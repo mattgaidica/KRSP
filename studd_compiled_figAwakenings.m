@@ -28,8 +28,8 @@ if go
         for iSubject = 1:numel(subjects)
             v_day = sort(compiled_day_odba{iSubject});
             v_night = sort(compiled_night_odba{iSubject});
-            v_dThresh(iSubject) = v_day(round(numel(v_day)*pThreshs(iiN)));
-            v_nThresh(iSubject) = v_night(round(numel(v_night)*pThreshs(iiN)));
+            v_dThresh(iSubject) = v_day(round(numel(v_day)*pThreshs(1)));
+            v_nThresh(iSubject) = v_night(round(numel(v_night)*pThreshs(1)));
             v_dMean(iSubject) = mean(v_day);
             v_nMean(iSubject) = mean(v_night);
             v_dStd(iSubject) = std(v_day);
@@ -83,7 +83,7 @@ if go
     go = false;
 end
 
-% close all;
+close all;
 ylimVals = [-0.35 0.35];
 sigThresh = 0.05;
 yArrow = ylimVals(2) - 0.05;
@@ -93,6 +93,7 @@ rows = 2;
 cols = 1;
 t = sweep/3600;
 xText = {'time after going to sleep (hrs)','time from wakeup (hrs)'};
+fontSize = 14;
 
 h = ff(1200,800);
 for iWake = 1:2
@@ -119,11 +120,13 @@ for iWake = 1:2
     grid on;
     box off;
     xlabel(xText{iWake});
+    ylabel('r (night awakenings - day ODBA)');
     if iWake == 1
         title({'Do night awakenings affect day odba?',...
             sprintf('awakening > %1.2f subject mean, sliding window %1.2f hrs',pThreshs,tw/3600)});
-        text(min(t),yArrow,'\leftarrow squirrel goes to sleep');
+        text(min(t),yArrow,'\leftarrow squirrel goes to sleep','fontsize',fontSize);
     else
-        text(max(t),yArrow,'squirrel wakes up \rightarrow','horizontalalignment','right');
+        text(max(t),yArrow,'squirrel wakes up \rightarrow','horizontalalignment','right','fontsize',fontSize);
     end
+    set(gca,'fontsize',fontSize);
 end
