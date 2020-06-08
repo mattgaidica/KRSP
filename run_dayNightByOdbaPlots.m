@@ -1,4 +1,8 @@
-filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
+if ismac
+    filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
+else
+    filespath = 'C:\Users\mgaidica\Box Sync\KRSP Axy Data\Temp';
+end
 files = dir(fullfile(filespath,'*.csv.mat'));
 doFig = true;
 doWrite = true;
