@@ -1,4 +1,4 @@
-function plotCircYear(doys,vals,temps)
+function plotCircYear(doys,vals)
 
 ssPath = '/Users/matt/Documents/Data/KRSP/SunriseSunset';
 files = dir(fullfile(ssPath,'*.txt'));

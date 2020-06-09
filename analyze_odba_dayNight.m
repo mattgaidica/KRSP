@@ -1,7 +1,7 @@
 filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 files = dir(fullfile(filespath,'*.meta.mat'));
 
-doAnalysis = false;
+doAnalysis = true;
 
 if doAnalysis
     awake_sunrise = [];

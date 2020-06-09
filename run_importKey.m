@@ -1,6 +1,8 @@
 % sqkey = readtable('/Users/matt/Documents/Data/KRSP/SQRaxy_key_mid_den.csv');
-squirrels = unique(sqkey.Squirrel_ID(~isnan(sqkey.Squirrel_ID)));
+% squirrels = unique(sqkey.Squirrel_ID(~isnan(sqkey.Squirrel_ID)));
 sqCount = [];
+
+
 
 % % for iS = 1:numel(squirrels)
 % %     sqCount(iS) = sum(sqkey.Squirrel_ID == squirrels(iS));

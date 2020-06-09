@@ -1,9 +1,9 @@
-doAnalysis = false;
-% weatherPath = '/Users/matt/Documents/Data/KRSP/HainesJunction_DailyTemps_Master.csv';
-% T_weather = readtable(weatherPath);
-% ssPath = '/Users/matt/Documents/Data/KRSP/SunriseSunset';
-% files = dir(fullfile(ssPath,'*.txt'));
-% T_ss = readtable(fullfile(ssPath,files(4).name));
+doAnalysis = true;
+weatherPath = '/Users/matt/Documents/Data/KRSP/HainesJunction_DailyTemps_Master.csv';
+T_weather = readtable(weatherPath);
+ssPath = '/Users/matt/Documents/Data/KRSP/SunriseSunset';
+files = dir(fullfile(ssPath,'*.txt'));
+T_ss = readtable(fullfile(ssPath,files(4).name));
 
 filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 files = dir(fullfile(filespath,'*.meta.mat'));
@@ -63,7 +63,7 @@ title({sprintf('r = %1.2f, p = %2.0e',r,p)});
 [v,k] = sort(data_days);
 
 fz = 14;
-close all
+% close all
 ff(900,400);
 % scatter(data_days,awake_length,15,'filled','k');
 f = fit(data_days,awake_length,'poly2');
