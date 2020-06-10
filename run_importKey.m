@@ -33,6 +33,8 @@ for ii = 1:size(sqkey,1)
 end
 % save table
 
+
+
 % % for iS = 1:numel(squirrels)
 % %     sqCount(iS) = sum(sqkey.Squirrel_ID == squirrels(iS));
 % % end
