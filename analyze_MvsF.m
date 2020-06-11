@@ -1,4 +1,4 @@
-sqkey = readtable('/Users/matt/Documents/Data/KRSP/sqkey.txt');
+load('sqkey.mat');
 dataPath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 
 colors = lines(4);
@@ -14,7 +14,8 @@ for ii = 1:size(sqkey,1)
         uniSq = uniSq + 1;
         useSquirrels(uniSq) = ii;
         fn = sqkey.filenames{ii};
-        load(fullfile(dataPath,[fn,'_meta.mat']));
+        fn_meta = strrep(fn,'.mat','_meta.mat');
+        load(fullfile(dataPath,fn_meta));
         startDoy(uniSq) = day(T_a.sunrise(1),'dayofyear');
         if size(T_a,1) > 1 % BAD DATES
             if T_a.sunrise(2) - T_a.sunrise(1) > day(2)
@@ -29,7 +30,8 @@ useSquirrels = useSquirrels(k);
 
 for ii = 1:numel(useSquirrels)
     fn = sqkey.filenames{useSquirrels(ii)};
-    load(fullfile(dataPath,[fn,'_meta.mat']));
+    fn_meta = strrep(fn,'.mat','_meta.mat');
+    load(fullfile(dataPath,fn_meta));
     for iDay = 1:size(T_a,1)
         xs = [xs;day(T_a.sunrise(iDay),'dayofyear')];
         ys = [ys;ii];
