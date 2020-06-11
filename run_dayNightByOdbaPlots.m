@@ -3,10 +3,10 @@ if ismac
 else
     filespath = 'C:\Users\mgaidica\Box Sync\KRSP Axy Data\Temp';
 end
-files = dir(fullfile(filespath,'*.csv.mat'));
-doFig = true;
+files = dirx(dir(fullfile(filespath,'*.mat')),'meta');
+doFig = false;
 doWrite = true;
-for iFile = 24%1:numel(files)
+for iFile = 1:numel(files)
     loadfile = fullfile(filespath,files(iFile).name);
     disp(loadfile);
     find_dayNight(loadfile,doFig,doWrite);

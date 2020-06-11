@@ -1,4 +1,5 @@
 function T_a = find_dayNight(loadfile,doFig,doWrite)
+warning('off','all');
 nSmooth = 360;
 colors = lines(3);
 T_a = table;
@@ -51,7 +52,7 @@ for iDay = 1:numel(allDays)
 end
 
 if doWrite
-    save(strrep(loadfile,'.csv.mat','.csv.meta.mat'),'T_a','nSmooth','zThresh');
+    save(strrep(loadfile,'.mat','_meta.mat'),'T_a','nSmooth','zThresh');
 end
 
 if doFig
@@ -105,3 +106,4 @@ if doFig
     saveas(h,[loadfile,'.png']);
     close(h);
 end
+warning('on','all');

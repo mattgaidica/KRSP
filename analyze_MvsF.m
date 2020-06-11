@@ -14,9 +14,9 @@ for ii = 1:size(sqkey,1)
         uniSq = uniSq + 1;
         useSquirrels(uniSq) = ii;
         fn = sqkey.filenames{ii};
-        load(fullfile(dataPath,[fn,'.meta.mat']));
+        load(fullfile(dataPath,[fn,'_meta.mat']));
         startDoy(uniSq) = day(T_a.sunrise(1),'dayofyear');
-        if size(T_a,1) > 1
+        if size(T_a,1) > 1 % BAD DATES
             if T_a.sunrise(2) - T_a.sunrise(1) > day(2)
                 disp(sqkey.filenames{ii})
             end
@@ -29,7 +29,7 @@ useSquirrels = useSquirrels(k);
 
 for ii = 1:numel(useSquirrels)
     fn = sqkey.filenames{useSquirrels(ii)};
-    load(fullfile(dataPath,[fn,'.meta.mat']));
+    load(fullfile(dataPath,[fn,'_meta.mat']));
     for iDay = 1:size(T_a,1)
         xs = [xs;day(T_a.sunrise(iDay),'dayofyear')];
         ys = [ys;ii];
