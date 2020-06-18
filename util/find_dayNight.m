@@ -47,9 +47,20 @@ for iDay = 1:numel(allDays)
             T_a.asleep_sunset(dayCount) = seconds(T_a.asleep(dayCount) - sunset);
             asleep_id(dayCount) = id;
         end
+        if ~isempty(awake_id(dayCount)) && ~isempty(asleep_id(dayCount))
+            T_a.awake_odba(dayCount) = sum(T.odba(awake_id(dayCount):asleep_id(dayCount)));
+            if dayCount > 1
+                T_a.asleep_odba(dayCount-1) = sum(T.odba(asleep_id(dayCount-1):awake_id(dayCount)));
+            end
+            if dayCount == numel(allDays)
+                T_a.asleep_odba(dayCount) = NaN; % always end with partial data?
+            end
+        end
         T_a.day_length(dayCount) = day_length;
     end
 end
+T_a.awake_odba(T_a.awake_odba==0) = NaN;
+T_a.asleep_odba(T_a.asleep_odba==0) = NaN;
 
 if doWrite
     save(strrep(loadfile,'.mat','_meta.mat'),'T_a','nSmooth','zThresh');

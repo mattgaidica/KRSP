@@ -8,6 +8,6 @@ doFig = false;
 doWrite = true;
 for iFile = 1:numel(files)
     loadfile = fullfile(filespath,files(iFile).name);
-    disp(loadfile);
+    disp(loadfile(end-30:end));
     find_dayNight(loadfile,doFig,doWrite);
 end
