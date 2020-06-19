@@ -1,5 +1,5 @@
 filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
-files = dir(fullfile(filespath,'*.meta.mat'));
+files = dir(fullfile(filespath,'*_meta.mat'));
 
 doAnalysis = true;
 
