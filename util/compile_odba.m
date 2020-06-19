@@ -1,18 +1,18 @@
-function compile_odba(filespath)
+% function compile_odba(filespath)
 decimateBy = 60;
 
 warning('off','all');
 files = dir2(filespath,'*.csv','-r');
-for iFile = 1:numel(files)
+for iFile = 1%:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(['working on: ...',readFile(end-40:end)]);
     inputTable = readtable(readFile);
     nRange = 1:decimateBy:size(inputTable,1);
     T = table;
     if ismember('datetime',inputTable.Properties.VariableNames)
-        dtData = inputTable.datetime(nRange);
+        dtData = inputTable.datetime;
     else
-        dtData = inputTable.dtime(nRange);
+        dtData = inputTable.dtime;
     end
     if ~isa(dtData(1),'datetime')
         dtData = datetime(dtData,'InputFormat','dd-MM-yyyy HH:mm:ss.00000');
@@ -24,12 +24,34 @@ for iFile = 1:numel(files)
         fprintf('formatting... ');
     end
     fprintf('%3.0f days recorded\n',days(dtData(end)-dtData(1)));
-    T.datetime = dtData;
+    T.datetime = dtData(nRange);
     T.odba = inputTable.odba(nRange);
     T.temp = inputTable.tempC(nRange);
-    T.Nest = inputTable.Nest2(nRange);
+    T.nest = inputTable.Nest2(nRange);
+    
+    Tstat = table;
+    nId = strcmp(inputTable.Nest2,'Nest');
+    diff_nId = diff(nId);
+    changes = [1;find(diff_nId)];
+    Tstat.datetime = dtData(changes);
+    Tstat.nest = inputTable.Nest2(changes);
+    for iChange = 1:numel(changes)
+        startId = changes(iChange);
+        if iChange == numel(changes)
+            endId = size(inputTable,1);
+        else
+            endId = changes(iChange+1);
+        end
+        Tstat.odba_max(iChange) = max(inputTable.odba(startId:endId));
+        Tstat.odba_mean(iChange) = mean(inputTable.odba(startId:endId));
+        Tstat.odba_sum(iChange) = sum(inputTable.odba(startId:endId));
+        Tstat.odba_med(iChange) = median(inputTable.odba(startId:endId));
+        Tstat.odba_std(iChange) = std(inputTable.odba(startId:endId));
+        Tstat.temp_mean(iChange) = mean(inputTable.tempC(startId:endId));
+    end
+    
     saveFile = strrep(readFile,'.csv',['__',datestr(dtData(1),'yyyymmdd'),'.mat']);
     disp(['saving ',saveFile(end-40:end)]);
     save(saveFile,'T');
-    warning('on','all');
 end
+warning('on','all');
