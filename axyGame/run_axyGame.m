@@ -1,9 +1,9 @@
 % load file
-useFile = ''; % forces redo
+useFile = 'C1_Jul1_2014__20140623.mat'; % forces redo
 dataPath = '/Users/matt/Documents/Data/KRSP/CompressedAxy';
 if isempty(useFile)
     files = dir(fullfile(dataPath,'*.mat'));
-    for iFile = 2:numel(files)
+    for iFile = 1:numel(files)
         saveFile = strrep(files(iFile).name,'.mat','_dn.txt');
         if ~isfile(fullfile(dataPath,saveFile)) % not analyzed
             useFile = files(iFile).name;
@@ -13,31 +13,27 @@ if isempty(useFile)
 end
 load(fullfile(dataPath,useFile));
 
-warning('off','all');
-dtDays = datetime(year(T.datetime),month(T.datetime),day(T.datetime));
-allDates = unique(dtDays);
-variable_names_types = [["filename", "string"]; ...
-    ["day", "datetime"]; ...
-    ["awake", "datetime"]; ...
-    ["exit_nest", "datetime"]; ...
-    ["enter_nest", "datetime"]; ...
-    ["asleep", "datetime"]];
-% Make table using fieldnames & value types from above
-Tdn = table('Size',[numel(allDates),size(variable_names_types,1)],...
-    'VariableNames', variable_names_types(:,1),...
-    'VariableTypes', variable_names_types(:,2));
-Tdn.day = allDates;
-for iRow = 1:numel(allDates)
-    Tdn.filename(iRow) = useFile;
+makeTable = true;
+if makeTable
+    warning('off','all');
+    dtDays = datetime(year(T.datetime),month(T.datetime),day(T.datetime));
+    allDates = unique(dtDays);
+    variable_names_types = [["filename", "string"]; ...
+        ["day", "datetime"]; ...
+        ["awake", "datetime"]; ...
+        ["exit_nest", "datetime"]; ...
+        ["enter_nest", "datetime"]; ...
+        ["asleep", "datetime"]];
+    % Make table using fieldnames & value types from above
+    Tdn = table('Size',[numel(allDates),size(variable_names_types,1)],...
+        'VariableNames', variable_names_types(:,1),...
+        'VariableTypes', variable_names_types(:,2));
+    Tdn.day = allDates;
+    for iRow = 1:numel(allDates)
+        Tdn.filename(iRow) = useFile;
+    end
+    warning('on','all');
 end
-% for iDay = 1:numel(allDates)
-%     if isempty(Tmaster.day) || ~any(find(Tmaster.day == allDates(iDay)))
-%         useRow = size(Tmaster,1)+1;
-%         Tmaster.filename{useRow} = {useFile};
-%         Tmaster.day(useRow) = allDates(iDay);
-%     end
-% end
-warning('on','all');
 
 rows = 2;
 cols = 1;
@@ -47,8 +43,8 @@ op = 0.2;
 lw = 1.5;
 close all
 clickStr = {'AWAKE','EXIT NEST','ENTER NEST','ASLEEP'};
-for iDay = 1:3%numel(allDates)+1
-    f = ff(1400,800);
+for iDay = 1:numel(allDates)+1
+    f = ff(1400,800,2);
     % data summary
     subplot(rows,cols,2);
     fmt = 'HH:mm';
@@ -78,6 +74,10 @@ for iDay = 1:3%numel(allDates)+1
     if iDay <= numel(allDates)
         [sunrise,sunset,day_length] = sunriseSunset(allDates(iDay));
         dataIds = find(dtDays == allDates(iDay));
+        nExt = 100;
+        if dataIds(end) + nExt <= numel(T.datetime)
+            dataIds = [dataIds' dataIds(end)+[1:nExt]];
+        end
         t = linspace(T.datetime(dataIds(1)),T.datetime(dataIds(end)),24);
         
         yyaxis right;
@@ -92,18 +92,20 @@ for iDay = 1:3%numel(allDates)+1
         plot([sunrise,sunrise],[min(ylim),max(ylim)],'-','linewidth',5,'color',[colors(3,:) op]);
         plot([sunset,sunset],[min(ylim),max(ylim)],'-','linewidth',5,'color',[0 0 0 op]);
         xticks(t);
+        xlim([min(t) max(t)]);
         xtickangle(30);
         ylabel('ODBA (g)');
-        
+        set(gca,'TitleFontSizeMultiplier',2);
         % click handler
+        ax = gca;
         for iClick = 1:4
             title(clickStr{iClick});
             [x,y] = ginput(1);
             if x > 0
-                clickDate = T.datetime(dataIds(1) + round(x * numel(dataIds)));
+                clickDate = num2ruler(x,ax.XAxis);%T.datetime(dataIds(1) + round(x * numel(dataIds)));
                 plot([clickDate,clickDate],[min(ylim),max(ylim)],':','linewidth',2,'color',clickColors(iClick,:));
             else
-                clickDate = NaN;
+                clickDate = NaT;
             end
             switch iClick
                 case 1

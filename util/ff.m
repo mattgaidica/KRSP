@@ -5,10 +5,21 @@ screensize = get(groot,'Screensize');
 if isempty(varargin)
     h = figure('position',screensize);
 elseif numel(varargin) == 1
-    h = figure('position',[0 300 varargin{1} screensize(4)]);
+    h = figure('position',[100 100 varargin{1} screensize(4)]);
 elseif numel(varargin) == 2
-    h = figure('position',[0 300 varargin{1} varargin{2}]);
-else
+    h = figure('position',[100 100 varargin{1} varargin{2}]);
+elseif numel(varargin) == 3
+    MP = get(0, 'MonitorPositions');
+    if size(MP, 1) == 1 || varargin{2} == 1% Single monitor
+        h = figure(varargin{:});
+    else % Multiple monitors
+        Shift = MP(2, 1:2);
+        h = figure('position',[200 200 varargin{1} varargin{2}]);
+        set(h,'Units','pixels');
+        pos = get(h,'Position');
+        set(h,'Position',[pos(1:2) + Shift, varargin{1},varargin{2}]);
+    end
+else % random pos
     h_width = varargin{1};
     h_height = varargin{2};
     rnd1 = screensize(3) - h_width;
