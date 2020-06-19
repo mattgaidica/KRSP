@@ -22,7 +22,7 @@ for ii = 1:size(sqkey,1)
     inFold = deploy_folds{1,find(strcmp(sqkey.Deployment_ID{ii},{deploy_folds{2,:}}))};
     if ~isnan(inFold)
         foldPath = fullfile(axyPath,inFold);
-        files = dir(fullfile(foldPath,'*.mat'));
+        files = dir(fullfile(foldPath,'*.csv'));
         squirrel = sqkey.Squirrel{ii};
         for iFile = 1:numel(files)
             if strcmp(files(iFile).name(1:numel(squirrel)),squirrel)
@@ -33,7 +33,7 @@ for ii = 1:size(sqkey,1)
 end
 % save table
 sqkey.filenames = filenames;
-save(fullfile('C:\Users\mgaidica\Box Sync\KRSP Axy Data\Temp','sqkey'),'sqkey');
+
 
 % % for iS = 1:numel(squirrels)
 % %     sqCount(iS) = sum(sqkey.Squirrel_ID == squirrels(iS));
