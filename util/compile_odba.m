@@ -1,6 +1,7 @@
 function compile_odba(filespath)
-decimateBy = 100;
+decimateBy = 60;
 
+warning('off','all');
 files = dir2(filespath,'*.csv','-r');
 for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
@@ -16,7 +17,8 @@ for iFile = 1:numel(files)
     if ~isa(dtData(1),'datetime')
         dtData = datetime(dtData,'InputFormat','dd-MM-yyyy HH:mm:ss.00000');
     end
-    if median(diff(unique(day(dtData,'dayofyear')))) ~= 1 % days do not progress by 1
+    medDays = median(diff(unique(day(dtData,'dayofyear'))));
+    if ~isnan(medDays) && medDays ~= 1 % NaN is single day && days progress by 1
         dtData = datetime(year(dtData),day(dtData),month(dtData),...
             hour(dtData),minute(dtData),second(dtData));
         fprintf('formatting... ');
@@ -25,6 +27,9 @@ for iFile = 1:numel(files)
     T.datetime = dtData;
     T.odba = inputTable.odba(nRange);
     T.temp = inputTable.tempC(nRange);
+    T.Nest = inputTable.Nest2(nRange);
     saveFile = strrep(readFile,'.csv',['__',datestr(dtData(1),'yyyymmdd'),'.mat']);
+    disp(['saving ',saveFile(end-40:end)]);
     save(saveFile,'T');
+    warning('on','all');
 end
