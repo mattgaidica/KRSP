@@ -1,9 +1,9 @@
-% function compile_odba(filespath)
+function compile_odba(filespath)
 decimateBy = 60;
 
 warning('off','all');
 files = dir2(filespath,'*.csv','-r');
-for iFile = 1%:numel(files)
+for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(['working on: ...',readFile(end-40:end)]);
     inputTable = readtable(readFile);
@@ -52,6 +52,6 @@ for iFile = 1%:numel(files)
     
     saveFile = strrep(readFile,'.csv',['__',datestr(dtData(1),'yyyymmdd'),'.mat']);
     disp(['saving ',saveFile(end-40:end)]);
-    save(saveFile,'T');
+    save(saveFile,'T','Tstat');
 end
 warning('on','all');
