@@ -1,8 +1,8 @@
-function compile_odba(filespath)
+function compile_odba(filespath,qualifier)
 decimateBy = 60;
 
 warning('off','all');
-files = dir2(filespath,'*.csv','-r');
+files = dir2(filespath,['*',qualifier,'.csv'],'-r');
 for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(['working on: ...',readFile(end-40:end)]);
@@ -26,8 +26,10 @@ for iFile = 1:numel(files)
     fprintf('%3.0f days recorded\n',days(dtData(end)-dtData(1)));
     T.datetime = dtData(nRange);
     T.odba = inputTable.odba(nRange);
-    T.temp = inputTable.tempC(nRange);
-    T.nest = inputTable.Nest2(nRange);
+    if ismember('tempC',inputTable.Properties.VariableNames)
+        T.temp = inputTable.tempC(nRange);
+        T.nest = inputTable.Nest2(nRange);
+    end
     
     Tstat = table;
     nId = strcmp(inputTable.Nest2,'Nest');
