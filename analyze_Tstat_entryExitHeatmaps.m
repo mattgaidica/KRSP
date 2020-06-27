@@ -10,9 +10,13 @@ if do
     ios_norm = zeros(2,366);
     data_hist = cell(2,nBins,366);
     
+    % should use sqkey!!!
     for iFile = 1:numel(files)
         disp(files(iFile).name);
         load(fullfile(loadPath,files(iFile).name));
+        if ~isValidT(T,true)
+            continue;
+        end
         
         Tdatas = {T.odba,T.temp};
         for iData = 1:2
@@ -72,13 +76,13 @@ titleStr = {'Enters','Exits';'In Nest','Out Nest'};
 colors = lines(5);
 op = 0.3;
 close all;
-ff(1600,800,2);
 dataCols = {ees,ios};
 normCols = {ees_norm,ios_norm};
 Tcol = {temp_hist,odba_hist};
 TcolTitle = {'Collar Temp (C)','Mean ODBA (g)'};
-
 nTicks = 13;
+
+ff(1600,800,2);
 for iCol = 1:2
     for inOut = 1:2
         data = squeeze(dataCols{iCol}(inOut,:,:)) ./ squeeze(normCols{iCol}(inOut,:));

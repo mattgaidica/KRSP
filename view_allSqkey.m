@@ -51,7 +51,7 @@ end
 
 
 close all;
-ff(1400,800,2);
+ff(1400,900,2);
 subplot(211);
 ms = 5;
 plot(F_scatt_x,F_scatt_y,'m.','markersize',ms);
@@ -84,3 +84,16 @@ xlim([1 366]);
 set(gca,'fontsize',14);
 legend({'Total','Female','\rightarrowLactating','\rightarrowPregnant','Male'},'location','northwest');
 legend box off;
+
+% F/M histograms per-year
+sexKey = {'F','M'};
+ff(800,400);
+for ii = 1:2
+    subplot(1,2,ii);
+    squirrels = strcmp(sqkey.sex,sexKey{ii});
+    files = ~strcmp(sqkey.filename,'');
+    years = sqkey.year(squirrels&files);
+    n = histcounts(years);
+    bar(unique(years),n);
+    title(sprintf([sexKey{ii},', n = %i'],sum(n)));
+end
