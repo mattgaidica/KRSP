@@ -50,7 +50,7 @@ if do
 end
 
 
-close all;
+% close all;
 ff(1400,900,2);
 subplot(211);
 ms = 5;

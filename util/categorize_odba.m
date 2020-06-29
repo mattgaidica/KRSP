@@ -1,7 +1,9 @@
 function categorize_odba(filespath,qualifier)
 strFilts = {'Nest','Out'};
 files = dir(fullfile(filespath,['*',qualifier,'.csv'])); % only this dir
+% files = dir2(filespath,['*',qualifier,'.csv'],'-r');
 warning('off','all');
+nSmooth = 91; % from Studd 2019
 for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(readFile(end-60:end));
@@ -9,6 +11,24 @@ for iFile = 1:numel(files)
     if isempty(inputTable)
         disp('table empty!');
         continue;
+    end
+    % raw data
+    if ismember('Var1',inputTable.Properties.VariableNames) &&...
+            ~ismember('odba',inputTable.Properties.VariableNames)
+        inputTable.datetime = inputTable.Var1;
+        X = inputTable.Var2;
+        Y = inputTable.Var3;
+        Z = inputTable.Var4;
+        inputTable.odba = abs(X-medfilt1(X,nSmooth))...
+            + abs(Y-medfilt1(Y,nSmooth))...
+            + abs(Z-medfilt1(Z,nSmooth));
+        if mean(inputTable.Var5) > 10
+            inputTable.temp = inputTable.Var5;
+        elseif ismember('Var6',inputTable.Properties.VariableNames)
+            inputTable.temp = inputTable.Var6;
+        else
+            error('can not find temp data');
+        end
     end
     % find each day, apply kmeans
     [doys,IA,IC] = unique(day(inputTable.datetime,'dayofyear'));

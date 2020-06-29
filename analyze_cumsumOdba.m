@@ -77,13 +77,16 @@ if do
     do = false;
 end
 
+% % v = datevec(datenum(2016, ones(size(2016)), doy_arr));
+% % mo_arr = v(:,2);
+
 close all
 op = 0.1;
-data_labels = {'All','Out of Nest','In Nest'};
+data_labels = {'All (Out & In)','Out of Nest','In Nest'};
 data_sets = {odba_arr,odba_arr_out,odba_arr_nest};
-colors = [parula(ceil(366/2));flip(parula(floor(366/2)))];
-ylimVals = [12,18,4];
-ff(1200,500);
+colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',366);
+ylimVals = [12,16,4];
+ff(1400,500);
 for iData = 1:3
     odba_compiled = zeros(366,nBins);
     for ii = 1:366
@@ -93,12 +96,12 @@ for iData = 1:3
     subplot(1,3,iData);
     odba_cs = cumsum(odba_compiled')';
     for ii = 1:366
-        if sum(odba_cs(ii,:)) > 0
+        if sum(odba_cs(ii,:)) > 0 && numel(unique(diff(odba_cs(ii,:)))) > 10
             plot(odba_cs(ii,:),'color',[colors(ii,:) op],'linewidth',2);
             hold on;
-            drawnow;
         end
     end
+    drawnow;
     xlim([1 size(odba_cs,2)]);
     ylim([0 ylimVals(iData)]);
     yticks([0:2:ylimVals(iData)]);
@@ -106,5 +109,7 @@ for iData = 1:3
     ylabel('cum. sum. ODBA');
     set(gca,'fontsize',14);
     title(data_labels{iData});
+    cb = cbAside(gca,'doy','k',[1 366]);
+    set(gca,'colormap',colors);
     grid on;
 end
