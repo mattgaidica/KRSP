@@ -1,13 +1,10 @@
 function compile_odba(filespath)
-decimateBy = 60;
-
 warning('off','all');
 files = dir2(filespath,'*.csv','-r');
 for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(['working on: ...',readFile(end-40:end)]);
     inputTable = readtable(readFile);
-    nRange = 1:decimateBy:size(inputTable,1);
     T = table;
     if ismember('datetime',inputTable.Properties.VariableNames)
         dtData = inputTable.datetime;
@@ -24,10 +21,16 @@ for iFile = 1:numel(files)
         fprintf('formatting... ');
     end
     fprintf('%3.0f days recorded\n',days(dtData(end)-dtData(1)));
+    
+    Fs = 1 / seconds(median(diff(dtData))); % 1 / period
+    decimateBy = 60*Fs; % compress to 1 minute
+    nRange = 1:decimateBy:size(inputTable,1);
     T.datetime = dtData(nRange);
     T.odba = inputTable.odba(nRange);
     T.temp = inputTable.tempC(nRange);
     T.nest = inputTable.Nest2(nRange);
+    odba_max = movmax(T.odba,decimateBy);
+    T.odba_max = odba_max(nRange);
     
     Tstat = table;
     nId = strcmp(inputTable.Nest2,'Nest');
