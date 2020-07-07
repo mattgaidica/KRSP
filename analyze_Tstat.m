@@ -14,8 +14,11 @@ if do
     trans_months = [];
     trans_type = [];
     for iFile = 1:numel(files)
-        disp(files(iFile).name);
         load(fullfile(loadPath,files(iFile).name));
+        if ~isValidT(T,true)
+            continue;
+        end
+        disp(files(iFile).name);
         filtDt = find(seconds(diff(Tstat.datetime)) < 60);
         filtDt = [filtDt;filtDt+1];
         Tstat(filtDt,:) = [];
