@@ -16,7 +16,7 @@ if copyFiles
     end
 end
 
-axy19 = '/Volumes/Seagate Expansion Drive 1/2019 AXY data/2019 Exported Axy';
+axy19 = '/Volumes/Seagate Expansion Drive/2019 AXY data/2019 Exported Axy';
 files19 = dir(fullfile(axy19,'*.csv'));
 T=readtable('/Users/matt/Box Sync/KRSP Axy Data/Dantzer Lab Axy Data/2019 AXY data/2019 Playback Experiment-Data_16Oct_axyLogSheet_mod.csv');
 for iFile = 1:numel(files19)
