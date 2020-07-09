@@ -10,8 +10,8 @@ elseif numel(varargin) == 2
     h = figure('position',[100 100 varargin{1} varargin{2}]);
 elseif numel(varargin) == 3
     MP = get(0, 'MonitorPositions');
-    if size(MP, 1) == 1 || varargin{2} == 1% Single monitor
-        h = figure(varargin{:});
+    if size(MP, 1) == 1 || varargin{3} == 1% Single monitor
+        h = figure('position',[200 200 varargin{1} varargin{2}]);
     else % Multiple monitors
         Shift = MP(2, 1:2);
         h = figure('position',[200 200 varargin{1} varargin{2}]);
