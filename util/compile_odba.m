@@ -22,18 +22,19 @@ for iFile = 1:numel(files)
         fprintf('formatting... ');
     end
     fprintf('%3.0f days recorded\n',days(dtData(end)-dtData(1)));
-    if ismember('tempC',inputTable.Properties.VariableNames)
-        T.temp = inputTable.tempC(nRange);
-        T.nest = inputTable.Nest2(nRange);
-    end
     
     Fs = 1 / seconds(median(diff(dtData))); % 1 / period
     decimateBy = 60*Fs; % compress to 1 minute
     nRange = 1:decimateBy:size(inputTable,1);
     T.datetime = dtData(nRange);
     T.odba = inputTable.odba(nRange);
-    odba_max = movmax(T.odba,decimateBy);
+    odba_max = movmax(inputTable.odba,decimateBy);
     T.odba_max = odba_max(nRange);
+    
+    if ismember('tempC',inputTable.Properties.VariableNames)
+        T.temp = inputTable.tempC(nRange);
+        T.nest = inputTable.Nest2(nRange);
+    end
     
     Tstat = table;
     nId = strcmp(inputTable.Nest2,'Nest');
