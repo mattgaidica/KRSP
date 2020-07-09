@@ -2,7 +2,7 @@
 % D = .025 x [(.15T(i - 4) + .15T(i - 3) + .15T(i - 2) + .08T(i - 1) + .21T(i) + .12T(i + 1) + .13T(i + 2)]
 % where T(i) represents the maximal epoch value in minute i, etc. If D >= 1.0, the minute was scored wake;
 % otherwise it was scored sleep.
-function Db = detect_sleepWake(T,nFilt)
+function T = detect_sleepWake(T,nFilt)
 nR = 5:numel(T.odba_max)-2;
 maxFilt = medfilt1(T.odba_max,nFilt);
 im = zeros(numel(nR),7);
@@ -20,6 +20,7 @@ Db(W >= 1) = 1;
 Db = circshift(Db,4);
 Db(1:4) = Db(5);
 Db(end:end-1) = Db(end-2);
+T.awake = Db;
 
 % % % % close all
 % % % % ff(1200,800);

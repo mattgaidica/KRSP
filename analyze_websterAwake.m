@@ -1,6 +1,7 @@
 filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 nBins = 96;
 binEdges = linspace(0,86400-60,nBins+1);
+doFig = false;
 if do
     files = dir(fullfile(filespath,'*.mat'));
     Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
@@ -9,7 +10,11 @@ if do
     close all
     for iFile = 1:numel(files)
         load(fullfile(filespath,files(iFile).name)); % T, Tstat
-        Db = detect_sleepWake(T,2);
+        if ~isValidT(T,true)
+            disp(['Skipping ',files(iFile).name]);
+            continue;
+        end
+        T = detect_sleepWake(T,2);
         doys_all = day(T.datetime,'dayofyear');
         doys_unique = unique(doys_all);
         histArr = [];
@@ -17,7 +22,7 @@ if do
         for iDoy = 1:numel(doys_unique)
             useIds = find(doys_all == doys_unique(iDoy));
             useTimes = T.datetime(useIds);
-            awakeArr = secDay(useTimes(Db(useIds) == 1)); % awake
+            awakeArr = secDay(useTimes(T.awake(useIds) == 1)); % awake
             histArr(iDoy,:) = histcounts(awakeArr,binEdges);
             histNorm(iDoy,:) = histcounts(secDay(T.datetime(useIds(1))):60:...
                 secDay(T.datetime(useIds(end))),binEdges);
@@ -29,24 +34,27 @@ if do
                 all_hists{doys_unique(iDoy)} = thisMat;
             end
         end
-        sunrise = secDay(Tss.sunrise(Tss_doys == doys_unique(iDoy)));
-        sunset = secDay(Tss.sunset(Tss_doys == doys_unique(iDoy)));
-        h = ff(1200,600);
-        bar(linspace(0,86400,size(histArr,2)),sum(histArr,1)./sum(histNorm,1),'k');
-        hold on;
-        colors = lines(3);
-        op = 0.5;
-        lw = 8;
-        plot([sunrise,sunrise],ylim,'-','linewidth',lw,'color',[colors(3,:),op]);
-        plot([sunset,sunset],ylim,'-','linewidth',lw,'color',[0,0,0,op]);
-        xticklabels(compose('%1.1f',24*xticks/(86400-60)));
-        xlabel('hour of day');
-        ylabel('frac. awake');
-        title(sprintf('%s - %i days',files(iFile).name,size(histArr,1)),'interpreter','none');
-        set(gca,'fontsize',14);
-        saveas(h,strrep(fullfile(filespath,'_figs',files(iFile).name),'.mat','.jpeg'));
-        close(h);
+        if doFig
+            sunrise = secDay(Tss.sunrise(Tss_doys == doys_unique(iDoy)));
+            sunset = secDay(Tss.sunset(Tss_doys == doys_unique(iDoy)));
+            h = ff(1200,600);
+            bar(linspace(0,86400,size(histArr,2)),sum(histArr,1)./sum(histNorm,1),'k');
+            hold on;
+            colors = lines(3);
+            op = 0.5;
+            lw = 8;
+            plot([sunrise,sunrise],ylim,'-','linewidth',lw,'color',[colors(3,:),op]);
+            plot([sunset,sunset],ylim,'-','linewidth',lw,'color',[0,0,0,op]);
+            xticklabels(compose('%1.1f',24*xticks/(86400-60)));
+            xlabel('hour of day');
+            ylabel('frac. awake');
+            title(sprintf('%s - %i days',files(iFile).name,size(histArr,1)),'interpreter','none');
+            set(gca,'fontsize',14);
+            saveas(h,strrep(fullfile(filespath,'_figs',files(iFile).name),'.mat','.jpeg'));
+            close(h);
+        end
     end
+    do = false;
 end
 
 mean_arr = [];
