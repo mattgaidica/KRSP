@@ -33,9 +33,9 @@ end
 if size(T,1) ~= 68
     error('table size changed, check manual entries!');
 end
-T.filename(17) = {'BJD18_22167_APRIL2019_BJD18_1.csv'}; % two dates
+T.filename(17) = {''}; % dead squirrel {'BJD18_22167_APRIL2019_BJD18_1.csv'}; % two dates
+T.filename(60) = {''}; % dead squirrel {'BJD18_22167_JUNE2019_BJD18_1.csv'}; % two dates
 T.filename(48) = {'BJD10_22290_May-July2019_BJD10_1.csv'}; % two dates
-T.filename(60) = {'BJD18_22167_JUNE2019_BJD18_1.csv'}; % two dates
 T.filename(67) = {'BJD10_22290_October2019_October2019_1.csv'}; % two dates
 T.filename(37) = {'BJD11_21922_MAY2019_BJD11_1.csv'}; % three CSVs, this is largest
 T.filename(24) = {'BJD14_20033_APRILMAY2019_BJD14_2.csv'}; % three CSVs, this is largest
@@ -65,6 +65,8 @@ missingHomes(strcmp('BJD15_21944_June-July2019_BJD15_1.csv',missingHomes)) = [];
 missingHomes(strcmp('BJD22_21944_APRIL2019_BJD22_2.csv',missingHomes)) = []; % mult files
 missingHomes(strcmp('BJD5_22803_APRILMAY2019_BJD5_2.csv',missingHomes)) = []; % mult files
 missingHomes(strcmp('BJD6_21465_MAY-JULY2019_BJD06_1.csv',missingHomes)) = []; % mult files
+missingHomes(strcmp('BJD18_22167_APRIL2019_BJD18_1.csv',missingHomes)) = []; % dead squirrel
+missingHomes(strcmp('BJD18_22167_JUNE2019_BJD18_1.csv',missingHomes)) = []; % dead squirrel
 
 missingHomes
 
