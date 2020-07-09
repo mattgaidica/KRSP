@@ -49,4 +49,6 @@ for iFile = 1:numel(matFiles)
         disp([matFiles(iFile).name,' has invalid range']);
     end
 end
+% then do:
 categorize_odba('/Volumes/Seagate Expansion Drive/2019 AXY data/2019 Exported Axy/trim','_trim.csv');
+compile_odba('/Volumes/Seagate Expansion Drive/2019 AXY data/2019 Exported Axy/trim/nest','_nest');

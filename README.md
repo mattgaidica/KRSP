@@ -25,4 +25,5 @@ __Generate Squirrel Key (sqkey)__
 
 The squirrel key places squirrel meta data together and associates them with a filename.
 
-1. Run `build_sqkey.m`.
+1. Run `build_sqkey.m`
+2. Run `view_allSqkey.m`

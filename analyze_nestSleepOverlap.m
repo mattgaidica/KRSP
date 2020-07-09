@@ -1,3 +1,4 @@
+filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 if do
     files = dir(fullfile(filespath,'*.mat'));
     overlapStats = [];
@@ -39,38 +40,59 @@ end
 close all
 % statsMult = [1 -1;-1 1;1 1;-1 -1];
 statsMult = [0 -1;0 1;1 0;-1 0];
-ff(500,500);
-op = 0.1;
+ff(1800,700);
+op = 0.075;
 useIds = [2,3,1,4,2];
-lns = [];
-for ii = 1:size(overlapStats,1)
-    theseStats = overlapStats(ii,:);
-    for jj = 1:4
-        xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
-        ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
-        lns(1) = plot(xs,ys,'color',[0,0,0,op]);
-        hold on;
+colors = lines(4);
+for iPlot = 1:2
+    subplot(1,2,iPlot);
+    lns = [];
+    for ii = 1:size(overlapStats,1)
+        theseStats = overlapStats(ii,:);
+        for jj = 1:4
+            xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
+            ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
+            lns(1) = plot(xs,ys,'color',[0,0,0,op]);
+            hold on;
+        end
     end
+    if iPlot == 1
+        theseStats = median(overlapStats);
+        for jj = 1:4
+            xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
+            ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
+            lns(2) = plot(xs,ys,'color',[1,0,0,.8],'linewidth',2);
+            hold on;
+        end
+        legend(lns,{'Individual','Median'});
+        title('All Data');
+    else % seasons
+        seasonIds = round(linspace(1,366,5));
+        for iSeason = 1:4
+            sIds = find(mean_doys >= seasonIds(iSeason) & mean_doys < seasonIds(iSeason+1));
+            theseStats = median(overlapStats(sIds,:));
+            for jj = 1:4
+                xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
+                ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
+                lns(iSeason+1) = plot(xs,ys,'color',[colors(iSeason,:),1],'linewidth',2);
+                hold on;
+            end
+        end
+        legend(lns,{'Individual','Winter','Spring','Summer','Fall'});
+        title('Seasonal Data');
+    end
+    xlim([-1 1]);
+    ylim([-1 1])
+    xticks([-1 0 1]);
+    yticks(xticks);
+    xticklabels(abs(xticks));
+    yticklabels(abs(yticks));
+    text(0,.95,'in-asleep','horizontalalignment','center','fontsize',12);
+    text(.95,0,'out-awake','horizontalalignment','right','fontsize',12);
+    text(0,-.95,'in-awake','horizontalalignment','center','fontsize',12);
+    text(-.95,0,'out-asleep','horizontalalignment','left','fontsize',12);
+    grid on;
+    xlabel('fraction of day');
+    ylabel('fraction of day');
+    set(gca,'fontsize',14);
 end
-theseStats = median(overlapStats);
-for jj = 1:4
-    xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
-    ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
-    lns(2) = plot(xs,ys,'color',[1,0,0,.8],'linewidth',2);
-    hold on;
-end
-xlim([-1 1]);
-ylim([-1 1])
-xticks([-1 0 1]);
-yticks(xticks);
-xticklabels(abs(xticks));
-yticklabels(abs(yticks));
-text(0,.95,'in-asleep','horizontalalignment','center');
-text(.95,0,'out-awake','horizontalalignment','right');
-text(0,-.95,'in-awake','horizontalalignment','center');
-text(-.95,0,'out-asleep','horizontalalignment','left');
-grid on;
-xlabel('fraction of day');
-ylabel('fraction of day');
-set(gca,'fontsize',14);
-legend(lns,{'Individuals','Median'});
