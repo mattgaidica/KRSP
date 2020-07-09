@@ -2,6 +2,7 @@ if do
     files = dir(fullfile(filespath,'*.mat'));
     overlapStats = [];
     iCount = 0;
+    mean_doys = [];
     for iFile = 1:numel(files)
         load(fullfile(filespath,files(iFile).name)); % T, Tstat
         if ~isValidT(T,true)
@@ -15,6 +16,7 @@ if do
         overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
         overlapStats(iCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
         overlapStats(iCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
+        mean_doys(iCount) = mean(unique(day(T.datetime,'dayofyear')));
     end
     do = false;
 end
