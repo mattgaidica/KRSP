@@ -3,16 +3,18 @@ nBins = 96;
 binEdges = linspace(0,86400-60,nBins+1);
 doFig = false;
 if do
-    files = dir(fullfile(filespath,'*.mat'));
+%     files = dir(fullfile(filespath,'*.mat'));
     Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
     Tss_doys = day(Tss.sunrise,'dayofyear');
     all_hists = cell(366,1);
     close all
-    for iFile = 1:numel(files)
-        load(fullfile(filespath,files(iFile).name)); % T, Tstat
-        if ~isValidT(T,true)
-            disp(['Skipping ',files(iFile).name]);
-            continue;
+    for iSq = 1:size(sqkey,1)
+        if ~isempty(sqkey.filename{iSq})
+            load(fullfile(filespath,sqkey.filename{iSq})); % T, Tstat
+% % % %             if ~isValidT(T,false)
+% % % %                 disp(['Skipping ',sqkey.filename{iSq}]);
+% % % %                 continue;
+% % % %             end
         end
         T = detect_sleepWake(T,2);
         doys_all = day(T.datetime,'dayofyear');
@@ -48,9 +50,9 @@ if do
             xticklabels(compose('%1.1f',24*xticks/(86400-60)));
             xlabel('hour of day');
             ylabel('frac. awake');
-            title(sprintf('%s - %i days',files(iFile).name,size(histArr,1)),'interpreter','none');
+            title(sprintf('%s - %i days',sqkey.filename{iSq},size(histArr,1)),'interpreter','none');
             set(gca,'fontsize',14);
-            saveas(h,strrep(fullfile(filespath,'_figs',files(iFile).name),'.mat','.jpeg'));
+            saveas(h,strrep(fullfile(filespath,'_figs',sqkey.filename{iSq}),'.mat','.jpeg'));
             close(h);
         end
     end

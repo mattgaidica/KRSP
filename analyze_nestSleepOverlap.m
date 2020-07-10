@@ -81,16 +81,17 @@ for iPlot = 1:2
         legend(lns,{'Individual','Winter','Spring','Summer','Fall'});
         title('Seasonal Data');
     end
-    xlim([-1 1]);
-    ylim([-1 1])
+    xlim([-0.25 1]);
+    ylim(xlim);
     xticks([-1 0 1]);
     yticks(xticks);
     xticklabels(abs(xticks));
-    yticklabels(abs(yticks));
-    text(0,.95,'in-asleep','horizontalalignment','center','fontsize',12);
-    text(.95,0,'out-awake','horizontalalignment','right','fontsize',12);
-    text(0,-.95,'in-awake','horizontalalignment','center','fontsize',12);
-    text(-.95,0,'out-asleep','horizontalalignment','left','fontsize',12);
+    yticklabels(xticklabels);
+    offset = 0.02;
+    text(0,max(ylim)-offset,'in-asleep','horizontalalignment','center','fontsize',12);
+    text(max(xlim)-offset,0,'out-awake','horizontalalignment','right','fontsize',12);
+    text(0,min(ylim)+offset,'in-awake','horizontalalignment','center','fontsize',12);
+    text(min(xlim)+offset,0,'out-asleep','horizontalalignment','left','fontsize',12);
     grid on;
     xlabel('fraction of day');
     ylabel('fraction of day');

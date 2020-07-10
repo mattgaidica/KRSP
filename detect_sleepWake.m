@@ -25,7 +25,7 @@ T.awake = Db;
 % % % % close all
 % % % % ff(1200,800);
 % % % % showAmt = 3600*4;
-% % % % xlims = [1,numel(odba);10000,10000+showAmt;50000,50000+showAmt];
+% % % % xlims = [1,numel(T.odba);10000,10000+showAmt;50000,50000+showAmt];
 % % % % titles = {'Several Days','Night Snippet','Day Snippet'};
 % % % % colors = lines(3);
 % % % % for ii = 1:4
@@ -40,9 +40,9 @@ T.awake = Db;
 % % % %         xlimVal = xlims(ii-1,:);
 % % % %         useTitle = titles{ii-1};
 % % % %     end
-% % % %     plot(odba,'-','color',[0 0 0 0.1]);
+% % % %     plot(T.odba,'-','color',[0 0 0 0.1]);
 % % % %     hold on;
-% % % %     plot(odba_m,'k-');
+% % % %     plot(T.odba_max,'k-');
 % % % %     ylabel('ODBA');
 % % % %     ylim([0 16]);
 % % % %     yyaxis right;

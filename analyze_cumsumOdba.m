@@ -19,49 +19,47 @@ if do
         if ~isempty(sqkey.filename{iSq})
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-            if isValidT(T,true)
-                dtdoys = day(T.datetime,'dayofyear');
-                undoys = unique(dtdoys);
-                if numel(undoys) < 2
+            dtdoys = day(T.datetime,'dayofyear');
+            undoys = unique(dtdoys);
+            if numel(undoys) < 2
+                continue;
+            end
+            sqCount = sqCount + 1;
+            for iDoy = 1:numel(undoys)-1
+                dts = T.datetime(dtdoys==undoys(iDoy) | dtdoys==undoys(iDoy+1));
+                if (86400*2) - seconds(dts(end)-dts(1)) > 100 % not enough data
                     continue;
                 end
-                sqCount = sqCount + 1;
-                for iDoy = 1:numel(undoys)-1
-                    dts = T.datetime(dtdoys==undoys(iDoy) | dtdoys==undoys(iDoy+1));
-                    if (86400*2) - seconds(dts(end)-dts(1)) > 100 % not enough data
-                        continue;
+                doyCount = doyCount + 1;
+                theseOdba = T.odba(dtdoys==undoys(iDoy) | dtdoys==undoys(iDoy+1));
+                theseNest = T.nest(dtdoys==undoys(iDoy) | dtdoys==undoys(iDoy+1));
+                theseSecs = secDay(dts);
+                thisSunrise = secDay(Tss.sunrise(Tss_doys==undoys(iDoy)));
+                [v,k] = sort(abs(theseSecs-thisSunrise));
+                sunriseOdba = theseOdba(k(1):k(2));
+                sunriseSecs = theseSecs(k(1):k(2));
+                sunriseSecs = sunriseSecs - sunriseSecs(1);
+                addId = find(sunriseSecs<0,1,'first');
+                sunriseSecs(addId:end) = sunriseSecs(addId:end) + sunriseSecs(addId-1) - sunriseSecs(addId);
+                sunriseNest = theseNest(k(1):k(2));
+                for iBin = 1:nBins
+                    % note: mean of empty vector is NaN
+                    tryIds = sunriseSecs >= binEdges(iBin) & sunriseSecs < binEdges(iBin+1);
+                    if sum(tryIds) > 0
+                        odba_arr(doyCount,iBin) = mean(sunriseOdba(tryIds));
+                        frac_out_nest(doyCount,iBin) = sum(strcmp(sunriseNest(tryIds),'Out')) / sum(tryIds);
                     end
-                    doyCount = doyCount + 1;
-                    theseOdba = T.odba(dtdoys==undoys(iDoy) | dtdoys==undoys(iDoy+1));
-                    theseNest = T.nest(dtdoys==undoys(iDoy) | dtdoys==undoys(iDoy+1));
-                    theseSecs = secDay(dts);
-                    thisSunrise = secDay(Tss.sunrise(Tss_doys==undoys(iDoy)));
-                    [v,k] = sort(abs(theseSecs-thisSunrise));
-                    sunriseOdba = theseOdba(k(1):k(2));
-                    sunriseSecs = theseSecs(k(1):k(2));
-                    sunriseSecs = sunriseSecs - sunriseSecs(1);
-                    addId = find(sunriseSecs<0,1,'first');
-                    sunriseSecs(addId:end) = sunriseSecs(addId:end) + sunriseSecs(addId-1) - sunriseSecs(addId);
-                    sunriseNest = theseNest(k(1):k(2));
-                    for iBin = 1:nBins
-                        % note: mean of empty vector is NaN
-                        tryIds = sunriseSecs >= binEdges(iBin) & sunriseSecs < binEdges(iBin+1);
-                        if sum(tryIds) > 0
-                            odba_arr(doyCount,iBin) = mean(sunriseOdba(tryIds));
-                            frac_out_nest(doyCount,iBin) = sum(strcmp(sunriseNest(tryIds),'Out')) / sum(tryIds);
-                        end
-                        tryIds = sunriseSecs >= binEdges(iBin) & sunriseSecs < binEdges(iBin+1) & strcmp(sunriseNest,'Out');
-                        if sum(tryIds) > 0
-                            odba_arr_out(doyCount,iBin) = mean(sunriseOdba(tryIds));
-                        end
-                        tryIds = sunriseSecs >= binEdges(iBin) & sunriseSecs < binEdges(iBin+1) & strcmp(sunriseNest,'Nest');
-                        if sum(tryIds) > 0
-                            odba_arr_nest(doyCount,iBin) = mean(sunriseOdba(tryIds));
-                        end
+                    tryIds = sunriseSecs >= binEdges(iBin) & sunriseSecs < binEdges(iBin+1) & strcmp(sunriseNest,'Out');
+                    if sum(tryIds) > 0
+                        odba_arr_out(doyCount,iBin) = mean(sunriseOdba(tryIds));
                     end
-                    doy_arr(doyCount) = undoys(iDoy);
-                    sex_arr(doyCount) = strcmp(sqkey.sex{iSq},'M');
+                    tryIds = sunriseSecs >= binEdges(iBin) & sunriseSecs < binEdges(iBin+1) & strcmp(sunriseNest,'Nest');
+                    if sum(tryIds) > 0
+                        odba_arr_nest(doyCount,iBin) = mean(sunriseOdba(tryIds));
+                    end
                 end
+                doy_arr(doyCount) = undoys(iDoy);
+                sex_arr(doyCount) = strcmp(sqkey.sex{iSq},'M');
             end
         end
     end
@@ -105,7 +103,7 @@ for iData = 1:3
             odba_compiled_M_std = odba_compiled_std;
             frac_out_compiled_M = frac_out_compiled;
         end
-
+        
         subplot(rows,cols,prc(cols,[iSex+1,iData]));
         odba_cs = cumsum(odba_compiled')';
         seasonDoys = round(linspace(1,366,4+1));
@@ -117,10 +115,10 @@ for iData = 1:3
                 hold on;
             end
             % seasons
-% %             if ismember(ii,seasonDoys(2:end)) && ~isempty(useDoys)
-% %                 plot(nanmean(odba_cs(useDoys,:)),'color',[colors(round(mean(useDoys)),:) 0.8],'linewidth',4);
-% %                 useDoys = [];
-% %             end
+            % %             if ismember(ii,seasonDoys(2:end)) && ~isempty(useDoys)
+            % %                 plot(nanmean(odba_cs(useDoys,:)),'color',[colors(round(mean(useDoys)),:) 0.8],'linewidth',4);
+            % %                 useDoys = [];
+            % %             end
         end
         drawnow;
         xlim([1 size(odba_cs,2)]);
@@ -166,13 +164,13 @@ for iData = 1:3
     ms_std = cumsum(mean(odba_compiled_M_std(bothIds,:),2));
     lns(1) = plot(x,ms,'linewidth',2,'color',lineColors(1,:));
     hold on;
-%     plot(x,ms+ms_std,':','color',lineColors(1,:));
-%     plot(x,ms-ms_std,':','color',lineColors(1,:));
+    %     plot(x,ms+ms_std,':','color',lineColors(1,:));
+    %     plot(x,ms-ms_std,':','color',lineColors(1,:));
     fs = cumsum(sum(odba_compiled_F(bothIds,:),2));
     fs_std = cumsum(mean(odba_compiled_M_std(bothIds,:),2));
     lns(2) = plot(x,fs,'linewidth',2,'color',lineColors(2,:));
-%     plot(x,fs+fs_std,':','color',lineColors(2,:));
-%     plot(x,fs-fs_std,':','color',lineColors(2,:));
+    %     plot(x,fs+fs_std,':','color',lineColors(2,:));
+    %     plot(x,fs-fs_std,':','color',lineColors(2,:));
     aa = plot(x,1,'k.','markersize',20);
     lns(3) = aa(1);
     ylabel('cum sum ODBA');
