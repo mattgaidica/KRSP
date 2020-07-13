@@ -46,7 +46,7 @@ for iType = 0:1
     for iMonth = 1:size(useMonths,1)
         subplot(rows,cols,prc(cols,[iMonth,iType+1]));
         binEdges_x = linspace(0,86400,24*2+1);
-        binEdges_y = logspace(2.8,4.8,24);
+        binEdges_y = logspace(2.6,4.8,24);
         trans_mat = zeros(numel(binEdges_x)-1,numel(binEdges_y)-1);
         trans_norm = zeros(numel(binEdges_x)-1,1);
         for iBin = 1:numel(binEdges_x)-1
@@ -61,7 +61,8 @@ for iType = 0:1
         imagesc(trans_mat' ./ trans_norm');
         hold on;
         set(gca,'ydir','normal');
-        xticklabels(compose('%1.0f',xticks/4));
+        xticks(linspace(min(xlim),max(xlim),8));
+        xticklabels(compose('%1.0f',linspace(0,23,numel(xticks))));
         xlabel('hour of day');
         caxis([0 0.15]);
         yticklabels(compose('%1.0f',binEdges_y(yticks)/60));
@@ -80,8 +81,8 @@ for iType = 0:1
         sunrise_std_x = closest(xsc,mean(theseSunrise)-std(theseSunrise));
         sunset_x = closest(xsc,mean(theseSunset));
         sunset_std_x = closest(xsc,mean(theseSunset)+std(theseSunset));
-        plot([sunrise_std_x,sunset_std_x],[1,1],'linewidth',8,'color',[colors(3,:) 0.5]);
-        plot([sunrise_x,sunset_x],[1,1],'linewidth',8,'color',[colors(3,:) 0.8]);
+        plot([sunrise_std_x,sunset_std_x],[max(ylim)-0.5,max(ylim)-0.5],'linewidth',8,'color',[1 1 1 0.5]); % colors(3,:)
+        plot([sunrise_x,sunset_x],[max(ylim)-0.5,max(ylim)-0.5],'linewidth',8,'color',[1 1 1 0.8]);
         
         set(gca,'fontsize',14);
         set(gca,'TitleFontSizeMultiplier',1.25);
