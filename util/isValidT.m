@@ -2,6 +2,14 @@ function isValid = isValidT(T,doTemp)
 doDebug = true;
 
 isValid = true;
+
+if std(T.odba) < 0.1
+    isValid = false;
+    if doDebug
+        disp('Failed: Std of ODBA too low');
+    end
+end
+
 % !! Hmm these all depend on Nest?
 if doTemp % all Nest depends on temp
     % out ODBA is above a reasonable threshold

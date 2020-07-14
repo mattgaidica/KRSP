@@ -4,6 +4,7 @@
 % otherwise it was scored sleep.
 function T = detect_sleepWake(T,nFilt)
 nR = 5:numel(T.odba_max)-2;
+% odba_norm = normalize(T.odba_max,'scale');
 maxFilt = medfilt1(T.odba_max,nFilt);
 im = zeros(numel(nR),7);
 im(:,1) = 0.15 * maxFilt(nR-4);
@@ -14,7 +15,7 @@ im(:,5) = 0.21 * maxFilt(nR);
 im(:,6) = 0.21 * maxFilt(nR+1);
 im(:,7) = 0.21 * maxFilt(nR+2);
 
-W = prctile(T.odba,95) * sum(im,2); % multiplier determines threshold, determined emperically
+W = 1 * sum(im,2); % multiplier determines threshold, determined emperically
 Db = zeros(numel(T.odba_max),1);
 Db(W >= 1) = 1;
 Db = circshift(Db,4);
