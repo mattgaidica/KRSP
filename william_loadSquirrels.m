@@ -6,7 +6,6 @@ if do
     sq_awake = [];
     sq_ids = [];
     sq_doys = [];
-    sq_dayLength = [];
     iRow = 0;
     squirrelId = 0;
     for iSq = 1:size(sqkey,1)
