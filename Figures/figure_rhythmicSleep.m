@@ -6,6 +6,7 @@ if do
     awake_sunrise = [];
     awake_sunset = [];
     sq_odba = [];
+    sq_odba_norm = [];
     sq_odba_max = [];
     sq_ids = [];
     sq_doys = [];
@@ -29,11 +30,13 @@ if do
                         % roughly, using 2016 right now
                         sunrise = Tss.sunrise(Tss_doys == undoys(iDoy));
                         sunset = Tss.sunset(Tss_doys == undoys(iDoy));
+                        day_length = Tss.day_length(Tss_doys == undoys(iDoy));
                         % do I want ODBA for NEXT DAY for sunset values?
                         awake_sunset = [awake_sunset;seconds(awakeDts-sunset)];
                         awake_sunrise = [awake_sunrise;seconds(awakeDts-sunrise)];
                         
                         sq_odba = [sq_odba;repmat(sum(T.odba(theseDoys)),size(awakeDts))]; % no need to normalize now
+                        sq_odba_norm = [sq_odba_norm;repmat(sum(T.odba(theseDoys))/day_length,size(awakeDts))];
                         % %                         v = sort(T.odba(theseDoys));
                         % %                         sq_odba_max = sum(v(end-29:end)); % n to end?
                         sq_ids = [sq_ids;repmat(squirrelId,size(awakeDts))];
@@ -47,14 +50,14 @@ if do
 end
 
 %% setup
-nHours = 6;
+nHours = 5;
 nBins = (nHours*60*2)+1;
 binEdges = linspace(-nHours*3600,nHours*3600,nBins);
 nSq = numel(unique(sq_ids));
 seasonDoys = round(linspace(1,366,5));
-seasonLabel = {'Winter','Spring','Summer','Fall'};
-close all
-ff(1200,1000);
+% seasonDoys = [1,366]; iSeason = 1;
+season_rs = [];
+season_ps = [];
 for iSeason = 1:4
     odbaHist = [];
     odbaMaxHist = [];
@@ -66,7 +69,7 @@ for iSeason = 1:4
         for iDoy = 1:numel(unDoys)
             if unDoys(iDoy) >= seasonDoys(iSeason) && unDoys(iDoy) <= seasonDoys(iSeason+1)
                 sqDoyCount = sqDoyCount + 1;
-                odbaHist(sqDoyCount) = min(sq_odba(sq_ids == iSq & sq_doys == unDoys(iDoy)));
+                odbaHist(sqDoyCount) = min(sq_odba_norm(sq_ids == iSq & sq_doys == unDoys(iDoy)));
                 % %         odbaMaxHist(sqDoyCount) = min(sq_odba_max(sq_ids == iSq & sq_doys == unDoys(iDoy)));
                 counts = histcounts(awake_sunset(sq_ids == iSq & sq_doys == unDoys(iDoy)),binEdges);
                 sunsetHist(sqDoyCount,:) = counts;
@@ -81,7 +84,7 @@ for iSeason = 1:4
     odbaIdsSunset = [];
     odbaMeanSunrise = [];
     % % odbaMaxMeanSunrise = [];
-    odbaIdsSunrise = [];
+    odbaIdsSunrise = []; % "number of awakenings in this bin"
     for iBin = 1:size(sunsetHist,2)
         useIds_odbaSunset = find(sunsetHist(:,iBin));
         odbaMeanSunset(iBin) = mean(odbaHist(useIds_odbaSunset));
@@ -100,14 +103,14 @@ for iSeason = 1:4
     % f = fit(odbaMeanSunrise',odbaIdsSunrise','poly1');
     % figure; plot(f,odbaMeanSunrise',odbaIdsSunrise');
     
-    %% plot
+    %% plot setup
     thisMeanSunset = [];
     thisMaxMeanSunset = [];
     thisIdsSunset = [];
     thisMeanSunrise = [];
     thisMaxMeanSunrise = [];
     thisIdsSunrise = [];
-    usePoints = 30; % half window
+    usePoints = 45; % half window
     for ii = usePoints:numel(odbaIdsSunrise)-usePoints
         nR = ii-usePoints+1:ii+usePoints;
         thisMeanSunset(ii,:) = odbaMeanSunset(nR);
@@ -125,7 +128,7 @@ for iSeason = 1:4
     % rs = [];
     % ps = [];
     % for ii = 1:size(thisMeanSunset,1)
-    %     [r,p] = corr(thisMeanSunset(ii,:)',thisIdsSunset(ii,:)');
+    %     [r,p] = corr(thisMeanSunset(ii,:)',thisIdsSunset(ii,:)','rows','complete');
     %     rs(ii) = r;
     %     ps(ii) = p;
     % end
@@ -137,24 +140,48 @@ for iSeason = 1:4
     % xticklabels(xticks/3600);
     % title('sunset');
     
-    subplot(4,1,iSeason);
+    %     close all;
+    %     ff(1200,800);
+    
     rs = [];
     ps = [];
     for ii = 1:size(thisMeanSunrise,1)
-        [r,p] = corr(thisMeanSunrise(ii,:)',thisIdsSunrise(ii,:)');
+        [r,p] = corr(thisMeanSunrise(ii,:)',thisIdsSunrise(ii,:)','rows','complete');
         rs(ii) = r;
         ps(ii) = p;
     end
-    t = binEdges((1:numel(rs))+usePoints-1);
-    plot(t,rs);
-    yyaxis right;
-    plot(t,ps);
-    ylim([0 0.1]);
-    xlim([min(t),max(t)]);
-    xticklabels(xticks/3600);
-    title(seasonLabel{iSeason});
-end
+    season_rs(iSeason,:) = rs;
+    season_ps(iSeason,:) = ps;
+    
+    %     subplot(212);
+    %     plot(t,smooth(rs,nSmooth),'k-');
+    %     hold on;
+    %     plot(t(ps < 0.05),0,'k.');
+    %     plot(t(ps < 0.01),0,'r.');
+    %     plot(t(ps < 0.001),0,'b.');
+    %     xlim([min(t),max(t)]);
+    %     title(seasonLabel{iSeason});
+end % seasons
 
+%% plot
+close all
+ff(1200,500);
+t = binEdges((1:numel(rs))+usePoints-1)/3600;
+colors = lines(4);
+nSmooth = 50;
+seasonLabel = {'1st Quarter','2nd Quarter','3rd Quarter','4th Quarter'};
+lns = [];
+useSeasons = 2:3;
+for iSeason = useSeasons
+    r_smooth = smooth(season_rs(iSeason,:),nSmooth);
+    lns(numel(lns)+1) = plot(t,r_smooth,'-','color',colors(iSeason,:));
+    hold on;
+    plot(t(season_ps(iSeason,:) < 0.05),r_smooth(season_ps(iSeason,:) < 0.05),'*','color',colors(iSeason,:));
+    xlim([min(t),max(t)]);
+end
+ylim([-.4 .4]);
+legend(lns,seasonLabel{useSeasons});
+xlim([-4 4]);
 
 % this is a good view of whats going on with the data
 % % fs = 12;
