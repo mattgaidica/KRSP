@@ -55,6 +55,7 @@ if do
                 end
                 doy_arr(doyCount) = undoys(iDoy);
                 sex_arr(doyCount) = strcmp(sqkey.sex{iSq},'M');
+                mast_arr(doyCount) = ismember(sqkey.year(iSq),[2014,2019]);
             end
         end
     end
