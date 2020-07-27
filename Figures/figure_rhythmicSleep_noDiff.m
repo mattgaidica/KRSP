@@ -5,18 +5,20 @@ if do
     Tss_doys = day(Tss.sunrise,'dayofyear');
     sq_odba = [];
     sq_odba_max = [];
+    sq_odba_z = [];
     sq_awake = [];
     sq_ids = [];
     sq_doys = [];
     sq_years = [];
     sq_dayLength = [];
+    sq_asleep = [];
     iRow = 0;
     squirrelId = 0;
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq}) % && ~any(ismember(sqkey.year(iSq),[2014,2019])) % ~(strcmp(sqkey.source{iSq},'ES') &&
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-            T = detect_sleepWake(T,2);
+            T = detect_sleepWake(T);
             if isValidT(T,false)
                 dtdoys = day(T.datetime,'dayofyear');
                 undoys = unique(dtdoys);
@@ -37,10 +39,12 @@ if do
                             sq_sex(iRow) = strcmp(sqkey.sex{iSq},'M');
                             sq_doys(iRow) = undoys(iDoy);
                             sq_odba(iRow,:) = T.odba(theseDoys);
+                            sq_odba_z(iRow,:) = T.odba_z(theseDoys);
                             sq_odba_max(iRow,:) = T.odba_max(theseDoys);
                             sq_years(iRow) = year(T.datetime(theseDoys(1)));
                             sq_dayLength(iRow) = Tss.day_length(Tss_doys == undoys(iDoy));
                             sq_awake(iRow,:) = T.awake(theseDoys);
+                            sq_asleep(iRow,:) = T.asleep(theseDoys);
                         end
                     end
                 end
@@ -57,11 +61,29 @@ for ii = 1:size(sq_odba,1)
     end
 end
 
-% close all
 mastTitles = {'Mast','nMast'};
 years_mast = [2014,2019]; % 2014,2019
 years_nmast = [2015,2016,2017]; % 2015,2016,2017, *need 2018,2020
 mast_years = {years_mast;years_nmast};
+
+% create 1:366 odba statistic
+pmasts = NaN(1,366);
+for iDoy = 1:366
+    mastIds = ismember(sq_doys,iDoy) & ismember(sq_years,years_mast) & filtIds; % sq_sex==1 & 
+    nmastIds = ismember(sq_doys,iDoy) & ismember(sq_years,years_nmast) & filtIds;
+    if sum(mastIds) > 1 && sum(nmastIds) > 1
+        mastOdbas = sq_odba(mastIds,:);
+        dist1 = sum(mastOdbas,2);
+        nmastOdbas = sq_odba(nmastIds,:);
+        dist2 = sum(nmastOdbas,2);
+        y = [dist1;dist2];
+        group = [zeros(size(dist1));ones(size(dist2))];
+        pmasts(iDoy) = anova1(y,group,'off')*(numel(dist1)+numel(dist2)).^2;
+    end
+end
+% figure;plot(find(pmasts<.05),'r*');
+
+% close all
 dayArr = 1:366;
 nDays = 30;
 % % % % asleepRange = 300:400; % 240 = 4 hours
@@ -69,6 +91,7 @@ nDays = 30;
 all_rs = NaN(2,366);
 all_ps = NaN(2,366);
 transitions = {};
+odbas = {};
 mastDays = zeros(2,1);
 mastSquirrels = zeros(2,1);
 
@@ -101,6 +124,7 @@ for iMast = 1:2
             end
             if iDoy == 265
                 transitions{iMast} = abs(diff(theseAwakes(:,asleepRange),1,2));
+                odbas{iMast} = theseOdbas(:,awakeRange);
                 transitionsAwakeId = awakeId;
                 if iMast == 1
                     h = ff(1200,800);
@@ -222,27 +246,36 @@ plot(find(parr),0,'r*');
 y = [];
 group = [];
 p_bins = [];
+Tmast = table;
 for iBin = 1:size(transitions{1},2)
     y = [transitions{1}(:,iBin);transitions{2}(:,iBin)];
     group = [zeros(numel(transitions{1}(:,iBin)),1);ones(numel(transitions{2}(:,iBin)),1)];
+    Tmast.mast(1) = sum(transitions{1}(:,iBin));
+    Tmast.mast(2) = numel(transitions{1}(:,iBin)) - sum(transitions{1}(:,iBin));
+    Tmast.nmast(1) = sum(transitions{2}(:,iBin));
+    Tmast.nmast(2) = numel(transitions{2}(:,iBin)) - sum(transitions{2}(:,iBin));
+    % these all give similar answers
     p_bins(iBin) = anova1(y,group,'off');
+%     p_bins(iBin) = ranksum(transitions{1}(:,iBin),transitions{2}(:,iBin))*numel(y).^2;
+%     [~,p] = fishertest(Tmast);
+%     p_bins(iBin) = p;
 end
 parr2 = p_bins < 0.05;
 
 % combine stats figures
 t = linspace(transitionsAwakeId-720-numel(parr),transitionsAwakeId-720,numel(parr))/60;
 close all
-nS = 50;
+nS = 20;
 lw = 2;
 ms = 10;
 lns = [];
 ff(700,500);
 subplot(211);
-mastTransitions = smooth(sum(transitions{1}./size(transitions{1},1)),nS);
+mastTransitions = smoothdata(sum(transitions{1}./size(transitions{1},1)),'gaussian',nS);
 lns(1) = plot(t,mastTransitions,'k','linewidth',lw);
 hold on;
 plot(t(parr),mastTransitions(parr),'k*','markersize',ms);
-nmastTransitions = smooth(sum(transitions{2}./size(transitions{2},1)),nS);
+nmastTransitions = smoothdata(sum(transitions{2}./size(transitions{2},1)),'gaussian',nS);
 lns(2) = plot(t,nmastTransitions,'r','linewidth',lw);
 hold on;
 plot(t(parr2),nmastTransitions(parr2),'r*','markersize',ms);
@@ -255,6 +288,8 @@ legend(lns,{sprintf('Mast Years (n = %i days)',size(transitions{1},1)),...
     sprintf('non-Mast Years (n = %i days)',size(transitions{2},1))},'location','southwest');
 legend box off;
 title('Sleep Transition Probability for DOY 265');
+text(max(xlim),max(ylim),sprintf('ANOVA on means p = %1.2e',ranksum(mean(transitions{1}),mean(transitions{2}))),...
+    'verticalalignment','top','horizontalalignment','right','fontsize',12);
 
 binEdges = 1:15:numel(parr);
 x = linspace(transitionsAwakeId-720-numel(parr),transitionsAwakeId-720,numel(binEdges)-1)/60;

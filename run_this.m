@@ -1,32 +1,31 @@
-mean_std = zeros(366,1);
-mean_mean = zeros(366,1);
-threshs = linspace(0.1,2.5,10);
-% threshs = linspace(0.5,2.5,10);
-colors = cool(numel(threshs));
-ff(1000,900);
-for iThresh = 1:numel(threshs)
-    for iDoy = 1:366
-        useIds = find(sq_doys == iDoy);
-        if ~isempty(useIds)
-            stdvals = [];
-            meanvals = [];
-            for ii = 1:numel(useIds)
-                thisOdba = sq_odba(useIds(ii),:);
-                stdvals(ii,:) = std(thisOdba(thisOdba > 0 & thisOdba < threshs(iThresh)));
-                meanvals(ii,:) = mean(thisOdba(thisOdba > 0 & thisOdba < threshs(iThresh)));
-%                 stdvals(ii,:) = std(thisOdba(thisOdba > threshs(iThresh)));
-            end
-            mean_mean(iDoy) = mean(meanvals);
-            mean_std(iDoy) = mean(stdvals);
-        end
+odbaArr = NaN(366,1440);
+lowArr = [];
+highArr = [];
+for iDoy = 1:366
+    useIds = ismember(sq_doys,iDoy) & filtIds;
+    if sum(useIds) < 7
+        continue;
     end
-    subplot(211);
-    plot(mean_std,'-','color',colors(iThresh,:));
-    title('std');
-    hold on;
-    subplot(212);
-    plot(mean_mean,'-','color',colors(iThresh,:));
-    title('mean');
-    hold on;
+    theseOdbas = sq_odba(useIds,:);
+    odbaArr(iDoy,:) = mean(theseOdbas);
+    tArr = theseOdbas;
+    tArr(tArr < 0.2 & tArr > 0.5) = NaN;
+    lowArr(iDoy,:) = nanmean(tArr);
+    tArr = theseOdbas;
+    tArr(tArr < 0.5) = NaN;
+    highArr(iDoy,:) = nanmean(tArr);
 end
-legend(compose('%1.2f',threshs))
+
+close all
+ff(600,500);
+subplot(211);
+imagesc(normalize(lowArr'));
+set(gca,'ydir','normal');
+colormap(magma);
+caxis([0 1]);
+
+subplot(212);
+imagesc(normalize(highArr'));
+set(gca,'ydir','normal');
+colormap(magma);
+caxis([0 1]);

@@ -9,6 +9,7 @@ if do
     trans_all = [];
     trans_secs = [];
     trans_months = [];
+    trans_doys = [];
     trans_type = [];
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq})
@@ -18,7 +19,7 @@ if do
             end
         end
         disp(sqkey.filename{iSq});
-        T = detect_sleepWake(T,2);
+        T = detect_sleepWake(T);
         Tawake = make_Tawake(T);
         
         for iT = 1:size(Tawake,1)-1 % last entry has no transition to reference
@@ -26,6 +27,7 @@ if do
             trans_all = [trans_all transTime];
             trans_secs = [trans_secs secDay(Tawake.datetime(iT))];
             trans_months = [trans_months month(Tawake.datetime(iT))];
+            trans_doys = [trans_doys day(Tawake.datetime(iT),'dayofyear')];
             trans_type = [trans_type Tawake.awake(iT)];
         end
     end
@@ -34,24 +36,26 @@ end
 
 Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
 Tss_months = month(Tss.sunrise);
+Tss_doys = day(Tss.sunrise,'dayofyear');
 
 close all
-useMonths = [1,3;4,6;7,9;10,12];
+% % % % useMonths = [1,3;4,6;7,9;10,12];
+useDoys = [1,20;80,100;170,190;260,280];
 monthNames = {'Winter','Spring','Summer','Fall'};
 typeNames = {'awake','asleep'};
 ff(900,900);
-rows = size(useMonths,1);
+rows = size(useDoys,1);
 cols = 2;
 for iType = 0:1
-    for iMonth = 1:size(useMonths,1)
-        subplot(rows,cols,prc(cols,[iMonth,iType+1]));
+    for iiDoy = 1:size(useDoys,1)
+        subplot(rows,cols,prc(cols,[iiDoy,iType+1]));
         binEdges_x = linspace(0,86400,24*2+1);
         binEdges_y = logspace(2.6,4.8,24);
         trans_mat = zeros(numel(binEdges_x)-1,numel(binEdges_y)-1);
         trans_norm = zeros(numel(binEdges_x)-1,1);
         for iBin = 1:numel(binEdges_x)-1
             useIds = find(trans_secs >= binEdges_x(iBin) & trans_secs < binEdges_x(iBin+1)...
-                & trans_months >= useMonths(iMonth,1) & trans_months <= useMonths(iMonth,2)...
+                & trans_doys >= useDoys(iiDoy,1) & trans_doys <= useDoys(iiDoy,2)...
                 & trans_type == iType);
             theseVals = trans_all(useIds);
             n = histcounts(theseVals,binEdges_y);
@@ -70,10 +74,10 @@ for iType = 0:1
         c = colorbar;
         c.Label.String = ['p(',typeNames{iType+1},')'];
         c.Label.FontSize = 14;
-        title(monthNames{iMonth});
+        title(monthNames{iiDoy});
         colormap(magma);
         
-        tss_range = find(Tss_months >= useMonths(iMonth,1) & Tss_months <= useMonths(iMonth,2));
+        tss_range = find(Tss_doys >= useDoys(iiDoy,1) & Tss_doys <= useDoys(iiDoy,2));
         theseSunrise = secDay(Tss.sunrise(tss_range));
         theseSunset = secDay(Tss.sunset(tss_range));
         xsc = linspace(0,86400,max(xlim)-min(xlim));

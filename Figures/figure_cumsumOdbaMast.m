@@ -67,20 +67,20 @@ end
 
 close all
 op = 0.1;
-sexLabels = {'F','M'};
+mastLabels = {'Mast','Non-Mast'};
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',366);
-ff(1400,800);
+ff(400,700);
 rows = 3;
-cols = 3;
+cols = 1;
 lineColors = lines(5);
 
-for iSex = 0:1
+for iMast = 0:1
     odba_compiled = zeros(366,nBins);
     asleep_compiled = zeros(366,nBins);
     frac_out_compiled = zeros(366,nBins);
     odba_compiled_std = zeros(366,nBins);
     for ii = 1:366
-        tryIds = doy_arr==ii & mast_arr==iSex; % sex_arr
+        tryIds = doy_arr==ii & mast_arr==iMast; % sex_arr
         if sum(tryIds) > 0
             odba_compiled(ii,:) = mean(odba_arr(tryIds,:));
             asleep_compiled(ii,:) = mean(asleep_arr(tryIds,:));
@@ -88,20 +88,20 @@ for iSex = 0:1
             frac_out_compiled(ii,:) = mean(frac_out_nest(tryIds,:));
         end
     end
-    if iSex == 0
-        odba_compiled_F = odba_compiled;
-        asleep_compiled_F = asleep_compiled;
-        odba_compiled_F_std = odba_compiled_std;
-        frac_out_compiled_F = frac_out_compiled;
+    if iMast == 0
+        odba_compiled_nMast = odba_compiled;
+        asleep_compiled_nMast = asleep_compiled;
+        odba_compiled_nMast_std = odba_compiled_std;
+        frac_out_compiled_nMast = frac_out_compiled;
     else
-        odba_compiled_M = odba_compiled;
-        asleep_compiled_M = asleep_compiled;
-        odba_compiled_M_std = odba_compiled_std;
-        frac_out_compiled_M = frac_out_compiled;
+        odba_compiled_Mast = odba_compiled;
+        asleep_compiled_Mast = asleep_compiled;
+        odba_compiled_Mast_std = odba_compiled_std;
+        frac_out_compiled_Mast = frac_out_compiled;
     end
     
     % ODBA
-    subplot(rows,cols,prc(cols,[iSex+1,1]));
+    subplot(rows,cols,prc(cols,[iMast+1,1]));
     odba_cs = cumsum(odba_compiled')';
     useDoys = [];
     for ii = 1:366
@@ -118,53 +118,7 @@ for iSex = 0:1
     xlabel('hours from sunrise');
     ylabel('cum sum ODBA');
     set(gca,'fontsize',14);
-    title([sexLabels{iSex+1},' ','All (Out & In)']);
-    cb = cbAside(gca,'doy','k',[1 366]);
-    set(gca,'colormap',colors);
-    grid on;
-    
-    % asleep
-    subplot(rows,cols,prc(cols,[iSex+1,2]));
-    asleep_cs = cumsum(asleep_compiled')';
-    useDoys = [];
-    for ii = 1:366
-        if sum(asleep_cs(ii,:)) > 0% && numel(unique(diff(odba_cs(ii,:)))) > 10 % remove some flat lines
-            useDoys = [useDoys;ii];
-            plot(asleep_cs(ii,:),'color',[colors(ii,:) op],'linewidth',2);
-            hold on;
-        end
-    end
-    drawnow;
-    xlim([1 size(asleep_cs,2)]);
-    ylim([0 25]);
-    yticks([0:2:max(ylim)]);
-    xlabel('hours from sunrise');
-    ylabel('cum sum asleep');
-    set(gca,'fontsize',14);
-    title([sexLabels{iSex+1},' ','All (Out & In)']);
-    cb = cbAside(gca,'doy','k',[1 366]);
-    set(gca,'colormap',colors);
-    grid on;
-    
-    % frac out
-    subplot(rows,cols,prc(cols,[iSex+1,3]));
-    frac_out_cs = cumsum(frac_out_compiled')';
-    seasonDoys = round(linspace(1,366,4+1));
-    useDoys = [];
-    for ii = 1:366
-        if sum(frac_out_cs(ii,:)) > 0% && numel(unique(diff(odba_cs(ii,:)))) > 10 % remove some flat lines
-            plot(frac_out_cs(ii,:),'color',[colors(ii,:) op],'linewidth',2);
-            hold on;
-        end
-    end
-    drawnow;
-    xlim([1 size(frac_out_cs,2)]);
-    ylim([0 15]);
-    yticks([0,15]);
-    xlabel('hours from sunrise');
-    ylabel('cum sum frac out');
-    set(gca,'fontsize',14);
-    title([sexLabels{iSex+1},' ','Frac Out']);
+    title([mastLabels{iMast+1}]);
     cb = cbAside(gca,'doy','k',[1 366]);
     set(gca,'colormap',colors);
     grid on;
@@ -172,29 +126,30 @@ end
 
 % cum sum odba
 subplot(rows,cols,prc(cols,[3,1]));
-bothIds = sum(odba_compiled_M,2)~=0 & sum(odba_compiled_F,2)~=0;
+bothIds = sum(odba_compiled_Mast,2)~=0 & sum(odba_compiled_nMast,2)~=0;
 x = find(bothIds);
 lns = [];
-ms = cumsum(sum(odba_compiled_M(bothIds,:),2));
-ms_std = cumsum(mean(odba_compiled_M_std(bothIds,:),2));
+ms = cumsum(sum(odba_compiled_Mast(bothIds,:),2));
+ms_std = cumsum(mean(odba_compiled_Mast_std(bothIds,:),2));
 lns(1) = plot(x,ms,'linewidth',2,'color',lineColors(1,:));
 hold on;
 %     plot(x,ms+ms_std,':','color',lineColors(1,:));
 %     plot(x,ms-ms_std,':','color',lineColors(1,:));
-fs = cumsum(sum(odba_compiled_F(bothIds,:),2));
-fs_std = cumsum(mean(odba_compiled_M_std(bothIds,:),2));
+fs = cumsum(sum(odba_compiled_nMast(bothIds,:),2));
+fs_std = cumsum(mean(odba_compiled_Mast_std(bothIds,:),2));
 lns(2) = plot(x,fs,'linewidth',2,'color',lineColors(2,:));
 %     plot(x,fs+fs_std,':','color',lineColors(2,:));
 %     plot(x,fs-fs_std,':','color',lineColors(2,:));
-aa = plot(x,1,'k.','markersize',20);
-lns(3) = aa(1);
+% % % % aa = plot(x,1,'k.','markersize',20);
+% building this at top of: /Users/matt/Documents/MATLAB/KRSP/Figures/figure_rhythmicSleep_noDiff.m
+plot(find(pmasts < 0.001),1,'k*','markersize',7);
 ylabel('cum sum ODBA');
 
 yyaxis right;
-mm = mean(odba_compiled_M(bothIds,:),2);
+mm = mean(odba_compiled_Mast(bothIds,:),2);
 plot(x,mm,'.','markersize',10,'color',lineColors(1,:));
 hold on;
-mf = mean(odba_compiled_F(bothIds,:),2);
+mf = mean(odba_compiled_nMast(bothIds,:),2);
 plot(x,mf,'.','markersize',10,'color',lineColors(2,:));
 ylabel('mean ODBA');
 ylim([0 1]);
@@ -202,72 +157,7 @@ yticks(ylim);
 set(gca,'ycolor','k')
 
 xlabel('doy');
-legend(lns(1:2),{'M','F'},'location','northwest');
-legend box off;
-title('annualized')
-set(gca,'fontsize',14);
-xlim([1 366]);
-
-% cum sum asleep
-subplot(rows,cols,prc(cols,[3,2]));
-bothIds = sum(asleep_compiled_M,2)~=0 & sum(asleep_compiled_F,2)~=0;
-x = find(bothIds);
-lns = [];
-ms = cumsum(sum(asleep_compiled_M(bothIds,:),2));
-lns(1) = plot(x,ms,'linewidth',2,'color',lineColors(1,:));
-hold on;
-fs = cumsum(sum(asleep_compiled_F(bothIds,:),2));
-lns(2) = plot(x,fs,'linewidth',2,'color',lineColors(2,:));
-aa = plot(x,1,'k.','markersize',20);
-lns(3) = aa(1);
-ylabel('cum sum asleep');
-
-yyaxis right;
-mm = mean(asleep_compiled_M(bothIds,:),2);
-plot(x,mm,'.','markersize',10,'color',lineColors(1,:));
-hold on;
-mf = mean(asleep_compiled_F(bothIds,:),2);
-plot(x,mf,'.','markersize',10,'color',lineColors(2,:));
-ylabel('mean asleep');
-ylim([0 1]);
-yticks(ylim);
-set(gca,'ycolor','k')
-
-xlabel('doy');
-legend(lns(1:2),{'M','F'},'location','northwest');
-legend box off;
-title('annualized')
-set(gca,'fontsize',14);
-xlim([1 366]);
-
-
-% fraction out of nest
-subplot(rows,cols,prc(cols,[3,3]));
-bothIds = sum(odba_compiled_M,2)~=0 & sum(odba_compiled_F,2)~=0;
-x = find(bothIds);
-lns = [];
-ms = cumsum(mean(frac_out_compiled_M(bothIds,:),2));
-lns(1) = plot(x,ms,'linewidth',2,'color',lineColors(1,:));
-hold on;
-fs = cumsum(mean(frac_out_compiled_F(bothIds,:),2));
-lns(2) = plot(x,fs,'linewidth',2,'color',lineColors(2,:));
-aa = plot(x,0,'k.','markersize',20);
-lns(3) = aa(1);
-ylabel('cum sum frac out');
-
-yyaxis right;
-mm = mean(frac_out_compiled_M(bothIds,:),2);
-plot(x,mm,'.','markersize',10,'color',lineColors(1,:));
-hold on;
-mf = mean(frac_out_compiled_F(bothIds,:),2);
-plot(x,mf,'.','markersize',10,'color',lineColors(2,:));
-ylabel('mean frac out');
-ylim([0 1]);
-yticks(ylim);
-set(gca,'ycolor','k')
-
-xlabel('doy');
-legend(lns(1:2),{'M','F'},'location','northwest');
+legend(lns(2:1),mastLabels,'location','northwest');
 legend box off;
 title('annualized')
 set(gca,'fontsize',14);
