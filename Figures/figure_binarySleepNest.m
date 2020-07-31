@@ -1,12 +1,12 @@
-sqkey = readtable('sqkey.txt');
+sqkey = readtable('sqkey');
 filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
-load(fullfile(filespath,sqkey.filename{545}));
-T = detect_sleepWake(T,2);
-xs = 25552:27026;
+load(fullfile(filespath,sqkey.filename{5}));
+T = detect_sleepWake(T);
+xs = 1:1440*2;
 
 op = 0.5;
 colors = lines(5);
-close all
+% close all
 ff(700,400);
 plot(T.odba(xs),'k');
 hold on;

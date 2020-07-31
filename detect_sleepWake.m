@@ -15,10 +15,10 @@ allSecs = secDay(T.datetime);
 testSpan = 3*60*60; % 3 hours
 sunriseOffset = 15*60; % 15 minutes
 useIds = allSecs < (sunrise-sunriseOffset) & allSecs > (sunrise-sunriseOffset-testSpan);
-refVals = T.odba(useIds);
-T.odba_z = (T.odba - mean(refVals)) ./ std(refVals);
+refVals = T.odba_max(useIds);
+T.odba_z = (T.odba_max - mean(refVals)) ./ std(refVals);
 
-nR = 5:numel(T.odba_z)-2;
+nR = 5:numel(T.odba)-2;
 nFilt = 2;
 maxFilt = medfilt1(T.odba_z,nFilt);
 im = zeros(numel(nR),7);
@@ -31,7 +31,7 @@ im(:,6) = 0.21 * maxFilt(nR+1);
 im(:,7) = 0.21 * maxFilt(nR+2);
 
 W = sum(im,2); % multiplier determines threshold, determined emperically
-Db = zeros(numel(T.odba_max),1);
+Db = zeros(numel(T.odba),1);
 Db(W > 0) = 1;
 Db = circshift(Db,4);
 Db(1:4) = Db(5);
