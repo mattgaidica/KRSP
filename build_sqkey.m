@@ -2,6 +2,7 @@ if doOnce % at open
     sq_em = readtable('sqkey_emily.txt');
     sq_sa = readtable('/Users/matt/Documents/Data/KRSP/sqkey_sarah_AllAxyMetaData.csv');
     sq_bd = readtable('/Users/matt/Documents/MATLAB/KRSP/2019modexport.csv');
+    sq_kr = readtable('/Volumes/Seagate Expansion Drive/2020 XZY data/2020 AXY logsheet.csv');
     
     h_em = sq_em.Properties.VariableNames;
     for ii = 1:numel(h_em)
@@ -18,15 +19,20 @@ if doOnce % at open
         sq_bd.Properties.VariableNames{ii} = lower(h_bd{ii});
     end
     
-    % for debugging, used on studd and westrick
-    h_em = sq_em.Properties.VariableNames;
-    h_sa = sq_sa.Properties.VariableNames;
-    h = unique([h_em(:)' h_sa(:)']);
-    for ii = 1:numel(h)
-        in_em = ismember(h{ii},h_em);
-        in_sa = ismember(h{ii},h_sa);
-        fprintf('em%i sa%i %i %s\n',in_em,in_sa,in_em&in_sa,h{ii});
+    h_kr = sq_kr.Properties.VariableNames;
+    for ii = 1:numel(h_kr)
+        sq_kr.Properties.VariableNames{ii} = lower(h_kr{ii});
     end
+    
+    % for debugging, used on studd and westrick
+% % % %     h_em = sq_em.Properties.VariableNames;
+% % % %     h_sa = sq_sa.Properties.VariableNames;
+% % % %     h = unique([h_em(:)' h_sa(:)']);
+% % % %     for ii = 1:numel(h)
+% % % %         in_em = ismember(h{ii},h_em);
+% % % %         in_sa = ismember(h{ii},h_sa);
+% % % %         fprintf('em%i sa%i %i %s\n',in_em,in_sa,in_em&in_sa,h{ii});
+% % % %     end
     
     doOnce = false;
 end
@@ -38,21 +44,34 @@ for iFile = 1:numel(movefiles)
     movefile(fullfile(moveFrom,movefiles(iFile).name),fullfile(moveTo,movefiles(iFile).name));
 end
 
+x = {}; % axy for BD data
+for ii = 1:numel(sq_bd.axy_)
+    x{ii} = num2str(sq_bd.axy_(ii));
+end
+
+% fill KR 
+xsex = {};
+xid = [];
+for ii = 1:numel(sq_kr.axy_)
+    xsex{ii,1} = 'F'; % all females
+    xid(ii,1) = NaN; % ids dont exist yet
+end
+
 sqkey = table;
-sqkey.axy = [sq_em.axy;sq_sa.axy;cellfun(@num2str,x,'UniformOutput',false)];
-sqkey.filename = [sq_em.filename;sq_sa.rawfilename;sq_bd.filename];
-sqkey.grid = [sq_em.grid;sq_sa.grid;sq_bd.grid];
-sqkey.midden = [sq_em.midden;sq_sa.midden_collar;sq_bd.midden];
-sqkey.season = [sq_em.season;sq_sa.deploymentperiod;sq_bd.axyperiod_beginningorlac_];
-sqkey.sex = [sq_em.sex;sq_sa.sex;sq_bd.partdate_litter1_];
+sqkey.axy = [sq_em.axy;sq_sa.axy;x';sq_kr.axy_];
+sqkey.filename = [sq_em.filename;sq_sa.rawfilename;sq_bd.filename;sq_kr.datafilename];
+sqkey.grid = [sq_em.grid;sq_sa.grid;sq_bd.grid;sq_kr.grid];
+sqkey.midden = [sq_em.midden;sq_sa.midden_collar;sq_bd.midden;sq_kr.midden];
+sqkey.season = [sq_em.season;sq_sa.deploymentperiod;sq_bd.axyperiod_beginningorlac_;sq_kr.axyperiod_beginningorlac_];
+sqkey.sex = [sq_em.sex;sq_sa.sex;sq_bd.partdate_litter1_;xsex];
 sqkey.sex_status = strings(size(sqkey,1),1);
-sqkey.squirrel_id = [sq_em.squirrel_id;sq_sa.sqid;sq_bd.squirrelid];
-sqkey.tag_left = [sq_em.taglft;sq_sa.taglt;sq_bd.momtagl];
-sqkey.tag_right = [sq_em.tagrt;sq_sa.tagrt;sq_bd.momtagr];
-sqkey.treatment = [sq_em.treatment;sq_sa.treatment;sq_bd.playbacktreatment];
-sqkey.year = [sq_em.year;sq_sa.year;year(sq_bd.datestart)];
+sqkey.squirrel_id = [sq_em.squirrel_id;sq_sa.sqid;sq_bd.squirrelid;xid];
+sqkey.tag_left = [sq_em.taglft;sq_sa.taglt;sq_bd.momtagl;sq_kr.momtagl];
+sqkey.tag_right = [sq_em.tagrt;sq_sa.tagrt;sq_bd.momtagr;sq_kr.momtagr];
+sqkey.treatment = [sq_em.treatment;sq_sa.treatment;sq_bd.playbacktreatment;sq_kr.playbacktreatment];
+sqkey.year = [sq_em.year;sq_sa.year;year(sq_bd.datestart);repmat(2020,[size(xsex,1),1])];
 sqkey.source = [repmat({'ES'},size(sq_em.year));repmat({'SW'},size(sq_sa.year));...
-    repmat({'BD'},size(sq_bd.datestart))];
+    repmat({'BD'},size(sq_bd.datestart));repmat({'KR'},size(xsex))];
 
 % fix sa filenames
 lookPath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
@@ -96,10 +115,19 @@ for jj = 1:size(sq_bd,1)
     end
 end
 
+for jj = 1:size(sq_kr,1)
+    if numel(sq_kr.datafilename{jj}) >= 5
+        fileId = find(contains({lookFiles.name},sq_kr.datafilename{jj}(1:end-4)));
+        if ~isempty(fileId)
+            sqkey.filename{strcmp(sqkey.filename,sq_kr.datafilename{jj})} = lookFiles(fileId).name;
+        end
+    end
+end
+
 % All: columns to lower()?
 
 % manual override
-sqkey.filename{strcmp(sqkey.filename,'JO-A4-13228-ctrl-lactation.csv')} =...
+sqkey.filename{strcmp(sqkey.filename,'JO-A4-13228-ctrl-lactation.csv')} =... 
     'JO-A4-13228-control-preg-lac-classified_nest__20160404.mat';
 % % % % sqkey.filename{strcmp(sqkey.filename,'JO-A4-13228-ctrl-preg.csv')} =...
 % % % %     'JO-A4-13228-control-preg-preg-classified_nest__20160314.mat';
@@ -111,8 +139,8 @@ sqkey.filename{strcmp(sqkey.filename,'JO-B.5.-13229-ctrl-preg.csv')} =...
     'JO-B.5.-13229-pregcontrol-preg-classified_nest__20160410.mat';
 sqkey.filename{strcmp(sqkey.filename,'JO-B.12-12700-GC-lactation.csv')} =...
     'JO-B.12-12700-none-lac-classified_nest__20160427.mat';
-posIds = find(strcmp(sqkey.filename,'JO-F.18.-20281-control-lac-classified__20170517.mat'));
-sqkey.filename{posIds(1)} = 'JO-F.18.-20281-pregcontrol-lac-classified_nest__20160417.mat';
+% % % % posIds = find(strcmp(sqkey.filename,'JO-F.18.-20281-control-lac-classified__20170517.mat'));
+% % % % sqkey.filename{posIds(1)} = 'JO-F.18.-20281-pregcontrol-lac-classified_nest__20160417.mat';
 % sqkey.filename{strcmp(sqkey.filename,'BJD15_1.csv')} =...
 %     'JO-F.18.-20281-control-lac-classified__20170517.mat';
 
@@ -143,7 +171,7 @@ for iSq = 1:size(sqkey,1)
         sqkey.sex{iSq} = 'F';
         sqkey.sex_status{iSq} = statusStr{5};
     end
-    if any(strcmp(sqkey.season{iSq},{'lactation','LL'})) % Emily's data only
+    if any(strcmp(sqkey.season{iSq},{'lactation','LL','LAC'})) % Emily's data only
         sqkey.sex_status{iSq} = statusStr{5};
     end
     if any(strcmp(sqkey.season{iSq},{'PREG/LAC','pregnancy'})) % Emily's data only
@@ -167,59 +195,3 @@ for iSq = 1:size(sqkey,1)
 end
 
 writetable(sqkey,'sqkey');
-
-% em1 sa1 1 axy
-% em1 sa0 0 census_month
-% em1 sa0 0 census_year
-% em1 sa0 0 cones_tree
-% em1 sa0 0 cones_tree_x1
-% em0 sa1 0 dateremoved
-% em0 sa1 0 datestart
-% em0 sa1 0 dateturnedoff
-% em0 sa1 0 daysdeployed
-% em1 sa0 0 density
-% em0 sa1 0 deploydate
-% em0 sa1 0 deployday
-% em1 sa0 0 deployment_id
-% em0 sa1 0 deploymentperiod
-% em0 sa1 0 deploytime
-% em0 sa1 0 dose
-% em1 sa0 0 filename
-% em1 sa0 0 frequency
-% em1 sa1 1 grid
-% em0 sa1 0 litterid
-% em1 sa0 0 locx
-% em1 sa0 0 locy
-% em1 sa0 0 midden
-% em1 sa0 0 midden_1
-% em0 sa1 0 midden_collar
-% em1 sa0 0 middenyear
-% em0 sa1 0 notes
-% em0 sa1 0 parturitiondate
-% em0 sa1 0 pbend
-% em0 sa1 0 pbstart
-% em1 sa0 0 post_pb
-% em1 sa0 0 pre_pb
-% em0 sa1 0 rawfilename
-% em0 sa1 0 removeday
-% em1 sa0 0 row
-% em1 sa0 0 season
-% em1 sa1 1 sex
-% em0 sa1 0 shake1start
-% em0 sa1 0 shake1stop
-% em0 sa1 0 shake2start
-% em0 sa1 0 shake2stop
-% em0 sa1 0 sqid
-% em1 sa0 0 squirrel
-% em1 sa0 0 squirrel_id
-% em1 sa0 0 taglft
-% em0 sa1 0 taglt
-% em1 sa1 1 tagrt
-% em0 sa1 0 timeremoved
-% em0 sa1 0 timestart
-% em0 sa1 0 timeturnedoff
-% em1 sa1 1 treatment
-% em0 sa1 0 trtstartday
-% em0 sa1 0 trtstopday
-% em1 sa0 0 var1
-% em1 sa1 1 year

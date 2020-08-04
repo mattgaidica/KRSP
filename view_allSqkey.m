@@ -93,7 +93,7 @@ for ii = 1:2
     squirrels = strcmp(sqkey.sex,sexKey{ii});
     files = ~strcmp(sqkey.filename,'');
     years = sqkey.year(squirrels&files);
-    n = histcounts(years,2013.5:1:2019.5);
-    bar(min(years):max(years),n);
+    n = histcounts(years,2013.5:1:2020.5);
+    bar(2014:2020,n);
     title(sprintf([sexKey{ii},', n = %i'],sum(n)));
 end

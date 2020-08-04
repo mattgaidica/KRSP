@@ -21,6 +21,14 @@ Rows from the master spreadsheet were associated with the correct files using `f
 3. Trimmed CSV files are categorized into `nest` folder. _Unless new files from 2016 are added, steps 1–3 are done forever._
 4. Nest files are compiled to MAT-files that contain T and Tstat.
 
+__Data Analysis Steps — 2020 data from KRSP__
+
+These data were sent on USB key from KRSP. The Excel spreadsheet had the correct filenames and was exported to a CSV file, which needed extra (blank) entries manually deleted.
+
+1. See `trim_2020files.m`. `BJD.14.JO.F.10..GR.LAC.csv` was not parsed so that was performed inline.
+2. `categorize_odba.m` created `nest` files and then `compile_odba.m` was run on that folder. The loop then requested user input to add trim data. Categorize and compile were ran at the end to generate the final mat-files.
+3. Files from `trim > nest	` were copied to the analysis folder.
+
 __Generate Squirrel Key (sqkey)__
 
 The squirrel key places squirrel meta data together and associates them with a filename.

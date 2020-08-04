@@ -403,7 +403,7 @@ BJD14,JO-B.5.-13229-pregcontrol-preg-classified_nest__20160410.mat,JO,"B.5.",pre
 BJD14,JO-D0.-20439-none-nb-classified_nest__20160504.mat,JO,"D0.",non-breeding,F,nbreeding,20439,H4845,H4846,NONE,2016,SW
 BJD1,JO-E.19-19553-ctrl-preg-classified_nest__20160314.mat,JO,"E.19",pregnancy,F,pregnant,19553,H3378,H3379,PREG CONTROL,2016,SW
 BJD4,JO-E12.-20241-none-nb-classified_nest__20160502.mat,JO,"E12.",non-breeding,F,nbreeding,20241,H4757,H4758,NONE,2016,SW
-BJD8,JO-F.18.-20281-pregcontrol-lac-classified_nest__20160417.mat,JO,"F.18.",lactation,F,lactating,20281,H4418,H4419,PREG CONTROL,2016,SW
+BJD8,JO-F.18.-20281-control-lac-classified__20170517.mat,JO,"F.18.",lactation,F,lactating,20281,H4418,H4419,PREG CONTROL,2016,SW
 BJD19,JO-F0-20841-none-nb-classified_nest__20160504.mat,JO,"F0",non-breeding,F,nbreeding,20841,H4888,H4889,NONE,2016,SW
 BJD6,JO-G.1-20300-ctrl-preg-classified_nest__20160324.mat,JO,"G.1",pregnancy,F,pregnant,20300,H3650,H3659,PREG CONTROL,2016,SW
 BJD16,,JO,"G.14",lactation,F,lactating,12357,F8180,F8200,PREG GC,2016,SW
@@ -544,3 +544,24 @@ BJD20,,JO,"R16.",START PLAYBACK,F,,20529,H3797,H3798,Rattle,2018,SW
 6,BJD6_19729_October2019_BJD6_1_nest_trim_nest__20190910.mat,JO,"Q10",LAC,F,,19729,H3570,H3571,RATTLE,2019,BD
 10,BJD10_22290_October2019_October2019_1_nest_trim_nest__20190910.mat,JO,"T13",LAC,F,,22290,M3686,M3687,RATTLE,2019,BD
 18,BJD18_20046_October2019_BJD18_1_nest_trim_nest__20190910.mat,JO,"3",LAC,F,,20046,H3582,H3583,RATTLE,2019,BD
+6,,JO,"N.7",LAC,F,lactating,NaN,F9809,F9810,rattle,2020,KR
+18,,JO,"F.4.",LAC,F,lactating,NaN,M6320,M6321,rattle,2020,KR
+7,,JO,"L16.",LAC,F,lactating,NaN,F9723,F9724,rattle,2020,KR
+20,,JO,"K.7.",LAC,F,lactating,NaN,M5424,H3457,rattle,2020,KR
+5,,JO,"E1.",LAC,F,lactating,NaN,M6318,M6838,rattle,2020,KR
+9,BJD.09.JO.G.10.BB.LAC_nest_trim_nest__20200329.mat,JO,"G.10",LAC,F,lactating,NaN,F9562,F9025,rattle,2020,KR
+6,BJD.06.KL.-1.1..BkW.LAC_nest_trim_nest__20200411.mat,KL,"-1.1.",LAC,F,lactating,NaN,M6357,M6351,control,2020,KR
+21,BJD.21.JO.P12..BY.LAC_nest_trim_nest__20200413.mat,JO,"P12.",LAC,F,lactating,NaN,M0482,M0483,rattle,2020,KR
+13,BJD.13.JO.T13.RW.LAC_nest_trim_nest__20200409.mat,JO,"T13",LAC,F,lactating,NaN,M3686,M3687,rattle,2020,KR
+14,BJD.14.JO.F.10..GR.LAC_nest_trim_nest__20200412.mat,JO,"F.10.",LAC,F,lactating,NaN,M1860,H3412,rattle,2020,KR
+10,BJD.10.KL.F6..GG.LAC_nest_trim_nest__20200418.mat,KL,"F6.",LAC,F,lactating,NaN,M5653,M5654,control,2020,KR
+3,,KL,"M10",LAC,F,lactating,NaN,H3301,H3302,control,2020,KR
+15,BJD.15.KL.O1.PB.LAC_nest_trim_nest__20200419.mat,KL,"O1",LAC,F,lactating,NaN,M6156,M6157,control,2020,KR
+16,BJD.16.BT.G3.GB.LAC_nest_trim_nest__20200419.mat,BT,"G3",LAC,F,lactating,NaN,M5836,M5837,chickadee,2020,KR
+18,BJD.18.BT.B1..RY.LAC_nest_trim_nest__20200430.mat,BT,"B1.",LAC,F,lactating,NaN,M6891,M6341,chickadee,2020,KR
+17,,BT,"K6.",LAC,F,lactating,NaN,M7302,M7303,chickadee,2020,KR
+14,BJD.14.KL.-0.12.GP.LAC_nest_trim_nest__20200506.mat,KL,"-0.12",LAC,F,lactating,NaN,H4106,H4107,control,2020,KR
+9,BJD.09.JO.E14.WY.LAC_nest_trim_nest__20200510.mat,JO,"E14",LAC,F,lactating,NaN,M4267,M4268,rattle,2020,KR
+13,BJD.13.KL.H15.WY.LAC_nest_trim_nest__20200524.mat,KL,"H15",LAC,F,lactating,NaN,M5310,M5311,control,2020,KR
+7,BJD.07.JO.Q9.-P.LAC_nest_trim_nest__20200519.mat,JO,"Q9",LAC,F,lactating,NaN,-,A7240,rattle,2020,KR
+15,BJD.15.KL.M4.R-.LAC_nest_trim_nest__20200527.mat,KL,"M4",LAC,F,lactating,NaN,M2264,-,control,2020,KR

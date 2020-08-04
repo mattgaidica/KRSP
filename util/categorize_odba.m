@@ -8,7 +8,7 @@ for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(readFile(end-60:end));
     inputTable = readtable(readFile);
-    if isempty(inputTable)
+    if isempty(inputTable) || ~ismember('Var1',inputTable.Properties.VariableNames)
         disp('table empty!');
         continue;
     end
