@@ -57,6 +57,9 @@ if do
             undoys = unique(dtdoys);
             squirrelId = squirrelId + 1;
             for iDoy = 1:numel(undoys)
+                if any(ismember(271:279,undoys(iDoy))) && strcmp(sqkey.source{iSq},'BD')
+                    continue;
+                end
                 sunrise = secDay(Tss.sunrise(Tss_doys == undoys(iDoy)));
                 sunset = secDay(Tss.sunset(Tss_doys == undoys(iDoy)));
                 theseDoys = find(dtdoys == undoys(iDoy));
@@ -88,13 +91,93 @@ if do
 end
 
 %%
-figure;
-plot(normalize(nanmean(sqs_temp),'scale'));
-hold on;
-plot(normalize(Tss.day_length,'scale'));
-plot(normalize(cellfun(@mean,sqs_odba),'scale'));
+% % % % % figure;
+% % % % % plot(normalize(nanmean(sqs_temp),'scale'));
+% % % % % hold on;
+% % % % % plot(normalize(Tss.day_length,'scale'));
+% % % % % plot(normalize(cellfun(@mean,sqs_odba),'scale'));
 
-%%
+[sunYear,sunYearAvg,sunMonth,sunHeader,monthNames] = getSunData(1:12);
+
+close all;
+ff(400,400);
+rlimVal = 2.65;
+colors = lines(8);
+sunColor = colors(3,:);
+accelColor = colors(5,:); %colors(5,:);
+
+% night
+edges = linspace(-pi,pi,13);
+counts = ones(1,12);
+h = polarhistogram('BinEdges',edges,'BinCounts',counts,...
+    'FaceColor','k','LineWidth',0.25,'FaceAlpha',0.9);
+h.EdgeColor = 'none';
+hold on;
+
+% day
+edges = linspace(-pi,pi,size(sunYear,1)+1);
+counts = sunYear(:,4) / 60 / 24;
+h = polarhistogram('BinEdges',edges,'BinCounts',counts,...
+    'FaceAlpha',1,'FaceColor',sunColor,'EdgeColor','none');
+h = polarplot(edges,ones(size(edges))); 
+h.Color = 'k';
+
+% temperature
+yearlyWeather = nanmean(sqs_temp);
+counts = smoothdata(normalize(yearlyWeather,'range')+1,'gaussian',50);
+edges = linspace(-pi,pi,numel(counts));
+colors = parula(numel(counts));
+colorLookup = linspace(1,2,size(colors,1));
+for ii = 1:numel(counts)
+%     ct = zeros(size(counts));
+%     ct(ii) = counts(ii);
+    colorId = closest(colorLookup,counts(ii));
+%     h = polarhistogram('BinEdges',edges,'BinCounts',ct,...
+%         'FaceColor',colors(colorId,:),'EdgeColor','none','FaceAlpha',0.5);
+    h = polarplot([edges(ii) edges(ii)],[1 counts(ii)],'-','Color',colors(colorId,:),...
+        'MarkerSize',15,'LineWidth',1);
+    hold on;
+end
+h = polarplot(edges,ones(size(edges))*1.5,'linewidth',1); 
+h.Color = repmat(0,[1,3]);
+h.LineStyle = ':';
+
+% odba
+yearOdba = fillmissing(cellfun(@mean,sqs_odba),'movmean',40);
+yearOdba_filt = imgaussfilt(yearOdba,3,'padding','circular');
+counts = normalize(yearOdba_filt,'range')+1.5;
+edges = linspace(-pi,pi,numel(counts)+1);
+h = polarhistogram('BinEdges',edges,'BinCounts',counts,...
+    'FaceColor','k','LineWidth',2,'FaceAlpha',0.5);
+h.DisplayStyle = 'stairs';
+h.EdgeColor = 'k';
+
+% season outlines
+seasons = linspace(-pi,pi,5)-2*((2*pi)/12);
+n = 1000;
+spacing = pi/128;
+for iS = 1:4
+    theseTheta = linspace(seasons(iS)+spacing,seasons(iS+1)-spacing,n);
+    theseRho = ones(1,n)*rlimVal;
+    h = polarplot(theseTheta,theseRho,'color',repmat(0.7+(iS/17),[1,3]),'LineWidth',8);
+end
+
+fs = 14;
+pax = gca;
+pax.ThetaZeroLocation = 'bottom';
+pax.ThetaDir = 'clockwise';
+pax.FontSize = fs;
+pax.Layer = 'top';
+rlim([0 rlimVal]);
+rticks([]);
+pax.Color = [1 1 1];
+% rticklabels({'','',''});
+text(pi/2,1.1,'24 hrs','FontSize',fs,'Color','k','HorizontalAlignment','right');
+text(-2.65,1.67,'0°C','FontSize',fs,'Color','k','color','k');
+text(0,2.31,'activity','FontSize',fs,'Color','k');
+thetaticklabels(circshift(monthNames,6));
+
+%% top table stats, see also /Users/matt/Documents/MATLAB/KRSP/Figures/cosinorEst.m
 clc
 sTitles = {'winter','spring','summer','fall'};
 sIds = round(linspace(1,366,5));

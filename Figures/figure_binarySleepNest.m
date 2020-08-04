@@ -27,10 +27,10 @@ xlabel('hour of day');
 yyaxis left;
 yticks([-2.5,-1.75,-1.25,-.5,0:2:10]);
 yticklabels({'Out Nest','In Nest','Asleep','Awake',0,2,4,6,8,10});
-ylabel('ODBA (g)');
+ylabel('\DeltaOA (g)');
 
 yyaxis right;
 yticks(14:2:30);
 ylabel('Collar Temp (C)');
 
-set(gca,'fontsize',12);
+set(gca,'fontsize',14);

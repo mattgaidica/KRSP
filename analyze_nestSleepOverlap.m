@@ -11,7 +11,7 @@ if do
             continue;
         end
         iCount = iCount + 1;
-        T = detect_sleepWake(T,2);
+        T = detect_sleepWake(T);
         T.nest_bin = strcmp(T.nest,'Nest');
         overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
         overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
@@ -40,60 +40,52 @@ end
 close all
 % statsMult = [1 -1;-1 1;1 1;-1 -1];
 statsMult = [0 -1;0 1;1 0;-1 0];
-ff(1800,700);
+ff(400,400);
 op = 0.075;
 useIds = [2,3,1,4,2];
 colors = lines(4);
-for iPlot = 1:2
-    subplot(1,2,iPlot);
-    lns = [];
-    for ii = 1:size(overlapStats,1)
-        theseStats = overlapStats(ii,:);
-        for jj = 1:4
-            xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
-            ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
-            lns(1) = plot(xs,ys,'color',[0,0,0,op]);
-            hold on;
-        end
+
+lns = [];
+for ii = 1:size(overlapStats,1)
+    theseStats = overlapStats(ii,:);
+    for jj = 1:4
+        xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
+        ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
+        lns(1) = plot(xs,ys,'color',[0,0,0,op]);
+        hold on;
     end
-    if iPlot == 1
-        theseStats = median(overlapStats);
-        for jj = 1:4
-            xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
-            ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
-            lns(2) = plot(xs,ys,'color',[1,0,0,.8],'linewidth',2);
-            hold on;
-        end
-        legend(lns,{'Individual','Median'});
-        title('All Data');
-    else % seasons
-        seasonIds = round(linspace(1,366,5));
-        for iSeason = 1:4
-            sIds = find(mean_doys >= seasonIds(iSeason) & mean_doys < seasonIds(iSeason+1));
-            theseStats = median(overlapStats(sIds,:));
-            for jj = 1:4
-                xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
-                ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
-                lns(iSeason+1) = plot(xs,ys,'color',[colors(iSeason,:),1],'linewidth',2);
-                hold on;
-            end
-        end
-        legend(lns,{'Individual','Winter','Spring','Summer','Fall'});
-        title('Seasonal Data');
-    end
-    xlim([-0.25 1]);
-    ylim(xlim);
-    xticks([-1 0 1]);
-    yticks(xticks);
-    xticklabels(abs(xticks));
-    yticklabels(xticklabels);
-    offset = 0.02;
-    text(0,max(ylim)-offset,'in-asleep','horizontalalignment','center','fontsize',12);
-    text(max(xlim)-offset,0,'out-awake','horizontalalignment','right','fontsize',12);
-    text(0,min(ylim)+offset,'in-awake','horizontalalignment','center','fontsize',12);
-    text(min(xlim)+offset,0,'out-asleep','horizontalalignment','left','fontsize',12);
-    grid on;
-    xlabel('fraction of day');
-    ylabel('fraction of day');
-    set(gca,'fontsize',14);
 end
+
+sIds = round(linspace(1,366,5));
+seasonDoys = circshift(1:366,60);
+for iSeason = 1:4
+    ss = ismember(mean_doys,seasonDoys(sIds(iSeason):sIds(iSeason+1)));
+    theseStats = median(overlapStats(ss,:));
+    for jj = 1:4
+        xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
+        ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
+        lns(iSeason+1) = plot(xs,ys,'color',[colors(iSeason,:),1],'linewidth',2);
+        hold on;
+    end
+end
+legend(lns,{'Individual','Winter','Spring','Summer','Fall'});
+legend box off
+title('Nest-sleep Overlap');
+
+xlim([-0.5 1]);
+ylim(xlim);
+xticks(sort([0,xlim]));
+yticks(xticks);
+xticklabels(abs(xticks));
+yticklabels(xticklabels);
+offset = 0.05;
+fs = 14;
+text(0,max(ylim)-offset,'in-asleep','horizontalalignment','center','fontsize',fs);
+text(max(xlim)-offset,0,'out-awake','horizontalalignment','right','fontsize',fs);
+text(0,min(ylim)+offset,'in-awake','horizontalalignment','center','fontsize',fs);
+text(min(xlim)+offset,-0,'out-asleep','horizontalalignment','left','fontsize',fs);
+% grid on;
+xlabel('fraction of day');
+ylabel('fraction of day');
+set(gca,'fontsize',14);
+box off;
