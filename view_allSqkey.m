@@ -51,22 +51,24 @@ end
 
 
 % close all;
-ff(1400,900,2);
-subplot(211);
+rows = 3;
+cols = 2;
+ff(900,800,2);
+subplot(rows,cols,[1,2]);
 ms = 5;
 plot(F_scatt_x,F_scatt_y,'m.','markersize',ms);
 hold on;
 plot(M_scatt_x,M_scatt_y,'b.','markersize',ms);
 ylim([1 sqCount]);
 xlim([1 366]);
-xlabel('doy');
+xlabel('day of year');
 ylabel('squirrel');
 set(gca,'fontsize',14);
 title(sprintf('%i squirrels (%iF + %iM), %i rec days',sqCount,...
     numel(unique(F_scatt_y)),numel(unique(M_scatt_y)),numel(M_scatt_x)+numel(F_scatt_y)));
 
 lw = 2;
-subplot(212);
+subplot(rows,cols,[3,4]);
 binEdges = linspace(0.5,366.5,366+1);
 nM = histcounts(M_scatt_x,binEdges);
 nF = histcounts(F_scatt_x,binEdges);
@@ -79,7 +81,7 @@ plot(find(nFLac~=0),nFLac(nFLac~=0),'xm');
 plot(find(nFPreg~=0),nFPreg(nFPreg~=0),'om');
 plot(1:366,nM,'-b','linewidth',lw);
 ylabel('rec days');
-xlabel('doy');
+xlabel('day of year');
 xlim([1 366]);
 set(gca,'fontsize',14);
 legend({'Total','Female','\rightarrowLactating','\rightarrowPregnant','Male'},'location','northwest');
@@ -87,13 +89,15 @@ legend box off;
 
 % F/M histograms per-year
 sexKey = {'F','M'};
-ff(800,400);
 for ii = 1:2
-    subplot(1,2,ii);
+    subplot(rows,cols,ii+4);
     squirrels = strcmp(sqkey.sex,sexKey{ii});
     files = ~strcmp(sqkey.filename,'');
     years = sqkey.year(squirrels&files);
     n = histcounts(years,2013.5:1:2020.5);
-    bar(2014:2020,n);
+    bar(2014:2020,n,'k');
     title(sprintf([sexKey{ii},', n = %i'],sum(n)));
+    ylim([0 70]);
+    set(gca,'fontsize',14);
+    xtickangle(30);
 end
