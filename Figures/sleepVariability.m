@@ -30,7 +30,7 @@ for iDoy = 1:366
     odbaArr(iDoy,:) = mean(sq_odba_z(useIds,:));
     odbaStdArr(iDoy,:) = std(sq_odba_z(useIds,:));
     asleepArr(iDoy,:) = mean(sq_asleep(useIds,:));
-    asleepStdArr(iDoy,:) = var(sq_asleep(useIds,:));
+    asleepStdArr(iDoy,:) = var(sq_asleep(useIds,:)) ./ sqrt(sum(useIds));
 end
 
 %% not used
@@ -71,6 +71,7 @@ set(gca,'ydir','normal');
 colorbar;
 
 %% main heat plots
+lw = 2;
 t = linspace(-720,720,size(asleepStdArr,2));
 nG = 0.5;
 op = 0.7;
