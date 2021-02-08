@@ -38,14 +38,9 @@ end
 
 figure;
 plot(nDays);
-title("Days of data for individuals");
 
-trySq = 212; % try onethat has a lot of data
+trySq = 213;
 useIdx = find(sq_ids == trySq);
-theseDoys = sq_doys(useIdx);
-figure;
-plot(theseDoys);
-title("Are the doys contiguous?") % should be straight
-
+sq_doys(useIdx)
 data = sq_odba(useIdx,:);
 writematrix(reshape(data',[],1),'~/1daysquirrelODBA.csv');
