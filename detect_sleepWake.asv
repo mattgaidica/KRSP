@@ -26,8 +26,7 @@ else
     nFilt = varargin{1};
     nMinutes = varargin{2};
 end
-% maxFilt = medfilt1(T.odba_z,nFilt);
-maxFilt = smoothdata(T.odba_z,'gaussian',nFilt);
+maxFilt = medfilt1(T.odba_z,nFilt);
 maxFilt = decimate(maxFilt,nMinutes); % trick to change minutes
 nR = 4:numel(maxFilt)-1;
 im = zeros(numel(nR),5);
@@ -49,8 +48,8 @@ else % user supplied
     useThresh = varargin{8};
 end
 
-W = [NaN(3,1);sum(im,2);NaN(1,1)]; % multiplier determines threshold, determined emperically
-W = interp1(1:numel(maxFilt),W,linspace(1,numel(maxFilt),size(T,1)),'linear')'; % trick to change minutes
+W = [zeros(3,1);sum(im,2);zeros]; % multiplier determines threshold, determined emperically
+W = interp1(1:numel(maxFilt),W,1:1440); % trick to change minutes
 % if numel(W) == 1442 % odd numbers
 %     W = W(2:end-1);
 % end

@@ -8,7 +8,7 @@ end
 for iSq = 1:size(sqkey,1)
     if ~isempty(sqkey.filename{iSq})
         load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-        if ~isValidT(T,false)
+        if isValidT(T,false)
             disp(sqkey.filename{iSq});
             h = ff(1200,500);
             plot(T.datetime,T.odba);
