@@ -1,7 +1,0 @@
-ff(1000,1000);
-rows = 6;
-cols = 6;
-
-for iPlot = 1:rows*cols
-    
-end
