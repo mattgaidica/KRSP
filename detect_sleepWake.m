@@ -27,8 +27,11 @@ else
     nMinutes = varargin{2};
 end
 % maxFilt = medfilt1(T.odba_z,nFilt);
-maxFilt = smoothdata(T.odba_z,'gaussian',nFilt);
-maxFilt = decimate(maxFilt,nMinutes); % trick to change minutes
+% maxFilt = smoothdata(T.odba_z,'gaussian',nFilt);
+maxFilt = T.odba_z;
+% trick to change minutes, but removes data instead of combining it?
+maxFilt = equalVectors(maxFilt,numel(maxFilt)/nMinutes);
+
 nR = 4:numel(maxFilt)-1;
 im = zeros(numel(nR),5);
 
@@ -51,6 +54,7 @@ end
 
 W = [NaN(3,1);sum(im,2);NaN(1,1)]; % multiplier determines threshold, determined emperically
 W = interp1(1:numel(maxFilt),W,linspace(1,numel(maxFilt),size(T,1)),'linear')'; % trick to change minutes
+W = smoothdata(W,'gaussian',nFilt);
 % if numel(W) == 1442 % odd numbers
 %     W = W(2:end-1);
 % end
