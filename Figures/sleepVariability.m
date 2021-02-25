@@ -114,7 +114,7 @@ subplot(413);
 imagesc(1:366,t,imgaussfilt(asleepStdArr.^2',nG),'AlphaData',~isnan(imgaussfilt(asleepStdArr.^2',nG)));
 colormap(magma);
 title('Asleep Variability');
-caxis([0 .07]);
+% caxis([0 .07]);
 set(gca,'ydir','normal');
 colorbar;
 set(gca,'fontsize',14);
@@ -130,9 +130,9 @@ asleepVar = asleepStdArr.^2;
 % asleepFill = inpaint_nans(asleepVar,5);
 asleepFill = fillmissing(asleepVar,'movmean',50);
 filtStd = imgaussfilt(asleepFill,12,'padding','circular'); % variance
-contourf(1:366,t,filtStd',5);
+contourf(1:366,t,filtStd',6); % last number is # of colors
 colormap(magma);
-caxis([0 0.05]);
+% caxis([0 0.05]);
 colorbar;
 set(gca,'fontsize',14);
 xlabel('day of year');

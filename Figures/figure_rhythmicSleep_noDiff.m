@@ -4,8 +4,9 @@ if do
     Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
     Tss_doys = day(Tss.sunrise,'dayofyear');
     sq_odba = [];
-    sq_odba_max = [];
     sq_odba_z = [];
+    sq_odba_std = [];
+    sq_odba_max = [];
     sq_awake = [];
     sq_ids = [];
     sq_doys = [];
@@ -18,7 +19,7 @@ if do
         if ~isempty(sqkey.filename{iSq}) % && ~any(ismember(sqkey.year(iSq),[2014,2019])) % ~(strcmp(sqkey.source{iSq},'ES') &&
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-            T = detect_sleepWake(T);
+            T = detect_sleepWake2(T,60);
             if isValidT(T,false)
                 dtdoys = day(T.datetime,'dayofyear');
                 undoys = unique(dtdoys);
@@ -36,10 +37,11 @@ if do
                         if min(theseDoys) > 1 && max(theseDoys) < numel(T.datetime)
                             iRow = iRow + 1;
                             sq_ids(iRow) = squirrelId;
-                            sq_sex(iRow) = strcmp(sqkey.sex{iSq},'M');
+                            sq_sex(iRow) = strcmp(sqkey.sex{iSq},'M'); % 0 = Female, 1 = Male
                             sq_doys(iRow) = undoys(iDoy);
                             sq_odba(iRow,:) = T.odba(theseDoys);
                             sq_odba_z(iRow,:) = T.odba_z(theseDoys);
+                            sq_odba_std(iRow,:) = T.odba_std(theseDoys);
                             sq_odba_max(iRow,:) = T.odba_max(theseDoys);
                             sq_years(iRow) = year(T.datetime(theseDoys(1)));
                             sq_dayLength(iRow) = Tss.day_length(Tss_doys == undoys(iDoy));
@@ -55,11 +57,11 @@ if do
 end
 
 filtIds = zeros(1,size(sq_odba,1)); % blanket filter
-for ii = 1:size(sq_odba,1)
-    if sum(sq_odba_max(ii,300:600)) < 300
-        filtIds(ii) = 1;
-    end
-end
+% for ii = 1:size(sq_odba,1)
+%     if sum(sq_odba_max(ii,300:600)) < 300
+%         filtIds(ii) = 1;
+%     end
+% end
 
 mastTitles = {'Mast','nMast'};
 years_mast = [2014,2019]; % 2014,2019

@@ -14,13 +14,13 @@ if do
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq})
             load(fullfile(loadPath,sqkey.filename{iSq}));
-            if ~isValidT(T,false) % no temp
+            if ~isValidT(T,false) % don't use temp as a test
                 disp('skipping');
                 continue;
             end
         end
         disp(sqkey.filename{iSq});
-        T = detect_sleepWake(T);
+        T = detect_sleepWake2(T,60);
         Tawake = make_Tawake(T);
         
         % at
@@ -54,7 +54,7 @@ close all
 % % % % useDoys = [1,30;70,110;170,190;260,280];
 sIds = round(linspace(1,366,5));
 seasonDoys = circshift(1:366,60);
-% % % % useDoys = {[350:366 1:20],70:110,160:190,235:295};
+% useDoys = {[340:366 1:40],70:110,160:231,232:335};
 useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
 monthNames = {'Winter','Spring','Summer','Fall'};
@@ -64,8 +64,8 @@ h = ff(750,600,2);
 rows = size(useDoys,2);
 cols = 2;
 nS = 1;
-binEdges_x = linspace(0,86400,24*4+1);
-binEdges_y = logspace(2.9,5,48);
+binEdges_x = linspace(0,86400,24*4+1); % was 24*4+1
+binEdges_y = logspace(2.9,5,48); % was 48
 pMats = NaN(2,size(useDoys,2),numel(binEdges_y)-1,numel(binEdges_x)-1);
 for iType = 0:1
     for iiDoy = 1:size(useDoys,2)
@@ -83,7 +83,7 @@ for iType = 0:1
         trueProb = trans_mat' ./ trans_norm';
         
         if doStats
-            nSurr = 1000;
+            nSurr = 1000; % should be 1000 for production
             trans_mat_surr = zeros(numel(binEdges_x)-1,numel(binEdges_y)-1);
             trans_norm_surr = zeros(numel(binEdges_x)-1,1);
             surrProb = zeros(nSurr,numel(binEdges_y)-1,numel(binEdges_x)-1);
@@ -110,6 +110,7 @@ for iType = 0:1
             pMats(iType+1,iiDoy,:,:) = pMat;
         else
             % load them
+            disp("You are using saved stats, may not be accurate!");
             load('predict_stats');
             pMat = squeeze(pMats(iType+1,iiDoy,:,:));
         end
@@ -120,7 +121,7 @@ for iType = 0:1
 % %         set(gca,'ydir','normal');
 % %         caxis([0 0.05]);
         
-% %         figure(h);
+        figure(h);
         trueProb_filt = imgaussfilt(trueProb,nS);
         trueProb_mod = -trueProb_filt;
         trueProb_mod(pMat < 0.05) = trueProb(pMat < 0.05);
@@ -164,5 +165,5 @@ end
 
 if doStats
     save('predict_stats','pMats');
-    doStats = false;
+%     doStats = false;
 end

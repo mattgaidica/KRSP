@@ -6,7 +6,7 @@ colors = lines(5);
 % nR = 1:1440*7;
 % data = smoothdata(T.odba_max,'gaussian',60);
 data = T.odba;
-n = 24;
+n = 60;
 
 subplot(211);
 plot(normalize(data),'color',repmat(0.2,[1,4]));
@@ -26,6 +26,11 @@ legend([{'axy'},tryMethods(:)']);
 
 subplot(212);
 plot(zd,'color',colors(1,:),'linewidth',1.5);
+hold on;
+xlim([1 size(zd,1)]);
+plot([1 size(zd,1)],[0 0],'k:','linewidth',1);
+ylabel('homeogram Z-score');
+
 yyaxis right;
 
 dayAct = data;
@@ -38,13 +43,19 @@ plot(dayAct,'k-');
 hold on;
 plot(nightAct,'r-');
 grid on;
+ylabel('axy amplitude');
+set(gca,'ycolor','k');
 
+xlabel('Time (min)');
 
-figure;
-histogram(dayAct,linspace(0,3,100));
-hold on;
-histogram(nightAct,linspace(0,3,100));
-set(gca,'yscale','log');
+legend({'homeograph','<0 ~ asleep','axy "awake"','axy "asleep"'},'location','northwest');
+set(gca,'fontsize',16);
+
+% figure;
+% histogram(dayAct,linspace(0,3,100));
+% hold on;
+% histogram(nightAct,linspace(0,3,100));
+% set(gca,'yscale','log');
 
 
 %%
@@ -79,7 +90,7 @@ nightAct(adjGz >= 0) = NaN;
 plot(dayAct,'k');
 hold on;
 plot(-nightAct,'r');
-xlim(size(nR));
+% xlim(size(nR));
 grid on;
 
 figure;

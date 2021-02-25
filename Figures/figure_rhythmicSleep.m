@@ -15,7 +15,7 @@ if do
         if ~isempty(sqkey.filename{iSq})
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-            T = detect_sleepWake(T,2);
+            T = detect_sleepWake2(T,60);
             awakeIds = find(diff(T.awake)==1)+1;
             if numel(awakeIds) > 2
                 squirrelId = squirrelId + 1;

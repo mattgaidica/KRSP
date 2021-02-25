@@ -52,7 +52,7 @@ if do
         if ~isempty(sqkey.filename{iSq}) %&& ~any(ismember(sqkey.year(iSq),[2014,2019])) % ~(strcmp(sqkey.source{iSq},'ES') &&
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-            T = detect_sleepWake(T);
+            T = detect_sleepWake2(T,60);
             dtdoys = day(T.datetime,'dayofyear');
             undoys = unique(dtdoys);
             squirrelId = squirrelId + 1;

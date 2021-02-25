@@ -11,7 +11,7 @@ if do
             continue;
         end
         iCount = iCount + 1;
-        T = detect_sleepWake(T);
+        T = detect_sleepWake2(T,70);
         T.nest_bin = strcmp(T.nest,'Nest');
         overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
         overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
