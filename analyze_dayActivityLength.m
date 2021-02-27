@@ -1,5 +1,7 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/Figures/figure_rhythmicSleep_noDiff.m
-
+% these analyses compare ODBA with temperature, day length, and
+% also contains cursory analyses on sleep transitions, used in
+% my weekly update
 doAnalysis = true;
 
 weatherPath = '/Users/matt/Documents/Data/KRSP/HainesJunction_DailyTemps_Master.csv';

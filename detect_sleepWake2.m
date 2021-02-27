@@ -1,5 +1,5 @@
 function [T,W_z] = detect_sleepWake2(T,n)
-doPlot = true;
+doPlot = false;
 
 % is T.odba the mean for 60s or a decimated snapshot? !!it should do mean,
 % more useful
@@ -17,7 +17,7 @@ if doPlot
     hold on;
 end
 W = zeros(size(T.odba));
-for ii = 1:n
+for ii = 1:4:n
     W = W + smoothdata(T.odba,'loess',1440/ii);
     if doPlot
         plot(W,'color',colors(ii,:));

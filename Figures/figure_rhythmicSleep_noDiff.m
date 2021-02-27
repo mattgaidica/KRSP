@@ -55,7 +55,7 @@ if do
     end
     do = false;
 end
-
+ %%
 filtIds = zeros(1,size(sq_odba,1)); % blanket filter
 % for ii = 1:size(sq_odba,1)
 %     if sum(sq_odba_max(ii,300:600)) < 300
