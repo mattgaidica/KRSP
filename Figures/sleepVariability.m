@@ -23,7 +23,7 @@ odbaStdArr = NaN(366,1440);
 asleepArr = NaN(366,1440);
 asleepStdArr = NaN(366,1440);
 for iDoy = 1:366
-    useIds = ismember(sq_doys,iDoy) & filtIds;
+    useIds = ismember(sq_doys,iDoy);
     if sum(useIds) < 7
         continue;
     end
@@ -32,43 +32,6 @@ for iDoy = 1:366
     asleepArr(iDoy,:) = mean(sq_asleep(useIds,:));
     asleepStdArr(iDoy,:) = var(sq_asleep(useIds,:)) ./ sqrt(sum(useIds));
 end
-
-%% not used
-nG = 1;
-close all
-ff(800,350);
-
-subplot(221);
-imagesc(imgaussfilt(odbaArr',nG));
-colormap(magma);
-title('odba mean');
-caxis([0 3]);
-set(gca,'ydir','normal');
-colorbar;
-
-subplot(223);
-imagesc(imgaussfilt(odbaStdArr',nG));
-colormap(magma);
-title('odba std');
-caxis([0 5]);
-set(gca,'ydir','normal');
-colorbar;
-
-subplot(222);
-imagesc(imgaussfilt(asleepArr',nG));
-colormap(magma);
-title('asleep mean');
-caxis([0 1]);
-set(gca,'ydir','normal');
-colorbar;
-
-subplot(224);
-imagesc(imgaussfilt(asleepStdArr',nG));
-colormap(magma);
-title('asleep std');
-caxis([0.2 0.5]);
-set(gca,'ydir','normal');
-colorbar;
 
 %% main heat plots
 lw = 2;

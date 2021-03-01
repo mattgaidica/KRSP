@@ -5,7 +5,6 @@ op = 0.2;
 colors = lines(5);
 if do
     Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
-    Tss_doys = day(Tss.sunrise,'dayofyear');
     trans_all = [];
     trans_secs = [];
     trans_months = [];
@@ -14,12 +13,15 @@ if do
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq})
             load(fullfile(loadPath,sqkey.filename{iSq}));
-            if ~isValidT(T,false) % don't use temp as a test
+            if ~sqkey.isValid(iSq) % don't use temp as a test
                 disp('skipping');
                 continue;
             end
+        else
+            disp('not loading');
+            continue;
         end
-        disp(sprintf("%i/%i - %s",iSq,size(sqkey,1),sqkey.filename{iSq}));
+        fprintf("%i/%i - %s\n",iSq,size(sqkey,1),sqkey.filename{iSq});
         T = detect_sleepWake2(T,60);
         Tawake = make_Tawake(T); % transition table
         
@@ -41,7 +43,7 @@ if do
                 % what if we only take out the next 2-3, assuming those
                 % might be the false positive?
                 if ~isempty(futureIdx)
-                    futureIdx = futureIdx(1:min([2,numel(futureIdx)])); % modify min([X
+                    futureIdx = futureIdx(1:min([3,numel(futureIdx)])); % modify min([X
                 end
                 
                 % at
@@ -60,17 +62,13 @@ if do
 end
 
 %%
+% extend to show 2days of repeating data
+% add sun bars back in
+% only plot sunrise for p(awake) and sunset for p(asleep)
+
 Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
 Tss_months = month(Tss.sunrise);
 Tss_doys = day(Tss.sunrise,'dayofyear');
-
-doSunrise = true;
-trans_secsAdj = trans_secs;
-if doSunrise
-    for ii = 1:numel(trans_secs)
-        trans_secsAdj(ii) = trans_secs(ii) - secDay(Tss.sunrise(trans_doys(ii)));
-    end
-end
 
 close all
 % % % % useMonths = [1,3;4,6;7,9;10,12];
@@ -82,20 +80,38 @@ useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
 monthNames = {'Winter','Spring','Summer','Fall'};
 typeNames = {'asleep','awake'};
-h = ff(750,600,2);
+h = ff;%(1400,900,2);
 % % hp = ff(750,600,2);
 rows = size(useDoys,2);
 cols = 2;
-nS = 1;
+nS = 2;
 if doSunrise
     binEdges_x = linspace(0,86400,24*4+1) - (86400/2); % was 24*4+1
 else
     binEdges_x = linspace(0,86400,24*4+1); % was 24*4+1
 end
-binEdges_y = logspace(2.9,5,48);
-% binEdges_y = linspace(0,86400/2,48+1);
+binEdges_y = logspace(2.9,5,49);
+% binEdges_y = linspace(0,86400/1.75,48+1);
 pMats = NaN(2,size(useDoys,2),numel(binEdges_y)-1,numel(binEdges_x)-1);
 for iType = 0:1
+    doSunrise = true;
+    trans_secsAdj = trans_secs;
+    if doSunrise % center around sunrise, wrap values if necessary
+        for ii = 1:numel(trans_secs)
+            if iType == 0
+                trans_secsAdj(ii) = trans_secs(ii) - secDay(Tss.sunset(trans_doys(ii)));
+            else
+                trans_secsAdj(ii) = trans_secs(ii) - secDay(Tss.sunrise(trans_doys(ii)));
+            end
+            if trans_secsAdj(ii) > (86400/2)
+                trans_secsAdj(ii) = -86400 + trans_secsAdj(ii);
+            end
+            if trans_secsAdj(ii) < (-86400/2)
+                trans_secsAdj(ii) = 86400 + trans_secsAdj(ii);
+            end
+        end
+    end
+
     for iiDoy = 1:size(useDoys,2)
         trans_mat = zeros(numel(binEdges_x)-1,numel(binEdges_y)-1);
         trans_norm = zeros(numel(binEdges_x)-1,1);
@@ -111,7 +127,7 @@ for iType = 0:1
         trueProb = trans_mat' ./ trans_norm';
         
         if doStats
-            nSurr = 2; % should be 1000 for production
+            nSurr = 10000; % should be 1000+ for production
             trans_mat_surr = zeros(numel(binEdges_x)-1,numel(binEdges_y)-1);
             trans_norm_surr = zeros(numel(binEdges_x)-1,1);
             surrProb = zeros(nSurr,numel(binEdges_y)-1,numel(binEdges_x)-1);
@@ -154,16 +170,29 @@ for iType = 0:1
         trueProb_mod = -trueProb_filt;
         trueProb_mod(pMat < 0.05) = trueProb(pMat < 0.05);
         subplot(rows,cols,prc(cols,[iiDoy,iType+1]));
-        imagesc(trueProb_mod);
+        imagesc(repmat(binEdges_x/3600,[1,2]),1:numel(binEdges_y),repmat(trueProb_mod,[1,2]));
         hold on;
         set(gca,'ydir','normal');
-        xticks(linspace(min(xlim),max(xlim),8));
-        xticklabels(compose('%1.0f',linspace(0,23,numel(xticks))));
+
+        % these are all by hand
+        xticks(-12:3:12);
+        xticklabelVals = compose('%1.0f',[-12,-6,0,6,12,-6,0,6 12]);
+        xticklabelVals{5} = "±12";
+        xticklabels(xticklabelVals);
+        
         if iiDoy == size(useDoys,2)
-            xlabel('hour of day');
+            if iType == 0
+                xlabel('Z_t (hrs rel. to sunset)');
+            else
+                xlabel('Z_t (hrs rel. to sunrise)');
+            end
         end
-        caxis([-0.149 0.15]); % make sure 0 is non-trans
-        yticklabels(compose('%1.1f',binEdges_y(yticks)/60/60));
+        
+        caxis([-0.149 0.15]); % make sure 0 is non-trans, manually determined
+        
+        yticks([closest(binEdges_y/3600,0),closest(binEdges_y/3600,1),closest(binEdges_y/3600,3),...
+            closest(binEdges_y/3600,6),closest(binEdges_y/3600,12),closest(binEdges_y/3600,24)]);
+        yticklabels(compose('%1.1f',[0,1,3,6,12,24]));
         if iType == 0
             ylabel('hours');
         end
@@ -173,19 +202,24 @@ for iType = 0:1
         c.Limits = [0 0.15];
         title(monthNames{iiDoy});
         colormap(magma_trans);
+        grid on;
         
         % only for sunrise/sunset bars
-        if ~doSunrise
-            tss_range = find(ismember(Tss_doys,useDoys{iiDoy}));
-            theseSunrise = secDay(Tss.sunrise(tss_range));
-            theseSunset = secDay(Tss.sunset(tss_range));
-            xsc = linspace(0,86400,max(xlim)-min(xlim));
-            sunrise_x = closest(xsc,mean(theseSunrise));
-            sunrise_std_x = closest(xsc,mean(theseSunrise)-std(theseSunrise));
-            sunset_x = closest(xsc,mean(theseSunset));
-            sunset_std_x = closest(xsc,mean(theseSunset)+std(theseSunset));
-            %         plot([sunrise_std_x,sunset_std_x],[max(ylim)-0.5,max(ylim)-0.5],'linewidth',8,'color',[1 1 1 0.5]); % colors(3,:)
-            plot([sunrise_x,sunset_x],[max(ylim)-0.5,max(ylim)-0.5],'linewidth',8,'color',[1 1 1 0.8]);
+        tss_range = find(ismember(Tss_doys,useDoys{iiDoy}));
+        theseSunrise = secDay(Tss.sunrise(tss_range));
+        theseSunset = secDay(Tss.sunset(tss_range));
+        theseDaylength = Tss.day_length(tss_range) / 3600; % convert to hours for x-axis
+        % do manually, harder to be fancy
+        if iType == 0 % locked to sunset
+            for iSun = [-6,6,18]
+                plot([iSun-mean(theseDaylength)/2,iSun],[max(ylim)-0.5,max(ylim)-0.5],...
+                    'linewidth',8,'color',[1 1 1 0.8]);
+            end
+        else % locked to sunrise
+            for iSun = [-18,-6,6]
+                plot([iSun,iSun+mean(theseDaylength)/2],[max(ylim)-0.5,max(ylim)-0.5],...
+                    'linewidth',8,'color',[1 1 1 0.8]);
+            end
         end
         
         set(gca,'fontsize',14);

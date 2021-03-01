@@ -20,14 +20,14 @@ if do
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
             T = detect_sleepWake2(T,60);
-            if isValidT(T,false)
+            if sqkey.isValid(iSq)
                 dtdoys = day(T.datetime,'dayofyear');
                 undoys = unique(dtdoys);
                 squirrelId = squirrelId + 1;
                 for iDoy = 1:numel(undoys)
-                    if any(ismember(271:279,undoys(iDoy))) && strcmp(sqkey.source{iSq},'BD')
-                        continue;
-                    end
+% % % %                     if any(ismember(271:279,undoys(iDoy))) && strcmp(sqkey.source{iSq},'BD')
+% % % %                         continue;
+% % % %                     end
                     theseDoys = find(dtdoys == undoys(iDoy));
                     if numel(theseDoys) == 1440 % require full day for now
                         sunrise = Tss.sunrise(Tss_doys == undoys(iDoy));
@@ -57,11 +57,6 @@ if do
 end
  %%
 filtIds = zeros(1,size(sq_odba,1)); % blanket filter
-% for ii = 1:size(sq_odba,1)
-%     if sum(sq_odba_max(ii,300:600)) < 300
-%         filtIds(ii) = 1;
-%     end
-% end
 
 mastTitles = {'Mast','nMast'};
 years_mast = [2014,2019]; % 2014,2019
