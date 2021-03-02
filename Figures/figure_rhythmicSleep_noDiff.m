@@ -18,16 +18,18 @@ if do
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq}) % && ~any(ismember(sqkey.year(iSq),[2014,2019])) % ~(strcmp(sqkey.source{iSq},'ES') &&
             disp(sqkey.filename{iSq});
+            % skip these squirrels (for now?)
+            if strcmp(sqkey.sex_status,'lactating') | strcmp(sqkey.sex_status,'pregnant') | strcmp(sqkey.sex,'F')
+                continue;
+            end
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-            T = detect_sleepWake2(T,60);
             if sqkey.isValid(iSq)
+                T.datetime = T.datetime + minutes(sqkey.shiftMin(iSq));
+                T = detect_sleepWake2(T,60); % !! remember to use 1:n (not 1:4:n) in production
                 dtdoys = day(T.datetime,'dayofyear');
                 undoys = unique(dtdoys);
                 squirrelId = squirrelId + 1;
                 for iDoy = 1:numel(undoys)
-% % % %                     if any(ismember(271:279,undoys(iDoy))) && strcmp(sqkey.source{iSq},'BD')
-% % % %                         continue;
-% % % %                     end
                     theseDoys = find(dtdoys == undoys(iDoy));
                     if numel(theseDoys) == 1440 % require full day for now
                         sunrise = Tss.sunrise(Tss_doys == undoys(iDoy));
