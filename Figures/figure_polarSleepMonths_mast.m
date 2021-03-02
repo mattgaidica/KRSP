@@ -1,14 +1,11 @@
 %% mean
-theseAsleep = [];
-iSeason = 1;
-
 mastTitles = {'Mast','nMast'};
 years_mast = [2014,2019]; % 2014,2019
 years_nmast = [2015,2016,2017,2018,2020]; % 2015,2016,2017, *need 2018,2020
 mast_years = {years_mast;years_nmast};
 
 sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,60);
+seasonDoys = circshift(1:366,57);
 useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
 monthNames = {'Winter','Spring','Summer','Autumn'};
@@ -16,6 +13,8 @@ monthNames = {'Winter','Spring','Summer','Autumn'};
 close all
 ff(1200,800);
 iSubplot = 1;
+% !! data should be circshift so sun is centered?
+% or seasons should be year-centered, i.e. summer peaks at 171
 for iSeason = 2:4
     mastIds = ismember(sq_doys,useDoys{iSeason}) & ismember(sq_years,years_mast);
     nmastIds = ismember(sq_doys,useDoys{iSeason}) & ismember(sq_years,years_nmast);
@@ -29,8 +28,7 @@ for iSeason = 2:4
         theseNmast = sq_asleep(nmastIds,ii);
         theseMast = sq_asleep(mastIds,ii);
         group = [zeros(size(theseNmast));ones(size(theseMast))];
-        [p,~,stats] = anova1([theseNmast;theseMast],group,'off');
-        all_ps(ii) = p;
+        all_ps(ii) = anova1([theseNmast;theseMast],group,'off');
     end
 
     all_ps = pval_adjust(all_ps,'bonferroni');
@@ -66,7 +64,7 @@ for iSeason = 2:4
     text(0,-1,["100%","\downarrow"],'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
     text(0.55,1.15,"Hour of Day",'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
 
-    %% var
+    % var
     maxR = 1/3;
     monthData_nmast = imgaussfilt((maxR)-var(sq_asleep(nmastIds,:)),10,'padding','circular');
     monthData_mast = imgaussfilt((maxR)-var(sq_asleep(mastIds,:)),10,'padding','circular');
@@ -78,8 +76,7 @@ for iSeason = 2:4
         theseNmast = sq_asleep(nmastIds,ii);
         theseMast = sq_asleep(mastIds,ii);
         group = [zeros(size(theseNmast));ones(size(theseMast))];
-        [p,~,stats] = anova1([theseNmast;theseMast],group,'off');
-        all_ps(ii) = p;
+        all_ps(ii) = anova1([theseNmast;theseMast],group,'off');
     end
 
     all_ps = pval_adjust(all_ps,'bonferroni');

@@ -55,8 +55,7 @@ if do
     end
     do = false;
 end
- %%
-filtIds = zeros(1,size(sq_odba,1)); % blanket filter
+%%
 
 mastTitles = {'Mast','nMast'};
 years_mast = [2014,2019]; % 2014,2019
