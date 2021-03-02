@@ -25,6 +25,10 @@ if do
         T = detect_sleepWake2(T,60);
         Tawake = make_Tawake(T); % transition table
         
+% %         if ~ismember(year(Tawake.datetime(1)),[2014,2019])
+% %             continue;
+% %         end
+        
         if true % only use the following transition time
             % at
             trans_secs = [trans_secs secDay(Tawake.datetime(1:end-1))'];
@@ -78,20 +82,17 @@ seasonDoys = circshift(1:366,60);
 % useDoys = {[340:366 1:40],70:110,160:231,232:335};
 useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
-monthNames = {'Winter','Spring','Summer','Fall'};
+monthNames = {'Winter','Spring','Summer','Autumn'};
 typeNames = {'asleep','awake'};
 h = ff;%(1400,900,2);
 % % hp = ff(750,600,2);
 rows = size(useDoys,2);
 cols = 2;
 nS = 2;
-if doSunrise
-    binEdges_x = linspace(0,86400,24*4+1) - (86400/2); % was 24*4+1
-else
-    binEdges_x = linspace(0,86400,24*4+1); % was 24*4+1
-end
-binEdges_y = logspace(2.9,5,49);
-% binEdges_y = linspace(0,86400/1.75,48+1);
+
+binEdges_x = linspace(0,86400,24*4+1) - (86400/2);
+binEdges_y = linspace(0,16*60*60,48+1); % hours*60*60
+
 pMats = NaN(2,size(useDoys,2),numel(binEdges_y)-1,numel(binEdges_x)-1);
 for iType = 0:1
     doSunrise = true;
@@ -127,7 +128,7 @@ for iType = 0:1
         trueProb = trans_mat' ./ trans_norm';
         
         if doStats
-            nSurr = 10000; % should be 1000+ for production
+            nSurr = 100; % should be 1000+ for production
             trans_mat_surr = zeros(numel(binEdges_x)-1,numel(binEdges_y)-1);
             trans_norm_surr = zeros(numel(binEdges_x)-1,1);
             surrProb = zeros(nSurr,numel(binEdges_y)-1,numel(binEdges_x)-1);
@@ -170,7 +171,9 @@ for iType = 0:1
         trueProb_mod = -trueProb_filt;
         trueProb_mod(pMat < 0.05) = trueProb(pMat < 0.05);
         subplot(rows,cols,prc(cols,[iiDoy,iType+1]));
+        
         imagesc(repmat(binEdges_x/3600,[1,2]),1:numel(binEdges_y),repmat(trueProb_mod,[1,2]));
+        
         hold on;
         set(gca,'ydir','normal');
 
@@ -188,11 +191,14 @@ for iType = 0:1
             end
         end
         
-        caxis([-0.149 0.15]); % make sure 0 is non-trans, manually determined
+%         caxis([-0.149 0.15]); % make sure 0 is non-trans, manually determined
+        caxis([0 0.15]);
         
-        yticks([closest(binEdges_y/3600,0),closest(binEdges_y/3600,1),closest(binEdges_y/3600,3),...
-            closest(binEdges_y/3600,6),closest(binEdges_y/3600,12),closest(binEdges_y/3600,24)]);
-        yticklabels(compose('%1.1f',[0,1,3,6,12,24]));
+%         yticks([closest(binEdges_y/3600,0),closest(binEdges_y/3600,1),closest(binEdges_y/3600,3),...
+%             closest(binEdges_y/3600,6),closest(binEdges_y/3600,12),closest(binEdges_y/3600,24)]);
+%         yticklabels(compose('%1.1f',[0,1,3,6,12,24]));
+        ylim([1 36]);
+        yticklabels(yticks/2);
         if iType == 0
             ylabel('hours');
         end
@@ -201,7 +207,10 @@ for iType = 0:1
         c.Label.FontSize = 14;
         c.Limits = [0 0.15];
         title(monthNames{iiDoy});
-        colormap(magma_trans);
+%         colormap(magma_trans);
+        colormap(magma);
+
+%         set(gca,'ColorScale','log');
         grid on;
         
         % only for sunrise/sunset bars
