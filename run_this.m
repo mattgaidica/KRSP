@@ -10,7 +10,7 @@ for ii = 1:numel(useYears)
     maxs(ii) = k;
     hold on;
 end
-for ii = 1:4
+for ii = [2,4]
     plot([useDoys{ii}(1),useDoys{ii}(1)],ylim,'k:');
     plot([useDoys{ii}(end),useDoys{ii}(end)],ylim,'k:');
 end

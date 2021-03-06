@@ -7,7 +7,9 @@ doPlot = false;
 % max could suffer from 'twitches' the skew the data
 colors = jet(n);
 if doPlot
-    ff(1200,600);
+    close all;
+    ff(1200,900);
+    subplot(211);
     plot(T.odba,'k');
     xlim([1 3500]);
     ylim([0 12]);
@@ -17,20 +19,31 @@ if doPlot
     hold on;
 end
 W = zeros(size(T.odba));
-for ii = 1:4:n
+for ii = 1:n
     W = W + smoothdata(T.odba,'loess',1440/ii);
     if doPlot
         plot(W,'color',colors(ii,:));
     end
 end
-W_z = normalize(W,'zscore');
+W_norm = normalize(W,'zscore'); % use this to estimate where sleep exists
+useStd = std(W(W_norm < 0));
+useMean = mean(W(W_norm < 0));
+W_z = (W - useMean) ./ useStd;
+
 if doPlot
-    ylim([0 80]);
+    ylim([0 50]);
     yyaxis right;
     plot(xlim,[0,0],':k');
-    ylim([-1 3]);
+    hold on;
+    plot(W_z,'k-','linewidth',1);
+%     ylim([-1 3]);
     ylabel('homeograph Z-score');
     set(gca,'ycolor','k');
+    subplot(212);
+    histogram(T.odba(W_norm < 0),100);
+    hold on;
+    histogram(T.odba(W_norm >= 0),100);
+    legend({'night ODBAs','day ODBAs'});
 end
 
 W_bin = zeros(numel(T.odba),1);
@@ -38,12 +51,3 @@ W_bin(W_z > 0) = 1;
 T.odba_z = W_z;
 T.awake = logical(W_bin);
 T.asleep = ~W_bin;
-
-T.odba_std = T.odba ./ std(T.odba(T.asleep));
-
-
-W = zeros(size(T.odba));
-for ii = 1:n
-    W = W + smoothdata(T.odba,'loess',1440/ii);
-end
-W_z = normalize(W,'zscore');

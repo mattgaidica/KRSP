@@ -57,9 +57,7 @@ if do
             undoys = unique(dtdoys);
             squirrelId = squirrelId + 1;
             for iDoy = 1:numel(undoys)
-                if any(ismember(271:279,undoys(iDoy))) && strcmp(sqkey.source{iSq},'BD')
-                    continue;
-                end
+                % !! need to add isValid sq_key!! and rm females?
                 sunrise = secDay(Tss.sunrise(Tss_doys == undoys(iDoy)));
                 sunset = secDay(Tss.sunset(Tss_doys == undoys(iDoy)));
                 theseDoys = find(dtdoys == undoys(iDoy));

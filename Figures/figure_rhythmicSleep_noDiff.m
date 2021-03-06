@@ -3,7 +3,8 @@ if do
     filePath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
     Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
     Tss_doys = day(Tss.sunrise,'dayofyear');
-    sq_odba = [];
+    sq_sex = [];
+%     sq_odba = [];
     sq_odba_z = [];
     sq_odba_std = [];
     sq_odba_max = [];
@@ -15,11 +16,14 @@ if do
     sq_asleep = [];
     iRow = 0;
     squirrelId = 0;
+    
+    alignBySunrise = false; % false = aligns to t=00:00
+    
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq}) % && ~any(ismember(sqkey.year(iSq),[2014,2019])) % ~(strcmp(sqkey.source{iSq},'ES') &&
             disp(sqkey.filename{iSq});
             % skip these squirrels (for now?)
-            if strcmp(sqkey.sex_status,'lactating') | strcmp(sqkey.sex_status,'pregnant') | strcmp(sqkey.sex,'F')
+            if strcmp(sqkey.sex_status,'lactating') | strcmp(sqkey.sex_status,'pregnant') | strcmp(sqkey.sex_status,'Pre-pregnancy')
                 continue;
             end
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
@@ -32,10 +36,12 @@ if do
                 for iDoy = 1:numel(undoys)
                     theseDoys = find(dtdoys == undoys(iDoy));
                     if numel(theseDoys) == 1440 % require full day for now
-                        sunrise = Tss.sunrise(Tss_doys == undoys(iDoy));
-                        afterSunrise = Tss.sunset(Tss_doys == undoys(iDoy));
-                        closestId = closest(secDay(T.datetime(theseDoys)),secDay(sunrise)); % center on sunrise
-                        theseDoys = theseDoys(closestId) - 720:theseDoys(closestId) + 720-1;
+                        if alignBySunrise
+                            sunrise = Tss.sunrise(Tss_doys == undoys(iDoy));
+                            afterSunrise = Tss.sunset(Tss_doys == undoys(iDoy));
+                            closestId = closest(secDay(T.datetime(theseDoys)),secDay(sunrise)); % center on sunrise
+                            theseDoys = theseDoys(closestId) - 720:theseDoys(closestId) + 720-1;
+                        end
                         if min(theseDoys) > 1 && max(theseDoys) < numel(T.datetime)
                             iRow = iRow + 1;
                             sq_ids(iRow) = squirrelId;
@@ -43,7 +49,7 @@ if do
                             sq_doys(iRow) = undoys(iDoy);
                             sq_odba(iRow,:) = T.odba(theseDoys);
                             sq_odba_z(iRow,:) = T.odba_z(theseDoys);
-                            sq_odba_std(iRow,:) = T.odba_std(theseDoys);
+%                             sq_odba_std(iRow,:) = T.odba_std(theseDoys);
                             sq_odba_max(iRow,:) = T.odba_max(theseDoys);
                             sq_years(iRow) = year(T.datetime(theseDoys(1)));
                             sq_dayLength(iRow) = Tss.day_length(Tss_doys == undoys(iDoy));

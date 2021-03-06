@@ -10,6 +10,10 @@ if do
     trans_months = [];
     trans_doys = [];
     trans_type = [];
+    
+    trans_at = [];
+    trans_to = [];
+    trans_on = [];
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq})
             load(fullfile(loadPath,sqkey.filename{iSq}));
@@ -28,38 +32,42 @@ if do
 % %         if ~ismember(year(Tawake.datetime(1)),[2014,2019])
 % %             continue;
 % %         end
+
+        trans_at = [trans_at secDay(Tawake.datetime)'];
+        trans_to = [trans_to Tawake.awake'];
+        trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
         
-        if true % only use the following transition time
-            % at
-            trans_secs = [trans_secs secDay(Tawake.datetime(1:end-1))'];
-            % on day
-            trans_doys = [trans_doys day(Tawake.datetime(1:end-1),'dayofyear')'];
-            % you transion to state
-            trans_type = [trans_type Tawake.awake(2:end)'];
-            % in seconds
-            trans_all = [trans_all seconds(diff(Tawake.datetime))'];
-        else % compile all transition times in the future
-            for ii = 1:size(Tawake,1)
-                futureIdx = find(Tawake.awake(ii:end) ~= Tawake.awake(ii)) + ii - 1;
-                % limit to transitions within 24hrs, else these matrices
-                % get too big; we don't analyze further out anyways
-                futureIdx = futureIdx(seconds(Tawake.datetime(futureIdx) - Tawake.datetime(ii)) <= 86400);
-                % what if we only take out the next 2-3, assuming those
-                % might be the false positive?
-                if ~isempty(futureIdx)
-                    futureIdx = futureIdx(1:min([3,numel(futureIdx)])); % modify min([X
-                end
-                
-                % at
-                trans_secs = [trans_secs repmat(secDay(Tawake.datetime(ii)),[1,numel(futureIdx)])];
-                % on day
-                trans_doys = [trans_doys repmat(day(Tawake.datetime(ii),'dayofyear'),[1,numel(futureIdx)])];
-                % you transion to state
-                trans_type = [trans_type repmat(~Tawake.awake(ii),[1,numel(futureIdx)])];
-                % in seconds
-                trans_all = [trans_all seconds(Tawake.datetime(futureIdx) - Tawake.datetime(ii))'];        
-            end
-        end
+% % % %         if true % only use the following transition time
+% % % %             % at
+% % % %             trans_secs = [trans_secs secDay(Tawake.datetime(1:end-1))'];
+% % % %             % on day
+% % % %             trans_doys = [trans_doys day(Tawake.datetime(1:end-1),'dayofyear')'];
+% % % %             % you transion to state
+% % % %             trans_type = [trans_type Tawake.awake(2:end)'];
+% % % %             % in seconds
+% % % %             trans_all = [trans_all seconds(diff(Tawake.datetime))'];
+% % % %         else % compile all transition times in the future
+% % % %             for ii = 1:size(Tawake,1)
+% % % %                 futureIdx = find(Tawake.awake(ii:end) ~= Tawake.awake(ii)) + ii - 1;
+% % % %                 % limit to transitions within 24hrs, else these matrices
+% % % %                 % get too big; we don't analyze further out anyways
+% % % %                 futureIdx = futureIdx(seconds(Tawake.datetime(futureIdx) - Tawake.datetime(ii)) <= 86400);
+% % % %                 % what if we only take out the next 2-3, assuming those
+% % % %                 % might be the false positive?
+% % % %                 if ~isempty(futureIdx)
+% % % %                     futureIdx = futureIdx(1:min([3,numel(futureIdx)])); % modify min([X
+% % % %                 end
+% % % %                 
+% % % %                 % at
+% % % %                 trans_secs = [trans_secs repmat(secDay(Tawake.datetime(ii)),[1,numel(futureIdx)])];
+% % % %                 % on day
+% % % %                 trans_doys = [trans_doys repmat(day(Tawake.datetime(ii),'dayofyear'),[1,numel(futureIdx)])];
+% % % %                 % you transion to state
+% % % %                 trans_type = [trans_type repmat(~Tawake.awake(ii),[1,numel(futureIdx)])];
+% % % %                 % in seconds
+% % % %                 trans_all = [trans_all seconds(Tawake.datetime(futureIdx) - Tawake.datetime(ii))'];        
+% % % %             end
+% % % %         end
     end
     do = false;
 %     chime;

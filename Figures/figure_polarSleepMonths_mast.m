@@ -5,6 +5,8 @@ weatherPath = '/Users/matt/Documents/Data/KRSP/HainesJunction_DailyTemps_Master.
 T_weather = readtable(weatherPath);
 
 mastTitles = {'Mast','nMast'};
+% 2019 females seem to be awake a lot longer in Spring, not true for 2014,
+% so the mast analysis is basically going nowhere
 years_mast = [2014,2019]; % 2014,2019
 years_nmast = [2015,2016,2017,2018,2020]; % 2015,2016,2017, *need 2018,2020
 mast_years = {years_mast;years_nmast};
@@ -14,6 +16,10 @@ seasonDoys = circshift(1:366,57); % centers at 171, so light is equal
 % seasonDoys = circshift(1:366,57-21); % centers at 192, so temp is equal
 useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
+
+middleDay = round(mean(useDoys{3}));
+nDays = 140;
+useDoys = {1:2,(middleDay-nDays+1:middleDay),(middleDay-nDays/2+1):middleDay+nDays/2,(middleDay:middleDay+nDays-1)};
 monthNames = {'Winter','Spring','Summer','Autumn'};
 linecolors = lines(5);
 
@@ -25,8 +31,8 @@ iSubplot = 1;
 % data comes in sunrise-centered, this shifts it to solar-noon centered to
 % eliminate bias of sunrise/sunset
 for iSeason = 2:4
-    mastIds = find(ismember(sq_doys,useDoys{iSeason}) & ismember(sq_years,years_mast) & ismember(sq_sex,1));
-    nmastIds = find(ismember(sq_doys,useDoys{iSeason}) & ismember(sq_years,years_nmast) & ismember(sq_sex,1));
+    mastIds = find(ismember(sq_doys,useDoys{iSeason}) & ismember(sq_years,years_mast));% & ismember(sq_sex,1));
+    nmastIds = find(ismember(sq_doys,useDoys{iSeason}) & ismember(sq_years,years_nmast));% & ismember(sq_sex,1));
     
     % what if I only use days that appear in both mast and nmast years?
     newmastIds = [];
@@ -78,12 +84,6 @@ for iSeason = 2:4
     p = anova1(y,group,'off');
     fprintf("season %i, temps p = %1.5f\n",iSeason,p);
     
-
-
-    % this was sunsrise-centered
-% % % %     monthData_nmast = imgaussfilt(mean(sq_asleep(nmastIds,:)),10,'padding','circular');
-% % % %     monthData_mast = imgaussfilt(mean(sq_asleep(mastIds,:)),10,'padding','circular');
-    
     nmastShifted = [];
     for iD = 1:numel(nmastIds)
         shiftBy = round(minutes(Tss.solar_noon(sq_doys(nmastIds(iD))) - Tss.sunrise(sq_doys(nmastIds(iD)))));
@@ -120,7 +120,7 @@ for iSeason = 2:4
     polarTime = linspace(-pi,pi,1440);
     colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',5);
     
-    polarplot(polarTime,maxR*ones(1440,1),'color',repmat(0.7,[3,1]),'linewidth',0.75); % outer circle
+    polarplot(polarTime,ones(1440,1),'color',repmat(0.7,[3,1]),'linewidth',0.75); % outer circle
     hold on;
     % actual data, colors(iSeason,:)
     lns = [];
@@ -148,7 +148,7 @@ for iSeason = 2:4
     pax.Color = [1 1 1];
     set(gca,'fontsize',14);
 
-    title(sprintf("%s\nSleep Mean",monthNames{iSeason}));
+    title(sprintf("%s\nSleep Mean\ndoy %i:%i",monthNames{iSeason},useDoys{iSeason}(1),useDoys{iSeason}(end)));
 
     fs = 14;
     text(0,1,["\uparrow","100%"],'horizontalalignment','center','verticalalignment','top','fontsize',fs,'color',repmat(0.4,[3,1]));
@@ -188,7 +188,7 @@ for iSeason = 2:4
     pax.Color = [1 1 1];
     set(gca,'fontsize',14);
 
-    title(sprintf("%s\nSleep Consistency",monthNames{iSeason}));
+    title("Sleep Consistency");
 
     fs = 14;
     text(0,maxR,["\uparrow","100%"],'horizontalalignment','center','verticalalignment','top','fontsize',fs,'color',repmat(0.4,[3,1]));
