@@ -31,7 +31,7 @@ useMean = mean(W(W_norm < 0));
 W_z = (W - useMean) ./ useStd;
 
 if doPlot
-    ylim([0 50]);
+    ylim([0 80]);
     yyaxis right;
     plot(xlim,[0,0],':k');
     hold on;

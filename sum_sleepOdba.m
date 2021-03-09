@@ -84,20 +84,21 @@ legend(lns,{'Sleep nMast','Sleep Mast'},'location','northwest');
 
 %%
 close all
-ff(1000,500);
+ff(1400,500);
 for iYear = 2014:2020
-    sumSleep_mast = NaN(366,1);
+    sumSleep = NaN(366,1);
     for iDoy = 1:366
-        mastIds = sq_doys==iDoy & sq_years==iYear;
-        theseSleep_mast = sq_asleep(mastIds,:);
+        theseIds = sq_doys==iDoy & sq_years==iYear;
+        theseSleep = sq_asleep(theseIds,:);
         
-        sunset = round(secDay(Tss.sunset(iDoy)) / 60);
-        
-        if numel(theseSleep_mast)>1
-            sumSleep_mast(iDoy) = mean(sum(circshift(theseSleep_mast,sunset,2),2));
-        end
+        sumSleep(iDoy) = mean(mean(theseSleep,1));
     end
-    plot(smoothdata(sumSleep_mast,'gaussian',70),'linewidth',3);
+    if ismember(iYear,[2014,2019])
+        dataColor = 'r';
+    else
+        dataColor = 'k';
+    end
+    plot(sumSleep,'linewidth',2,'color',dataColor);
     hold on;
 end
 for ii = 1:4
@@ -105,3 +106,5 @@ for ii = 1:4
 end
 legend(compose("%i",2014:2020));
 title('Sum sleep');
+xlabel('day of year');
+ylabel('mean asleep');

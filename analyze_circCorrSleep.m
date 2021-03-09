@@ -1,4 +1,5 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/Figures/figure_rhythmicSleep_noDiff.m
+months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 if ~exist('T_weather','var')
     weatherPath = '/Users/matt/Documents/Data/KRSP/HainesJunction_DailyTemps_Master.csv';
     T_weather = readtable(weatherPath);
@@ -94,7 +95,7 @@ for iSun = 1:2
     polarTime = linspace(0,2*pi,size(theseAsleep,2));
     colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',366);
     modR = 0;
-    for iDoy = circshift(1:366,90) % for color overlay
+    for iDoy = circshift(1:366,0) % for color overlay
         polarplot(polarTime,theseAsleep(iDoy,:),'color',[colors(iDoy,:),op],'linewidth',2);
         hold on;
         ms = 15;
@@ -166,7 +167,7 @@ for iSun = 1:2
         end
     end
 
-    for iDoy = circshift(1:366,90) % for color overlay
+    for iDoy = circshift(1:366,0) % for color overlay
         polarplot(polarTime,theseAsleep(iDoy,:),'color',[colors(iDoy,:),op],'linewidth',2);
         hold on;
         if iSun == 1

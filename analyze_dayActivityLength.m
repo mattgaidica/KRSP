@@ -28,8 +28,8 @@ asleep_trans_day = [];
 
 for iSq = 1:numel(sq_ids)
     thisDoy = sq_doys(iSq);
-    dayOdba(iSq) = sum(sq_odba_std(iSq,minDay(T_ss.sunrise(thisDoy)):minDay(T_ss.sunset(thisDoy))));
-    nightOdba(iSq) = sum([sq_odba_std(iSq,1:minDay(T_ss.sunrise(thisDoy))),...
+    dayOdba(iSq) = sum(sq_odba_z(iSq,minDay(T_ss.sunrise(thisDoy)):minDay(T_ss.sunset(thisDoy))));
+    nightOdba(iSq) = sum([sq_odba_z(iSq,1:minDay(T_ss.sunrise(thisDoy))),...
         sq_odba_z(iSq,minDay(T_ss.sunset(thisDoy)):end)]);
     
     colors_season(iSq,:) = cmap_season(thisDoy,:);
@@ -55,12 +55,10 @@ cols = 2;
 S = 5;
 ff(750,1000);
 
-% sleep variance
-
 subplot(rows,cols,1);
 scatter(sq_dayLength/60/60,dayOdba,S,colors_season,'filled');
 xlabel('dayLength (hrs)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day \DeltaOA')
 set(gca,'fontsize',14);
 title('');
 
@@ -385,7 +383,7 @@ grid on;
 ylabel('daylight (hrs)');
 
 %%
-ff(800,900);
+ff(1200,700);
 subplot(2,cols,1);
 scatter(asleep_trans_day,dayOdba,10,colors_season,'filled');
 xlabel('sleep transitions (day frac_{norm})');

@@ -49,38 +49,39 @@ if do
     sqs_transDay = cell(1,366);
     sqs_transNight = cell(1,366);
     for iSq = 1:size(sqkey,1)
-        if ~isempty(sqkey.filename{iSq}) %&& ~any(ismember(sqkey.year(iSq),[2014,2019])) % ~(strcmp(sqkey.source{iSq},'ES') &&
+        if ~isempty(sqkey.filename{iSq})% && ~any(ismember(sqkey.year(iSq),[2014,2019])) % ~(strcmp(sqkey.source{iSq},'ES') &&
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
-            T = detect_sleepWake2(T,60);
-            dtdoys = day(T.datetime,'dayofyear');
-            undoys = unique(dtdoys);
-            squirrelId = squirrelId + 1;
-            for iDoy = 1:numel(undoys)
-                % !! need to add isValid sq_key!! and rm females?
-                sunrise = secDay(Tss.sunrise(Tss_doys == undoys(iDoy)));
-                sunset = secDay(Tss.sunset(Tss_doys == undoys(iDoy)));
-                theseDoys = find(dtdoys == undoys(iDoy));
-                dayDoys = theseDoys(secDay(T.datetime(theseDoys)) > sunrise & secDay(T.datetime(theseDoys)) < sunset);
-                nightDoys = theseDoys(secDay(T.datetime(theseDoys)) < sunrise | secDay(T.datetime(theseDoys)) > sunset);
-                [Y,M,D] = datevec(T.datetime(theseDoys(1)));
-                useId = find(weather.Date == datetime(Y,M,D));
-                if numel(theseDoys) == 1440 && ~isempty(useId) && ~isnan(weather.Mean_Temp(useId))
-                    y_weather = [y_weather weather.Mean_Temp(useId)];
-                    y_dayLength = [y_dayLength Tss.day_length(undoys(iDoy))];
-                    y_asleep = [y_asleep mean(T.asleep(theseDoys))];
-                    y_nest = [y_nest sum(strcmp(T.nest(theseDoys),'Nest'))];
-                    x_odba = [x_odba mean(T.odba_z(theseDoys))];
-                    sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba_z(theseDoys))];
-                    sqs_asleep{undoys(iDoy)} = [sqs_asleep{undoys(iDoy)} sum(T.asleep(theseDoys))];
-                    sqs_asleepDay{undoys(iDoy)} = [sqs_asleepDay{undoys(iDoy)} sum(T.asleep(dayDoys))];
-                    sqs_asleepNight{undoys(iDoy)} = [sqs_asleepNight{undoys(iDoy)} sum(T.asleep(nightDoys))];
-                    
-                    sqs_nest{undoys(iDoy)} = [sqs_nest{undoys(iDoy)} sum(strcmp(T.nest(theseDoys),'Nest'))];
-                    
-                    sqs_trans{undoys(iDoy)} = [sqs_trans{undoys(iDoy)} sum(abs(diff(T.asleep(theseDoys))))];
-                    sqs_transDay{undoys(iDoy)} = [sqs_transDay{undoys(iDoy)} sum(abs(diff(T.asleep(dayDoys))))];
-                    sqs_transNight{undoys(iDoy)} = [sqs_transNight{undoys(iDoy)} sum(abs(diff(T.asleep(nightDoys))))];
+            if sqkey.isValid(iSq)
+                T = detect_sleepWake2(T,60);
+                dtdoys = day(T.datetime,'dayofyear');
+                undoys = unique(dtdoys);
+                squirrelId = squirrelId + 1;
+                for iDoy = 1:numel(undoys)
+                    sunrise = secDay(Tss.sunrise(Tss_doys == undoys(iDoy)));
+                    sunset = secDay(Tss.sunset(Tss_doys == undoys(iDoy)));
+                    theseDoys = find(dtdoys == undoys(iDoy));
+                    dayDoys = theseDoys(secDay(T.datetime(theseDoys)) > sunrise & secDay(T.datetime(theseDoys)) < sunset);
+                    nightDoys = theseDoys(secDay(T.datetime(theseDoys)) < sunrise | secDay(T.datetime(theseDoys)) > sunset);
+                    [Y,M,D] = datevec(T.datetime(theseDoys(1)));
+                    useId = find(weather.Date == datetime(Y,M,D));
+                    if numel(theseDoys) == 1440 && ~isempty(useId) && ~isnan(weather.Mean_Temp(useId))
+                        y_weather = [y_weather weather.Mean_Temp(useId)];
+                        y_dayLength = [y_dayLength Tss.day_length(undoys(iDoy))];
+                        y_asleep = [y_asleep mean(T.asleep(theseDoys))];
+                        y_nest = [y_nest sum(strcmp(T.nest(theseDoys),'Nest'))];
+                        x_odba = [x_odba mean(T.odba_z(theseDoys))];
+                        sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba_z(theseDoys))];
+                        sqs_asleep{undoys(iDoy)} = [sqs_asleep{undoys(iDoy)} sum(T.asleep(theseDoys))];
+                        sqs_asleepDay{undoys(iDoy)} = [sqs_asleepDay{undoys(iDoy)} sum(T.asleep(dayDoys))];
+                        sqs_asleepNight{undoys(iDoy)} = [sqs_asleepNight{undoys(iDoy)} sum(T.asleep(nightDoys))];
+                        
+                        sqs_nest{undoys(iDoy)} = [sqs_nest{undoys(iDoy)} sum(strcmp(T.nest(theseDoys),'Nest'))];
+                        
+                        sqs_trans{undoys(iDoy)} = [sqs_trans{undoys(iDoy)} sum(abs(diff(T.asleep(theseDoys))))];
+                        sqs_transDay{undoys(iDoy)} = [sqs_transDay{undoys(iDoy)} sum(abs(diff(T.asleep(dayDoys))))];
+                        sqs_transNight{undoys(iDoy)} = [sqs_transNight{undoys(iDoy)} sum(abs(diff(T.asleep(nightDoys))))];
+                    end
                 end
             end
         end
@@ -117,7 +118,7 @@ edges = linspace(-pi,pi,size(sunYear,1)+1);
 counts = sunYear(:,4) / 60 / 24;
 h = polarhistogram('BinEdges',edges,'BinCounts',counts,...
     'FaceAlpha',1,'FaceColor',sunColor,'EdgeColor','none');
-h = polarplot(edges,ones(size(edges))); 
+h = polarplot(edges,ones(size(edges)));
 h.Color = 'k';
 
 % temperature
@@ -127,16 +128,16 @@ edges = linspace(-pi,pi,numel(counts));
 colors = parula(numel(counts));
 colorLookup = linspace(1,2,size(colors,1));
 for ii = 1:numel(counts)
-%     ct = zeros(size(counts));
-%     ct(ii) = counts(ii);
+    %     ct = zeros(size(counts));
+    %     ct(ii) = counts(ii);
     colorId = closest(colorLookup,counts(ii));
-%     h = polarhistogram('BinEdges',edges,'BinCounts',ct,...
-%         'FaceColor',colors(colorId,:),'EdgeColor','none','FaceAlpha',0.5);
+    %     h = polarhistogram('BinEdges',edges,'BinCounts',ct,...
+    %         'FaceColor',colors(colorId,:),'EdgeColor','none','FaceAlpha',0.5);
     h = polarplot([edges(ii) edges(ii)],[1 counts(ii)],'-','Color',colors(colorId,:),...
         'MarkerSize',15,'LineWidth',1);
     hold on;
 end
-h = polarplot(edges,ones(size(edges))*1.5,'linewidth',1); 
+h = polarplot(edges,ones(size(edges))*1.5,'linewidth',1);
 h.Color = repmat(0,[1,3]);
 h.LineStyle = ':';
 
@@ -180,7 +181,12 @@ clc
 sTitles = {'winter','spring','summer','fall'};
 sIds = round(linspace(1,366,5));
 seasonDoys = circshift(1:366,60);
+
 for iS = 1:4
+    meanDayLength = mean(Tss.day_length(seasonDoys(sIds(iS):sIds(iS+1))));
+    stdDayLength = std(Tss.day_length(seasonDoys(sIds(iS):sIds(iS+1))));
+    fprintf('%s: day length: %1.2f + %1.2f\n',sTitles{iS},meanDayLength/3600,stdDayLength/3600);
+    
     meanAsleep = nanmean([sqs_asleep{seasonDoys(sIds(iS):sIds(iS+1))}]);
     stdAsleep = nanstd([sqs_asleep{seasonDoys(sIds(iS):sIds(iS+1))}]);
     fprintf('%s: asleep: %1.2f + %1.2f\n',sTitles{iS},meanAsleep/60,stdAsleep/60);
@@ -205,30 +211,33 @@ for iS = 1:4
     stdTrans = nanstd([sqs_transNight{seasonDoys(sIds(iS):sIds(iS+1))}]);
     fprintf('%s: NIGHTtrans: %1.0f + %1.0f\n\n',sTitles{iS},meanTrans,stdTrans);
 end
-
+meanDayLength = mean(Tss.day_length(seasonDoys(1:366)));
+stdDayLength = std(Tss.day_length(seasonDoys(1:366)));
+fprintf('%s: day length: %1.2f + %1.2f\n','All',meanDayLength/3600,stdDayLength/3600);
+    
 meanAsleep = nanmean([sqs_asleep{seasonDoys(1:366)}]);
-    stdAsleep = nanstd([sqs_asleep{seasonDoys(1:366)}]);
-    fprintf('%s: asleep: %1.2f + %1.2f\n','All',meanAsleep/60,stdAsleep/60);
-    
-    meanAsleep = nanmean([sqs_asleepDay{seasonDoys(1:366)}]);
-    stdAsleep = nanstd([sqs_asleepDay{seasonDoys(1:366)}]);
-    fprintf('%s: DAYasleep: %1.2f + %1.2f\n','All',meanAsleep/60,stdAsleep/60);
-    
-    meanAsleep = nanmean([sqs_asleepNight{seasonDoys(1:366)}]);
-    stdAsleep = nanstd([sqs_asleepNight{seasonDoys(1:366)}]);
-    fprintf('%s: NIGHTasleep: %1.2f + %1.2f\n\n','All',meanAsleep/60,stdAsleep/60);
-    
-    meanTrans = nanmean([sqs_trans{seasonDoys(1:366)}]);
-    stdTrans = nanstd([sqs_trans{seasonDoys(1:366)}]);
-    fprintf('%s: trans: %1.0f + %1.0f\n','All',meanTrans,stdTrans);
-    
-    meanTrans = nanmean([sqs_transDay{seasonDoys(1:366)}]);
-    stdTrans = nanstd([sqs_transDay{seasonDoys(1:366)}]);
-    fprintf('%s: DAYtrans: %1.0f + %1.0f\n','All',meanTrans,stdTrans);
-    
-    meanTrans = nanmean([sqs_transNight{seasonDoys(1:366)}]);
-    stdTrans = nanstd([sqs_transNight{seasonDoys(1:366)}]);
-    fprintf('%s: NIGHTtrans: %1.0f + %1.0f\n\n','All',meanTrans,stdTrans);
+stdAsleep = nanstd([sqs_asleep{seasonDoys(1:366)}]);
+fprintf('%s: asleep: %1.2f + %1.2f\n','All',meanAsleep/60,stdAsleep/60);
+
+meanAsleep = nanmean([sqs_asleepDay{seasonDoys(1:366)}]);
+stdAsleep = nanstd([sqs_asleepDay{seasonDoys(1:366)}]);
+fprintf('%s: DAYasleep: %1.2f + %1.2f\n','All',meanAsleep/60,stdAsleep/60);
+
+meanAsleep = nanmean([sqs_asleepNight{seasonDoys(1:366)}]);
+stdAsleep = nanstd([sqs_asleepNight{seasonDoys(1:366)}]);
+fprintf('%s: NIGHTasleep: %1.2f + %1.2f\n\n','All',meanAsleep/60,stdAsleep/60);
+
+meanTrans = nanmean([sqs_trans{seasonDoys(1:366)}]);
+stdTrans = nanstd([sqs_trans{seasonDoys(1:366)}]);
+fprintf('%s: trans: %1.0f + %1.0f\n','All',meanTrans,stdTrans);
+
+meanTrans = nanmean([sqs_transDay{seasonDoys(1:366)}]);
+stdTrans = nanstd([sqs_transDay{seasonDoys(1:366)}]);
+fprintf('%s: DAYtrans: %1.0f + %1.0f\n','All',meanTrans,stdTrans);
+
+meanTrans = nanmean([sqs_transNight{seasonDoys(1:366)}]);
+stdTrans = nanstd([sqs_transNight{seasonDoys(1:366)}]);
+fprintf('%s: NIGHTtrans: %1.0f + %1.0f\n\n','All',meanTrans,stdTrans);
 
 %% what best correlates with ODBA?
 close all

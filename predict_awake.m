@@ -14,6 +14,8 @@ if do
     trans_at = [];
     trans_to = [];
     trans_on = [];
+    trans_is = [];
+    trans_yr = [];
     for iSq = 1:size(sqkey,1)
         if ~isempty(sqkey.filename{iSq})
             load(fullfile(loadPath,sqkey.filename{iSq}));
@@ -36,6 +38,8 @@ if do
         trans_at = [trans_at secDay(Tawake.datetime)'];
         trans_to = [trans_to Tawake.awake'];
         trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
+        trans_is = [trans_is repmat(iSq,size(Tawake.awake'))];
+        trans_yr = [trans_yr year(Tawake.datetime)'];
         
 % % % %         if true % only use the following transition time
 % % % %             % at

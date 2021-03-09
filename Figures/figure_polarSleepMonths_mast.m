@@ -1,4 +1,4 @@
-%% mean
+%% setup: /Users/matt/Documents/MATLAB/KRSP/Figures/figure_rhythmicSleep_noDiff.m
 % see also: /Users/matt/Documents/MATLAB/KRSP/run_this.m for comparing
 % annual temp/light
 weatherPath = '/Users/matt/Documents/Data/KRSP/HainesJunction_DailyTemps_Master.csv';
@@ -83,15 +83,15 @@ for iSeason = 2:4
     group = [zeros(size(meanTemps_nmast)),ones(size(meanTemps_mast))];
     p = anova1(y,group,'off');
     fprintf("season %i, temps p = %1.5f\n",iSeason,p);
-    
+
     nmastShifted = [];
     for iD = 1:numel(nmastIds)
-        shiftBy = round(minutes(Tss.solar_noon(sq_doys(nmastIds(iD))) - Tss.sunrise(sq_doys(nmastIds(iD)))));
+        shiftBy = round(secDay(Tss.solar_noon(sq_doys(nmastIds(iD))))/60);
         nmastShifted(iD,:) = circshift(sq_asleep(nmastIds(iD),:),-shiftBy);
     end
     mastShifted = [];
     for iD = 1:numel(mastIds)
-        shiftBy = round(minutes(Tss.solar_noon(sq_doys(mastIds(iD))) - Tss.sunrise(sq_doys(mastIds(iD)))));
+        shiftBy = round(secDay(Tss.solar_noon(sq_doys(mastIds(iD))))/60);
         mastShifted(iD,:) = circshift(sq_asleep(mastIds(iD),:),-shiftBy);
     end
     
@@ -117,7 +117,7 @@ for iSeason = 2:4
     all_ps = pval_adjust(all_ps,'bonferroni');
     
     sunBuffer = 0.1;
-    polarTime = linspace(-pi,pi,1440);
+    polarTime = linspace(0,2*pi,1440);
     colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',5);
     
     polarplot(polarTime,ones(1440,1),'color',repmat(0.7,[3,1]),'linewidth',0.75); % outer circle
