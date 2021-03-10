@@ -106,7 +106,7 @@ colors = flip(mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',5));
 
 % main plot
 close all
-ff(1200,500);
+ff(1000,400);
 lw1 = 3;
 lw2 = 1;
 rows = 2;

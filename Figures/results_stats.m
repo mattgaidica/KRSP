@@ -71,7 +71,7 @@ if do
                         y_asleep = [y_asleep mean(T.asleep(theseDoys))];
                         y_nest = [y_nest sum(strcmp(T.nest(theseDoys),'Nest'))];
                         x_odba = [x_odba mean(T.odba_z(theseDoys))];
-                        sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba_z(theseDoys))];
+                        sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba(theseDoys))];
                         sqs_asleep{undoys(iDoy)} = [sqs_asleep{undoys(iDoy)} sum(T.asleep(theseDoys))];
                         sqs_asleepDay{undoys(iDoy)} = [sqs_asleepDay{undoys(iDoy)} sum(T.asleep(dayDoys))];
                         sqs_asleepNight{undoys(iDoy)} = [sqs_asleepNight{undoys(iDoy)} sum(T.asleep(nightDoys))];
@@ -123,7 +123,7 @@ h.Color = 'k';
 
 % temperature
 yearlyWeather = nanmean(sqs_temp);
-counts = smoothdata(normalize(yearlyWeather,'range')+1,'gaussian',50);
+counts = smoothdata(normalize(yearlyWeather,'range')+1,'gaussian',100);
 edges = linspace(-pi,pi,numel(counts));
 colors = parula(numel(counts));
 colorLookup = linspace(1,2,size(colors,1));
@@ -143,7 +143,7 @@ h.LineStyle = ':';
 
 % odba
 yearOdba = fillmissing(cellfun(@mean,sqs_odba),'movmean',40);
-yearOdba_filt = imgaussfilt(yearOdba,3,'padding','circular');
+yearOdba_filt = imgaussfilt(yearOdba,50,'padding','circular');
 counts = normalize(yearOdba_filt,'range')+1.5;
 edges = linspace(-pi,pi,numel(counts)+1);
 h = polarhistogram('BinEdges',edges,'BinCounts',counts,...
@@ -171,9 +171,9 @@ rlim([0 rlimVal]);
 rticks([]);
 pax.Color = [1 1 1];
 % rticklabels({'','',''});
-text(pi/2,1.1,'24 hrs','FontSize',fs,'Color','k','HorizontalAlignment','right');
+% text(pi/2,1.1,'24 hrs','FontSize',fs,'Color','k','HorizontalAlignment','right');
 text(-2.65,1.67,'0°C','FontSize',fs,'Color','k','color','k');
-text(0,2.31,'activity','FontSize',fs,'Color','k');
+text(-0.85,-2.4,'activity','FontSize',fs,'Color','k');
 thetaticklabels(circshift(monthNames,6));
 
 %% top table stats, see also /Users/matt/Documents/MATLAB/KRSP/Figures/cosinorEst.m
