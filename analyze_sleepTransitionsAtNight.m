@@ -4,7 +4,7 @@
 % trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
 ssPath = '/Users/matt/Documents/Data/KRSP/SunriseSunset';
 files = dir(fullfile(ssPath,'*.txt'));
-T_ss = readtable(fullfile(ssPath,files(4).name)); % 366 day year (simplify for now)
+Tss = readtable(fullfile(ssPath,files(4).name)); % 366 day year (simplify for now)
     
 close all
 ff(1300,900);
@@ -23,9 +23,9 @@ for iSun = 1:2
         shiftDoys = circshift(allDoys,-iDoy+1+nHalfWindow);
         useDoys = shiftDoys(1:nHalfWindow*2+1);
 
-        shiftBy = closest(t,secDay(T_ss.solar_noon(iDoy))/60/60) + round(numel(t)/2);
+        shiftBy = closest(t,secDay(Tss.solar_noon(iDoy))/60/60) + round(numel(t)/2);
         if iSun == 1
-            shiftBy = closest(t,secDay(T_ss.sunrise(iDoy))/60/60) + round(numel(t)/2);
+            shiftBy = closest(t,secDay(Tss.sunrise(iDoy))/60/60) + round(numel(t)/2);
         end
 
         subplot(2,2,prc(2,[iSun,1]));
@@ -59,7 +59,7 @@ for iSun = 1:2
         end
 
         if iSun == 1
-            shiftBy = closest(t,secDay(T_ss.sunset(iDoy))/60/60) + round(numel(t)/2);
+            shiftBy = closest(t,secDay(Tss.sunset(iDoy))/60/60) + round(numel(t)/2);
         end
 
         subplot(2,2,prc(2,[iSun,2]));
@@ -113,52 +113,110 @@ rows = 2;
 cols = 4;
 subplot(rows,cols,[1 2 5 6]);
 lns = [];
+showHours = 8;
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
+sleepDurations_season = {};
 for iSeason = 1:4
     uniqueSqs = unique(trans_is);
-    transTimes = [];
+    sleepDurations = [];
     for iSq = uniqueSqs
         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason}));
+        if ~isempty(theseSleepTrans)
+            
+            % test light/dark transitions
+% % % %             theseDoys = trans_on(theseSleepTrans);
+% % % %             meanSunrise = mean(secDay(Tss.sunrise(theseDoys)));
+% % % %             meanSunset = mean(secDay(Tss.sunset(theseDoys)));
+% % % %             temp = [];
+% % % %             for ii = theseSleepTrans
+% % % %                 if trans_at(ii) > meanSunset || trans_at(ii) < meanSunrise
+% % % %                     temp = [temp ii];
+% % % %                 end
+% % % %             end
+% % % %             if isempty(temp)
+% % % %                 continue;
+% % % %             end
+% % % %             theseSleepTrans = temp;
+            
+            allEntries = find(trans_is==iSq);
+            % must end with awake transition to get time
+            if trans_to(allEntries(end)) == 0
+                theseSleepTrans = theseSleepTrans(1:end-1);
+            end
 
-        allEntries = find(trans_is==iSq);
-        % must end with awake transition to get time
-        if trans_to(allEntries(end)) == 0
-            theseSleepTrans = theseSleepTrans(1:end-1);
+            theseTransStart = trans_at(theseSleepTrans); % asleep
+            theseTransEnd = trans_at(theseSleepTrans+1); % awake
+            theseDurations = theseTransEnd - theseTransStart;
+            % fix transitions around next day (in seconds)
+            for ii = find(theseDurations < 0)
+                theseDurations(ii) = theseDurations(ii) + 86400;
+            end
+            sleepDurations = [sleepDurations theseDurations];
         end
-
-        theseTransStart = trans_at(theseSleepTrans); % asleep
-        theseTransEnd = trans_at(theseSleepTrans+1); % awake
-        theseTransTimes = theseTransEnd - theseTransStart;
-        % fix transitions around next day (in seconds)
-        for ii = find(theseTransTimes < 0)
-            theseTransTimes(ii) = theseTransTimes(ii) + 86400;
-        end
-        transTimes = [transTimes theseTransTimes];
     end
+    
     % uncomment for PDF
 %     [counts,edges] = histcounts(transTimes/3600,linspace(0,8,(8/24)*1440));
 %     plot(edges(1:end-1),normalize(smoothdata(counts,'gaussian',20),'range'),'color',colors(iSeason,:),'linewidth',2);
 %     hold on; 
     
     % uncomment for CDF
-    [Fout,x,Flo,Fup] = ecdf(transTimes/3600);
-    lns(iSeason) = plot(x,Fout,'color',colors(iSeason,:),'linewidth',lw1);
-    hold on;
-    plot(x,Flo,':','color',colors(iSeason,:),'linewidth',lw2);
-    plot(x,Fup,':','color',colors(iSeason,:),'linewidth',lw2);
+    sleepDurations_season{iSeason} = sleepDurations;
+    if ~isempty(sleepDurations)
+        [Fout,x,Flo,Fup] = ecdf(sleepDurations/3600);
+        lns(iSeason) = plot(x,Fout,'color',colors(iSeason,:),'linewidth',lw1);
+        hold on;
+        plot(x,Flo,':','color',colors(iSeason,:),'linewidth',lw2);
+        plot(x,Fup,':','color',colors(iSeason,:),'linewidth',lw2);
+    end
 end
-legend(lns,seasonLabels,'location','southeast');
-xlim([0 8]);
+
+xlim([0 showHours]);
 set(gca,'fontsize',16);
 xlabel('Asleep Length (hrs)');
-ylabel('%');
+ylabel('Probability');
 grid on;
 title('Asleep Periods');
+legend(lns,seasonLabels,'location','southeast','AutoUpdate','off');
+
+% do significance
+binEdges = linspace(0,86400,24+1);
+yText = flip(linspace(0.4,0.8,6));
+iCount = 0;
+fs = 12;
+lw = 2;
+pThresh = 0.001;
+sigColor = repmat(0.3,[1,3]);
+for ii = 1:4
+    [~,~,binii] = histcounts(sleepDurations_season{ii},binEdges);
+    for jj = ii+1:4
+        seasonCompare = sprintf('%s - %s\n',seasonLabels{ii},seasonLabels{jj});
+        disp(seasonCompare);
+        iCount = iCount + 1;
+        text(5,yText(iCount)-.021,seasonCompare,'horizontalalignment','left',...
+            'verticalalignment','middle','fontsize',fs,'color',sigColor);
+        
+        [~,~,binjj] = histcounts(sleepDurations_season{jj},binEdges);
+        for iBin = 1:numel(binEdges)-1
+            if sum(binii==iBin) > 1 && sum(binjj==iBin) > 1
+                x = [sleepDurations_season{ii}(binii==iBin),sleepDurations_season{jj}(binjj==iBin)];
+                group = [ones(1,sum(binii==iBin)),zeros(1,sum(binjj==iBin))];
+                p = anova1(x,group,'off');
+            end
+            if p < pThresh && ii ~= jj
+                ln = plot([binEdges(iBin)/3600,binEdges(iBin+1)/3600],repmat(yText(iCount),[1,2]),'-',...
+                    'linewidth',lw,'color',sigColor);
+                uistack(ln,'bottom');
+            end
+        end
+    end
+end
 
 % mast plots
 useSubplots = [3,4,7,8];
 for iSeason = 1:4
     lns = NaN(2,1);
+    sleepDurations_mast = {};
     for iMast = 1:2
         if iMast == 1
             useYears = [2015:2018,2020];
@@ -169,10 +227,25 @@ for iSeason = 1:4
         end
         subplot(rows,cols,useSubplots(iSeason));
         uniqueSqs = unique(trans_is);
-        transTimes = [];
+        sleepDurations = [];
         for iSq = uniqueSqs
             theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
                 ismember(trans_on,useDoys{iSeason}) & ismember(trans_yr,useYears));
+            
+            % test light/dark transitions
+% % % %             theseDoys = trans_on(theseSleepTrans);
+% % % %             meanSunrise = mean(secDay(Tss.sunrise(theseDoys)));
+% % % %             meanSunset = mean(secDay(Tss.sunset(theseDoys)));
+% % % %             temp = [];
+% % % %             for ii = theseSleepTrans
+% % % %                 if trans_at(ii) > meanSunset || trans_at(ii) < meanSunrise
+% % % %                     temp = [temp ii];
+% % % %                 end
+% % % %             end
+% % % %             if isempty(temp)
+% % % %                 continue;
+% % % %             end
+% % % %             theseSleepTrans = temp;
 
             allEntries = find(trans_is==iSq);
             % must end with awake transition to get time
@@ -182,33 +255,49 @@ for iSeason = 1:4
 
             theseTransStart = trans_at(theseSleepTrans); % asleep
             theseTransEnd = trans_at(theseSleepTrans+1); % awake
-            theseTransTimes = theseTransEnd - theseTransStart;
+            theseDurations = theseTransEnd - theseTransStart;
             % fix transitions around next day (in seconds)
-            for ii = find(theseTransTimes < 0)
-                theseTransTimes(ii) = theseTransTimes(ii) + 86400;
+            for ii = find(theseDurations < 0)
+                theseDurations(ii) = theseDurations(ii) + 86400;
             end
-            transTimes = [transTimes theseTransTimes];
+            sleepDurations = [sleepDurations theseDurations];
         end
         
-        if ~isempty(transTimes)
-            [Fout,x,Flo,Fup] = ecdf(transTimes/3600);
+        sleepDurations_mast{iMast} = sleepDurations;
+        if ~isempty(sleepDurations)
+            [Fout,x,Flo,Fup] = ecdf(sleepDurations/3600);
             lns(iMast) = plot(x,Fout,'color',[colors(iSeason,:),op],'linewidth',lw1);
             hold on;
             plot(x,Flo,':','color',[colors(iSeason,:),op],'linewidth',lw2);
             plot(x,Fup,':','color',[colors(iSeason,:),op],'linewidth',lw2);
         end
-        xlim([0 8]);
+        xlim([0 showHours]);
         set(gca,'fontsize',12);
         xlabel('Asleep Length (hrs)');
-        ylabel('%');
         grid on;
         title(seasonLabels{iSeason});
         if ~isnan(lns(1)) && ~isnan(lns(2))
-            legend(lns,{'Non-mast','Mast'},'location','southeast');
+            legend(lns,{'Non-mast','Mast'},'location','southeast','AutoUpdate','off');
         elseif ~isnan(lns(1))
-            legend(lns(1),{'Non-mast'},'location','southeast');
+            legend(lns(1),{'Non-mast'},'location','southeast','AutoUpdate','off');
         else
-            legend(lns(2),{'Mast'},'location','southeast');
+            legend(lns(2),{'Mast'},'location','southeast','AutoUpdate','off');
+        end
+    end
+    
+    % end of mast loop, do stats
+    [~,~,bin1] = histcounts(sleepDurations_mast{1},binEdges);
+    [~,~,bin2] = histcounts(sleepDurations_mast{2},binEdges);
+    for iBin = 1:numel(binEdges)-1
+        if sum(bin1==iBin) > 1 && sum(bin2==iBin) > 1
+            x = [sleepDurations_mast{1}(bin1==iBin),sleepDurations_mast{2}(bin2==iBin)];
+            group = [ones(1,sum(bin1==iBin)),zeros(1,sum(bin2==iBin))];
+            p = anova1(x,group,'off');
+            if p < pThresh
+                ln = plot([binEdges(iBin)/3600,binEdges(iBin+1)/3600],repmat(mean(yText),[1,2]),'-',...
+                    'linewidth',lw,'color',sigColor);
+                uistack(ln,'bottom');
+            end
         end
     end
 end
@@ -226,7 +315,7 @@ for iYear = 2014:2020
         useColor = 'k';
     end
     uniqueSqs = unique(trans_is);
-    transTimes = [];
+    sleepDurations = [];
     for iSq = uniqueSqs
         theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
             ismember(trans_on,useDoys{iSeason}) & trans_yr == iYear);
@@ -240,12 +329,12 @@ for iYear = 2014:2020
 
         theseTransStart = trans_at(theseSleepTrans); % asleep
         theseTransEnd = trans_at(theseSleepTrans+1); % awake
-        theseTransTimes = theseTransEnd - theseTransStart;
+        theseDurations = theseTransEnd - theseTransStart;
         % fix transitions around next day (in seconds)
-        for ii = find(theseTransTimes < 0)
-            theseTransTimes(ii) = theseTransTimes(ii) + 86400;
+        for ii = find(theseDurations < 0)
+            theseDurations(ii) = theseDurations(ii) + 86400;
         end
-        transTimes = [transTimes theseTransTimes];
+        sleepDurations = [sleepDurations theseDurations];
     end
     % uncomment for PDF
 %     [counts,edges] = histcounts(transTimes/3600,linspace(0,8,(8/24)*1440));
@@ -253,9 +342,9 @@ for iYear = 2014:2020
 %     hold on; 
     
     % uncomment for CDF
-    if ~isempty(transTimes)
+    if ~isempty(sleepDurations)
         legendLabels{numel(legendLabels)+1} = sprintf('%i, n = %i',iYear,nSq);
-        [Fout,x,Flo,Fup] = ecdf(transTimes/3600);
+        [Fout,x,Flo,Fup] = ecdf(sleepDurations/3600);
         lns(numel(lns)+1) = plot(x,Fout,'color',useColor,'linewidth',lw1);
         hold on;
         plot(x,Flo,':','color',useColor,'linewidth',lw2);

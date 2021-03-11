@@ -27,6 +27,11 @@ if do
             disp('not loading');
             continue;
         end
+
+% % % %         if strcmp(sqkey.sex{iSq},'M') == 1
+% % % %             continue;
+% % % %         end
+
         fprintf("%i/%i - %s\n",iSq,size(sqkey,1),sqkey.filename{iSq});
         T = detect_sleepWake2(T,60);
         Tawake = make_Tawake(T); % transition table

@@ -5,8 +5,8 @@ doPlot = false;
 % more useful
 % i.e. does it miss out on data, such that max is better?
 % max could suffer from 'twitches' the skew the data
-colors = jet(n);
 if doPlot
+    colors = jet(n);
     close all;
     ff(1200,900);
     subplot(211);
