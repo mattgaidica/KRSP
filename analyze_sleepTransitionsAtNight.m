@@ -5,6 +5,7 @@
 ssPath = '/Users/matt/Documents/Data/KRSP/SunriseSunset';
 files = dir(fullfile(ssPath,'*.txt'));
 Tss = readtable(fullfile(ssPath,files(4).name)); % 366 day year (simplify for now)
+months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
     
 close all
 ff(1300,900);
@@ -13,7 +14,7 @@ binEdges = linspace(1,86400,100); % rm 0 entries, are those subsequent animal en
 
 nHalfWindow = 30;
 allDoys = 1:366;
-colors = flip(mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',366));
+colors = seasonColors(unique(trans_on));
 op = 0.2;
 nS = 3;
 t = linspace(0,24,numel(binEdges)-1);
@@ -91,9 +92,8 @@ for iSun = 1:2
             plot([12 12],ylim,'k:');
             plot([36 36],ylim,'k:');
         end
-
-        drawnow;
     end
+    drawnow;
 end
 
 %% CDF plots

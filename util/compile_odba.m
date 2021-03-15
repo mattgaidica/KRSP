@@ -23,7 +23,6 @@ for iFile = 1:numel(files)
     end
     fprintf('%3.0f days recorded\n',days(dtData(end)-dtData(1)));
     
-    % UPDATE TO TAKE MEAN, NOT DECIMATE
     Fs = 1 / seconds(median(diff(dtData))); % 1 / period
     decimateBy = 60*Fs; % compress to 1 minute
     nRange = 1:decimateBy:size(inputTable,1);

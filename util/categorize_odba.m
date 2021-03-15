@@ -3,7 +3,7 @@ strFilts = {'Nest','Out'};
 files = dir(fullfile(filespath,['*',qualifier,'.csv'])); % only this dir
 % files = dir2(filespath,['*',qualifier,'.csv'],'-r');
 warning('off','all');
-nSmooth = 91; % from Studd 2019
+nSmooth = 91; % !! DEPENDS ON FS - from Studd 2019
 for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(readFile(end-60:end));
@@ -22,7 +22,9 @@ for iFile = 1:numel(files)
         inputTable.odba = abs(X-medfilt1(X,nSmooth))...
             + abs(Y-medfilt1(Y,nSmooth))...
             + abs(Z-medfilt1(Z,nSmooth));
-        if mean(inputTable.Var5) > 10
+        % when is this condition used?
+        tempDiff = max(inputTable.Var5) - min(inputTable.Var5);
+        if std(inputTable.Var5) > 2 && tempDiff > 5 && tempDiff < 90
             inputTable.temp = inputTable.Var5;
         elseif ismember('Var6',inputTable.Properties.VariableNames)
             inputTable.temp = inputTable.Var6;

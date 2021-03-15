@@ -1,24 +1,25 @@
-% !! set iSq manually
+%% main tool
 loadPath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 % sqkey = readtable('sqkey.txt');
 
 Tss = readtable('/Users/matt/Documents/Data/KRSP/SunriseSunset/ss_2016.txt');
 Tss_doys = day(Tss.sunrise,'dayofyear');
-%% main tool
+
 if false
+    % !! reset iSq = 0 to redo all
     close all
     while(iSq <= size(sqkey,1))
+        iSq = iSq + 1;
         if ~isempty(sqkey.filename{iSq})
             fprintf("Working on %s\n",sqkey.filename{iSq});
             load(fullfile(loadPath,sqkey.filename{iSq}));
         else
             fprintf("Skipping %s\n",sqkey.filename{iSq});
             sqkey.isValid(iSq) = false;
-            iSq = iSq + 1;
             continue;
         end
 
-        dayStart = find(round(secDay(T.datetime)/60) == 0,1,'first');
+        dayStart = find(round(secDay(T.datetime)/60) == min(secDay(T.datetime)),1,'first');
         theseOdba = [];
         theseOdba = T.odba(dayStart:end);
         theseOdba = [theseOdba;NaN(1440 - (numel(theseOdba) - 1440*(floor(numel(theseOdba)/1440))),1)];
@@ -47,28 +48,26 @@ if false
             break; % click margins
         end
         close(h);
-
-        iSq = iSq + 1;
     end
 
     % these were compiled from the script below, need to fix/review them, but
     % exclude for now
-    problemData = [84,85,88,179,181,190,194,197,199,247,294,348,357,366,417,418,534];
-    sqkey.isValid(problemData) = false;
+% %     problemData = [84,85,88,179,181,190,194,197,199,247,294,348,357,366,417,418,534];
+% %     sqkey.isValid(problemData) = false;
 
     % save sqkey!
-    writetable(sqkey,'sqkey.txt');
-    writetable(sqkey,'sqkey_isValid.txt');
+% %     writetable(sqkey,'sqkey.txt');
+% %     writetable(sqkey,'sqkey_isValid.txt');
 end
 %% check if day [sun ODBA] < [dark ODBA]
 if false
     close all
     for iSq = 1:size(sqkey,1)
-        if ~isempty(sqkey.filename{iSq}) & sqkey.filename{iSq}
+        if ~isempty(sqkey.filename{iSq})
             fprintf("Working on %s\n",sqkey.filename{iSq});
             load(fullfile(loadPath,sqkey.filename{iSq}));
 
-            dayStart = find(round(secDay(T.datetime)/60) == 0,1,'first');
+            dayStart = find(round(secDay(T.datetime)/60) == min(secDay(T.datetime)),1,'first');
             theseOdba = [];
             theseOdba = T.odba(dayStart:end);
             theseOdba = [theseOdba;NaN(1440 - (numel(theseOdba) - 1440*(floor(numel(theseOdba)/1440))),1)];
@@ -95,7 +94,7 @@ end
 
 %% shift data
 % add these to datetime (seconds)
-shift720 = [84,85,88,179,181,190,194,197,199,294,534];
+shift720 = [84,85,88,179,181,190,194,197,199,294,534,552];
 sqkey.shiftMin(shift720) = 720;
 sqkey.shiftMin(247) = 840;
 sqkey.shiftMin(348) = 440;
@@ -103,14 +102,15 @@ sqkey.shiftMin(357) = 380;
 sqkey.shiftMin(366) = 420;
 sqkey.shiftMin(417) = 500;
 sqkey.shiftMin(418) = 680;
+sqkey.shiftMin(545) = 320;
 
-problemData = [84,85,88,179,181,190,194,197,199,247,294,348,357,366,417,418,534];
+problemData = [84,85,88,179,181,190,194,197,199,247,294,348,357,366,417,418,534,545,552];
 sqkey.isValid(problemData) = 1;
 
-for iSq = shift720
+for iSq = 552
     load(fullfile(loadPath,sqkey.filename{iSq}));
     T.datetime = T.datetime + minutes(720); % TEST VALUES HERE
-    dayStart = find(round(secDay(T.datetime)/60) == 0,1,'first');
+    dayStart = find(round(secDay(T.datetime)/60) == min(secDay(T.datetime)),1,'first');
     theseOdba = [];
     theseOdba = T.odba(dayStart:end);
     theseOdba = [theseOdba;NaN(1440 - (numel(theseOdba) - 1440*(floor(numel(theseOdba)/1440))),1)];

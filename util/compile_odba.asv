@@ -1,6 +1,7 @@
-function compile_odba(filespath)
+function compile_odba(filespath,qualifier)
+
 warning('off','all');
-files = dir2(filespath,'*.csv','-r');
+files = dir2(filespath,['*',qualifier,'.csv'],'-r');
 for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(['working on: ...',readFile(end-40:end)]);
@@ -26,11 +27,16 @@ for iFile = 1:numel(files)
     decimateBy = 60*Fs; % compress to 1 minute
     nRange = 1:decimateBy:size(inputTable,1);
     T.datetime = dtData(nRange);
-    T.odba = inputTable.odba(nRange);
-    T.temp = inputTable.tempC(nRange);
-    T.nest = inputTable.Nest2(nRange);
-    odba_max = movmax(T.odba,120*Fs); % 2min max 
-    T.odba
+    meanOdba = movmean(inputTable.odba,decimateBy); % first make moving mean
+    T.odba = meanOdba(nRange); % then decimate
+    T.odba_mean = inputTable.odba(nRange); % then decimate
+    odba_max = movmax(inputTable.odba,decimateBy);
+    T.odba_max = odba_max(nRange);
+    
+    if ismember('tempC',inputTable.Properties.VariableNames)
+        T.temp = inputTable.tempC(nRange);
+        T.nest = inputTable.Nest2(nRange);
+    end
     
     Tstat = table;
     nId = strcmp(inputTable.Nest2,'Nest');
