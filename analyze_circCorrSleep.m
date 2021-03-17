@@ -93,7 +93,7 @@ for iSun = 1:2
 
     subplot(2,2,prc(2,[iSun,1]));
     polarTime = linspace(0,2*pi,size(theseAsleep,2));
-    colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',366);
+    colors = seasonColors(1:366);
     modR = 0;
     for iDoy = circshift(1:366,0) % for color overlay
         polarplot(polarTime,theseAsleep(iDoy,:),'color',[colors(iDoy,:),op],'linewidth',2);

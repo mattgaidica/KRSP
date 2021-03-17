@@ -53,7 +53,9 @@ if do
             disp(sqkey.filename{iSq});
             load(fullfile(filePath,sqkey.filename{iSq})); % T, Tstat
             if sqkey.isValid(iSq)
-                T = detect_sleepWake2(T,60);
+                T.datetime = T.datetime + minutes(sqkey.shiftMin(iSq));
+                dls = Tss.day_length(day(T.datetime,'dayofyear')) / 60; % min
+                T = detect_sleepWake2(T,dls);
                 dtdoys = day(T.datetime,'dayofyear');
                 undoys = unique(dtdoys);
                 squirrelId = squirrelId + 1;

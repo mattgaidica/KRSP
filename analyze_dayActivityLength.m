@@ -13,7 +13,7 @@ T_ss = readtable(fullfile(ssPath,files(4).name)); % 366 day year (simplify for n
 %% What is the relationship between day length and activity?
 % hypothesis: no correlation, activity per unit sunlight is equal across all doys
 
-cmap_season = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',366);
+cmap_season = seasonColors(1:366);
 dayOdba = [];
 nightOdba = [];
 colors_season = [];
@@ -104,7 +104,7 @@ hold on;
 title('');
 
 subplot(rows,cols,[rows*cols-1 rows*cols]);
-imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png'),[24*3,366],'nearest'));
+imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png'),[24*3,366],'nearest'));
 hold on;
 plot(1:366,(T_ss.day_length./60/60)*3,'w-','linewidth',2);
 axis on;
@@ -186,7 +186,7 @@ hold on;
 title('');
 
 subplot(rows,cols,[rows*cols-1 rows*cols]);
-imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png'),[24*3,366],'nearest'));
+imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png'),[24*3,366],'nearest'));
 hold on;
 plot(1:366,(T_ss.day_length./60/60)*3,'w-','linewidth',2);
 axis on;
@@ -275,7 +275,7 @@ title('');
 % % title('Night');
 
 subplot(rows,cols,[rows*cols-1 rows*cols]);
-imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png'),[24*3,366],'nearest'));
+imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png'),[24*3,366],'nearest'));
 hold on;
 plot(1:366,(T_ss.day_length./60/60)*3,'w-','linewidth',2);
 axis on;
@@ -369,7 +369,7 @@ title('');
 % % title('Night');
 
 subplot(rows,cols,[rows*cols-1 rows*cols]);
-imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png'),[24*3,366],'nearest'));
+imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png'),[24*3,366],'nearest'));
 hold on;
 plot(1:366,(T_ss.day_length./60/60)*3,'w-','linewidth',2);
 axis on;
@@ -399,7 +399,7 @@ set(gca,'fontsize',22);
 title('');
 
 subplot(2,cols,[2*cols-1 2*cols]);
-imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png'),[24*3,366],'nearest'));
+imshow(imresize(imread('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png'),[24*3,366],'nearest'));
 hold on;
 plot(1:366,(T_ss.day_length./60/60)*3,'w-','linewidth',2);
 axis on;

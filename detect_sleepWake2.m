@@ -1,6 +1,14 @@
-function [T,W_z] = detect_sleepWake2(T,n)
+function [T,W_z] = detect_sleepWake2(T,dls)
+% dls is array of daylight seconds
+% ex: dls = Tss.day_length(day(T.datetime,'dayofyear')) / 60; % min
+if numel(dls) == 1
+    error('use DLS version');
+end
 doPlot = false;
+baseSec = 1440;
+n = baseSec / 24;
 
+dlsMinBlock = min([dls,baseSec-dls],[],2);
 % is T.odba the mean for 60s or a decimated snapshot? !!it should do mean,
 % more useful
 % i.e. does it miss out on data, such that max is better?
@@ -11,7 +19,8 @@ if doPlot
     ff(1200,900);
     subplot(211);
     plot(T.odba,'k');
-    xlim([1 3500]);
+    xlim([1 numel(T.odba)]);
+%     xlim([1 3500]);
     ylim([0 12]);
     ylabel('\DeltaOA');
     xlabel('Time (min)');
@@ -19,10 +28,17 @@ if doPlot
     hold on;
 end
 W = zeros(size(T.odba));
-for ii = 1:n
-    W = W + smoothdata(T.odba,'loess',1440/ii);
+for iFilt = 1:n
+%     disp(iFilt);
+    filtFactor = 1440/iFilt;
+    % this dynamically weighs the addition of the filter based on dls
+    % *2 because dlsMinBlock is only half a 'cycle'
+    thisSmooth = smoothdata(dlsMinBlock*2 >= filtFactor,'gaussian',baseSec/2)...
+        .* smoothdata(T.odba,'loess',filtFactor);
+    % must normalize or else 
+    W = W + normalize(thisSmooth,'range',[0 1]);
     if doPlot
-        plot(W,'color',colors(ii,:));
+        plot(W,'color',colors(iFilt,:));
     end
 end
 W_norm = normalize(W,'zscore'); % use this to estimate where sleep exists
@@ -36,13 +52,14 @@ if doPlot
     plot(xlim,[0,0],':k');
     hold on;
     plot(W_z,'k-','linewidth',1);
+    plot(sign(W_z)+mean(ylim),'k-'); % binary sleep est
 %     ylim([-1 3]);
     ylabel('homeograph Z-score');
     set(gca,'ycolor','k');
     subplot(212);
-    histogram(T.odba(W_norm < 0),100);
+    histogram(T.odba(W_norm < 0),50);
     hold on;
-    histogram(T.odba(W_norm >= 0),100);
+    histogram(T.odba(W_norm >= 0),50);
     legend({'night ODBAs','day ODBAs'});
 end
 

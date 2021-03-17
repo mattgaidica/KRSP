@@ -19,7 +19,9 @@ if do
         end
         fprintf("%i/%i - %s\n",iSq,size(sqkey,1),sqkey.filename{iSq});
         iCount = iCount + 1;
-        T = detect_sleepWake2(T,60);
+        T.datetime = T.datetime + minutes(sqkey.shiftMin(iSq));
+        dls = Tss.day_length(day(T.datetime,'dayofyear')) / 60; % min
+        T = detect_sleepWake2(T,dls);
         
         T.nest_bin = strcmp(T.nest,'Nest');
         overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
@@ -56,7 +58,7 @@ ff(800,400);
 subplot(121);
 op = 0.075;
 useIds = [2,3,1,4,2];
-colors = flip(mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons.png',5));
+colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
 lns = [];
 for ii = 1:size(overlapStats,1)

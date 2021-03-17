@@ -3,7 +3,6 @@ strFilts = {'Nest','Out'};
 files = dir(fullfile(filespath,['*',qualifier,'.csv'])); % only this dir
 % files = dir2(filespath,['*',qualifier,'.csv'],'-r');
 warning('off','all');
-nSmooth = 91; % !! DEPENDS ON FS - from Studd 2019
 for iFile = 1:numel(files)
     readFile = fullfile(filespath,files(iFile).name);
     disp(readFile(end-60:end));
@@ -19,6 +18,18 @@ for iFile = 1:numel(files)
         X = inputTable.Var2;
         Y = inputTable.Var3;
         Z = inputTable.Var4;
+        
+        % Wilson 2006 uses running mean, here we use median (see medfilt1 below)
+        if isa(A.Var1(1),'datetime')
+            dtData = datetime(A.Var1,'InputFormat','dd-MM-yyyy HH:mm:ss.00000');
+            Fs = 1 / seconds(median(diff(dtData))); % 1 / period
+        else
+            disp('!! did not detect date as Var1');
+            Fs = 1;
+        end
+        % handle possible 10Hz condition
+        nSmooth = 60 * Fs; % !! note: 91 was used in Studd 2019 at 1Hz, changed 20210315-Matt
+        
         inputTable.odba = abs(X-medfilt1(X,nSmooth))...
             + abs(Y-medfilt1(Y,nSmooth))...
             + abs(Z-medfilt1(Z,nSmooth));
@@ -43,7 +54,7 @@ for iFile = 1:numel(files)
     for nId = 1:numel(nearestDayIds)-1
         nRange = nearestDayIds(nId):nearestDayIds(nId+1);
         thisData = inputTable.temp(nRange);
-        idx = kmeans(thisData,2); % 1==in, 2==out !! HOW do I know?
+        idx = kmeans(thisData,2); % 1==in, 2==out
         if mean(thisData(idx==1)) > mean(thisData(idx==2))
             outputTable.Nest2(nRange(idx==1)) = strFilts(1);
             outputTable.Nest2(nRange(idx==2)) = strFilts(2);

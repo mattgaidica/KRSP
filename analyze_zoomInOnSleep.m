@@ -19,6 +19,19 @@ for iRow = awakeIdx'
     end
 end
 
+%% continuous measure on A
+x_movMean = movmean(A.Var2,60);
+x_grad = gradient(A.Var2);
+x_cumsum = cumsum(x_grad) - x_movMean;
+x_cumsum_abs = cumsum(abs(x_grad)) - x_movMean;
+
+close all
+ff(1200,600);
+plot(A.Var2);
+hold on;
+plot(x_cumsum);
+yyaxis right;
+plot(x_cumsum);
 %% simulate axy
 t = linspace(0,2*pi,1000);
 sig1 = sin(t);

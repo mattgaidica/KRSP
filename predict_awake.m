@@ -28,14 +28,15 @@ if do
             continue;
         end
 
-% % % %         if strcmp(sqkey.sex{iSq},'M') == 1
-% % % %             continue;
-% % % %         end
-
         fprintf("%i/%i - %s\n",iSq,size(sqkey,1),sqkey.filename{iSq});
-        T = detect_sleepWake2(T,60);
+        T.datetime = T.datetime + minutes(sqkey.shiftMin(iSq));
+        dls = Tss.day_length(day(T.datetime,'dayofyear')) / 60; % min
+        T = detect_sleepWake2(T,dls);
         Tawake = make_Tawake(T); % transition table
         
+% %         if strcmp(sqkey.sex{iSq},'M') == 1
+% %             continue;
+% %         end
 % %         if ~ismember(year(Tawake.datetime(1)),[2014,2019])
 % %             continue;
 % %         end
