@@ -4,7 +4,7 @@ function [T,W_z] = detect_sleepWake2(T,dls)
 if numel(dls) == 1
     error('use DLS version');
 end
-doPlot = false;
+doPlot = true;
 baseSec = 1440;
 n = baseSec / 24;
 
@@ -14,7 +14,7 @@ dlsMinBlock = min([dls,baseSec-dls],[],2);
 % i.e. does it miss out on data, such that max is better?
 % max could suffer from 'twitches' the skew the data
 if doPlot
-    colors = jet(n);
+    colors = magma(n);
     close all;
     ff(1200,900);
     subplot(211);
@@ -24,7 +24,7 @@ if doPlot
     ylim([0 12]);
     ylabel('\DeltaOA');
     xlabel('Time (min)');
-    set(gca,'fontsize',14);
+    set(gca,'fontsize',16);
     hold on;
 end
 W = zeros(size(T.odba));
@@ -54,7 +54,7 @@ if doPlot
     plot(W_z,'k-','linewidth',1);
     plot(sign(W_z)+mean(ylim),'k-'); % binary sleep est
 %     ylim([-1 3]);
-    ylabel('homeograph Z-score');
+    ylabel('Homeograph (H)');
     set(gca,'ycolor','k');
     subplot(212);
     histogram(T.odba(W_norm < 0),50);

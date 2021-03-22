@@ -4,7 +4,7 @@ function workon(openArr)
     % (open) >> workon([2,3,6,14])
     % (open) >> workon(1:7)
     
-    limitTo = 15; % # of files
+    limitTo = 30; % # of files
     
     listing = dir('**/*.m');
     [~,idx] = sort([listing.datenum],'descend');
