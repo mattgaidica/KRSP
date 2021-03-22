@@ -196,11 +196,19 @@ if isfinite(p.Results.dot_size)
     else
         cmap = feval(p.Results.colormap,length(ux));
     end
+    % !! if cmap for i == NaN, plot invisible entries and skip overlay
     for i=1:length(ux)
         if isempty(p.Results.MarkerFaceColor')
-            scatter(x(ic==i),y(ic==i),p.Results.dot_size*36,'filled','MarkerFaceAlpha',p.Results.MarkerFaceAlpha,'MarkerEdgeColor',p.Results.MarkerEdgeColor,'MarkerFaceColor',cmap(i,:))
+            if any(isnan(cmap(i,:)))
+                scatter(x(ic==i),y(ic==i),p.Results.dot_size*36,'filled','MarkerFaceAlpha',0,'MarkerEdgeColor','none')
+            else
+                scatter(x(ic==i),y(ic==i),p.Results.dot_size*36,'filled','MarkerFaceAlpha',p.Results.MarkerFaceAlpha,'MarkerEdgeColor',p.Results.MarkerEdgeColor,'MarkerFaceColor',cmap(i,:))
+            end
         else
             scatter(x(ic==i),y(ic==i),p.Results.dot_size*36,'filled','MarkerFaceAlpha',p.Results.MarkerFaceAlpha,'MarkerEdgeColor',p.Results.MarkerEdgeColor,'MarkerFaceColor',p.Results.MarkerFaceColor)
+        end
+        if any(isnan(cmap(i,:)))
+            continue;
         end
         hold on
         iqr = prctile(yorig(ic==i),[25 75]);

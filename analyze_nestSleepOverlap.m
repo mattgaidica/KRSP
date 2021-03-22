@@ -1,55 +1,4 @@
-filespath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
-if do
-    files = dir(fullfile(filespath,'*.mat'));
-    overlapStats = [];
-    iCount = 0;
-    mean_doys = [];
-    sq_inNestMin = [];
-    sq_asleepMin = [];
-    for iSq = 1:size(sqkey,1)
-        if ~isempty(sqkey.filename{iSq})
-            load(fullfile(loadPath,sqkey.filename{iSq}));
-            if ~sqkey.isValid(iSq) || ~isValidT(T,true) % check temp
-                disp('invalid');
-                continue;
-            end
-        else
-            disp('not loading');
-            continue;
-        end
-        fprintf("%i/%i - %s\n",iSq,size(sqkey,1),sqkey.filename{iSq});
-        iCount = iCount + 1;
-        T.datetime = T.datetime + minutes(sqkey.shiftMin(iSq));
-        dls = Tss.day_length(day(T.datetime,'dayofyear')) / 60; % min
-        T = detect_sleepWake2(T,dls);
-        
-        T.nest_bin = strcmp(T.nest,'Nest');
-        overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
-        overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
-        overlapStats(iCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
-        overlapStats(iCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
-        mean_doys(iCount) = mean(unique(day(T.datetime,'dayofyear')));
-        sq_inNestMin(iCount) = sum(T.nest_bin) ./ size(T,1);
-        sq_asleepMin(iCount) = sum(T.asleep) ./ size(T,1);
-    end
-    do = false;
-end
-
-if false
-    bee_stats = overlapStats(:);
-    bee_cats = repmat(1:4,[size(bee_stats,1)/4,1]);
-    bee_cats = bee_cats(:);
-    catLabels = {'In & Awake','In & Asleep','Out & Awake','Out & Asleep'};
-    
-    close all
-    ff(500,500);
-    beeswarm(bee_cats,bee_stats,'corral_style','omit','overlay_style','sd');
-    axis tight
-    xticks([1:4]);
-    xticklabels(catLabels);
-    ylabel('frac. of time');
-end
-
+% setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
 close all
 % statsMult = [1 -1;-1 1;1 1;-1 -1];
 statsMult = [0 -1;0 1;1 0;-1 0];
@@ -126,9 +75,10 @@ lns(3) = plot(xlim,[ci(1,1)*min(xlim)+ci(1,2),ci(1,1)*max(xlim)+ci(1,2)],'k:');
 plot(xlim,[ci(2,1)*min(xlim)+ci(2,2),ci(2,1)*max(xlim)+ci(2,2)],'k:');
 
 [r,p] = corr(sq_inNestMin'*24,sq_asleepMin'*24);
-title(sprintf('r = %1.2f, p = %1.2e',r,p));
+title('Asleep vs. In Nest');
 xlabel('In Nest (hrs/day)');
 ylabel('Asleep (hrs/day)');
 grid on;
 set(gca,'fontsize',16);
 legend(lns,{'Squirrel Mean','Linear Fit','95% Confidence'},'location','northwest');
+text(12,3,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center');

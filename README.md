@@ -36,3 +36,13 @@ The squirrel key places squirrel meta data together and associates them with a f
 1. Run `build_sqkey.m`
 2. Review `axySelect_simple.m` for adjusting days with apparent offset.
 3. Run `view_allSqkey.m`
+
+Note: Loading T-structs from folder is not good. Use this code:
+
+	Tss_all = []; % do this above loop
+	for iSq = 1:size(sqkey,1)
+		[T,Tss_all] = loadTStruct(iSq,sqkey,Tss_all);
+		if isempty(T)
+			continue;
+		end
+	end

@@ -5,9 +5,7 @@
 
 %% this is all the transitions (x-y plot) for all seasons
 % sunrise/set centered on top, solar noon on bottom
-ssPath = '/Users/matt/Documents/Data/KRSP/SunriseSunset';
-files = dir(fullfile(ssPath,'*.txt'));
-Tss = readtable(fullfile(ssPath,files(4).name)); % 366 day year (simplify for now)
+Tss = makeTss(2014:2020);
 months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 
 close all
@@ -22,14 +20,15 @@ op = 0.2;
 nS = 3;
 t = linspace(0,24,numel(binEdges)-1);
 
+useylim = 0.03;
 for iSun = 1:2
     for iDoy = 1:366
         shiftDoys = circshift(allDoys,-iDoy+1+nHalfWindow);
         useDoys = shiftDoys(1:nHalfWindow*2+1);
-
-        shiftBy = closest(t,secDay(Tss.solar_noon(iDoy))/60/60) + round(numel(t)/2);
+        % just use 2016, or take mean?
+        shiftBy = closest(t,mean(secDay(Tss.noon(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);
         if iSun == 1
-            shiftBy = closest(t,secDay(Tss.sunrise(iDoy))/60/60) + round(numel(t)/2);
+            shiftBy = closest(t,mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);
         end
 
         subplot(2,2,prc(2,[iSun,1]));
@@ -40,7 +39,7 @@ for iSun = 1:2
         if iDoy == 1
             title('transition to awake');
             xlim([0 24]);
-            ylim([0 0.035]);
+            ylim([0 useylim]);
             ylabel('probability')
             if iSun == 1
                 xlabel('hours relative to sunrise');
@@ -63,7 +62,7 @@ for iSun = 1:2
         end
 
         if iSun == 1
-            shiftBy = closest(t,secDay(Tss.sunset(iDoy))/60/60) + round(numel(t)/2);
+            shiftBy = closest(t,mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);
         end
 
         subplot(2,2,prc(2,[iSun,2]));
@@ -74,7 +73,7 @@ for iSun = 1:2
         if iDoy == 1
             title('transition to sleep');
             xlim([0 24]);
-            ylim([0 0.035]);
+            ylim([0 useylim]);
             xticks(0:6:24);
             xticklabels({'±12','-6','0','+6','±12'});
             ylabel('probability');
@@ -100,12 +99,13 @@ for iSun = 1:2
 end
 
 %% CDF plots
+colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
+
 sIds = round(linspace(1,366,5));
 seasonDoys = circshift(1:366,57); % centers at 171, so light is equal
 % seasonDoys = circshift(1:366,57-21); % centers at 192, so temp is equal
 useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
-colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
 % main plot
 close all
@@ -175,8 +175,30 @@ for iSeason = 1:4
         plot(x,Fup,':','color',colors(iSeason,:),'linewidth',lw2);
     end
 end
-% if p < 0.05 dist. are different
-[h,p] = kstest2(sleepDurations_season{3},sleepDurations_season{2});
+
+% do stats
+ylab = flip(linspace(0.4,0.8,6));
+statCount = 0;
+fs = 12;
+statColor = repmat(0.5,[1,4]);
+for ii = 1:4
+    for jj = ii+1:4
+        % if p < 0.05 dist. are different
+        [h,p] = kstest2(sleepDurations_season{ii},sleepDurations_season{jj});
+        sigStr = '';
+        if p < 0.05 && p >= 0.01
+            sigStr = '*';
+        elseif p < 0.01 && p >= 0.001
+            sigStr = '**';
+        elseif p < 0.001
+            sigStr = '***';
+        end
+        statCount = statCount + 1;
+        text(4,ylab(statCount),sprintf('%s-%s %sp = %1.2e',seasonLabels{ii}(1:3),...
+            seasonLabels{jj}(1:3),sigStr,p),'fontsize',fs,'color',statColor);
+    end
+end
+
 
 xlim([0 showHours]);
 set(gca,'fontsize',16);
@@ -186,39 +208,6 @@ grid on;
 title('Asleep Periods');
 legend(lns,seasonLabels,'location','southeast','AutoUpdate','off');
 
-% do significance
-binEdges = linspace(0,1440,24+1);
-yText = flip(linspace(0.4,0.8,6));
-iCount = 0;
-fs = 12;
-lw = 2;
-pThresh = 0.05;
-sigColor = repmat(0.3,[1,3]);
-for ii = 1:4
-    [~,~,binii] = histcounts(sleepDurations_season{ii},binEdges);
-    for jj = ii+1:4
-        seasonCompare = sprintf('%s - %s\n',seasonLabels{ii},seasonLabels{jj});
-        disp(seasonCompare);
-        iCount = iCount + 1;
-        text(5,yText(iCount)-.021,seasonCompare,'horizontalalignment','left',...
-            'verticalalignment','middle','fontsize',fs,'color',sigColor);
-        
-        [~,~,binjj] = histcounts(sleepDurations_season{jj},binEdges);
-        for thisBin = 1:numel(binEdges)-1
-            if sum(binii==thisBin) > 1 && sum(binjj==thisBin) > 1
-                x = [sleepDurations_season{ii}(binii==thisBin),sleepDurations_season{jj}(binjj==thisBin)];
-                group = [zeros(1,sum(binii==thisBin)),ones(1,sum(binjj==thisBin))];
-                p = anova1(x,group,'off');
-            end
-            if p < pThresh && ii ~= jj
-                ln = plot([binEdges(thisBin)/3600,binEdges(thisBin+1)/3600],repmat(yText(iCount),[1,2]),'-',...
-                    'linewidth',lw,'color',sigColor);
-                uistack(ln,'bottom');
-            end
-        end
-    end
-end
-
 % mast plots
 useSubplots = [3,4,7,8];
 for iSeason = 1:4
@@ -226,7 +215,7 @@ for iSeason = 1:4
     sleepDurations_mast = {};
     for iMast = 1:2
         if iMast == 1
-            useYears = [2015:2018,2020];
+            useYears = [2015:2020];
             op = 1;
         else
             useYears = [2014,2019];
@@ -292,24 +281,30 @@ for iSeason = 1:4
         end
     end
     
-    % end of mast loop, do stats
-    [~,~,bin1] = histcounts(sleepDurations_mast{1},binEdges);
-    [~,~,bin2] = histcounts(sleepDurations_mast{2},binEdges);
-    for thisBin = 1:numel(binEdges)-1
-        if sum(bin1==thisBin) > 1 && sum(bin2==thisBin) > 1
-            x = [sleepDurations_mast{1}(bin1==thisBin),sleepDurations_mast{2}(bin2==thisBin)];
-            group = [ones(1,sum(bin1==thisBin)),zeros(1,sum(bin2==thisBin))];
-            p = anova1(x,group,'off');
-            if p < pThresh
-                ln = plot([binEdges(thisBin)/3600,binEdges(thisBin+1)/3600],repmat(mean(yText),[1,2]),'-',...
-                    'linewidth',lw,'color',sigColor);
-                uistack(ln,'bottom');
-            end
+    if ~isempty(sleepDurations_mast{1}) && ~isempty(sleepDurations_mast{2})
+        [h,p] = kstest2(sleepDurations_mast{1},sleepDurations_mast{2});
+        sigStr = '';
+        if p < 0.05 && p >= 0.01
+            sigStr = '*';
+        elseif p < 0.01 && p >= 0.001
+            sigStr = '**';
+        elseif p < 0.001
+            sigStr = '***';
         end
+            
+        text(2,mean(ylab),sprintf('%sp = %1.2e',sigStr,p),'fontsize',fs,'color',statColor);
+    else
+        text(2,mean(ylab),'no data','fontsize',fs,'color',statColor);
     end
 end
 
 %% test each year
+sIds = round(linspace(1,366,5));
+seasonDoys = circshift(1:366,57); % centers at 171, so light is equal
+% seasonDoys = circshift(1:366,57-21); % centers at 192, so temp is equal
+useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
+    seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
+
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
 close all
 ff(1200,900);
@@ -369,20 +364,3 @@ for iSeason = 1:4
     grid on;
     title(sprintf('Asleep Periods, %s',seasonLabels{iSeason}));
 end
-
-
-%%
-
-% pd = fitdist(transTimes','Lognormal');
-% [m,v] = lognstat(pd.mu,pd.sigma);
-% [p,pLo,pUp] = logncdf(transTimes,pd.mu,pd.sigma,pd.ParameterCovariance);
-% 
-% plot(sort(transTimes),sort(p),'k-');
-% hold on;
-% plot(sort(transTimes),sort(pLo),'k:');
-% plot(sort(transTimes),sort(pUp),'k:');
-% 
-% [f,x,flo,fup] = ecdf(transTimes);
-% plot(x,f,'b');
-% plot(x,flo,'b:');
-% plot(x,fup,'b:');
