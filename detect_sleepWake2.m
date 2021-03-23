@@ -26,6 +26,7 @@ if doPlot
     xlabel('Time (min)');
     set(gca,'fontsize',16);
     hold on;
+    title(sprintf('%s - %s',datestr(T.datetime(1),'mmm dd YYYY'),datestr(T.datetime(end),'mmm dd YYYY')));
 end
 W = zeros(size(T.odba));
 for iFilt = 1:n
@@ -56,11 +57,15 @@ if doPlot
 %     ylim([-1 3]);
     ylabel('Homeograph (H)');
     set(gca,'ycolor','k');
+    
     subplot(212);
-    histogram(T.odba(W_norm < 0),50);
+    histogram(T.odba(W_norm < 0),linspace(0,2,50));
     hold on;
-    histogram(T.odba(W_norm >= 0),50);
-    legend({'night ODBAs','day ODBAs'});
+    histogram(T.odba(W_norm >= 0),linspace(0,2,50));
+    legend({'night \DeltaOA','day \DeltaOA'});
+    xlabel('\DeltaOA');
+    ylabel('count');
+    set(gca,'fontsize',16);
 end
 
 W_bin = zeros(numel(T.odba),1);

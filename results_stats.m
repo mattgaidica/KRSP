@@ -231,7 +231,7 @@ sleepTransDarkness{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
 Tstats = table(dayLength',sleepPerDay',sleepDaylight',sleepDarkness',sleepTrans',sleepTransDaylight',sleepTransDarkness',...
     'VariableNames',rowNames,'RowNames',varNames);
 Tstats = rows2vars(Tstats);
-writetable(Tstats,'Tstats.xlsx');
+writetable(Tstats,'Tstats_mast.xlsx');
 
 %% what best correlates with ODBA?
 close all

@@ -129,6 +129,9 @@ if do
             nightDoys = theseDoys(secDay(T.datetime(theseDoys)) < sunrise | secDay(T.datetime(theseDoys)) > sunset);
             [Y,M,D] = datevec(T.datetime(theseDoys(1)));
             useId = find(weather.Date == datetime(Y,M,D));
+% %             if ~ismember(Y,[2014,2019])
+% %                 continue;
+% %             end
             if numel(theseDoys) == 1440 && ~isempty(useId) && ~isnan(weather.Mean_Temp(useId))
                 y_weather = [y_weather weather.Mean_Temp(useId)];
                 y_dayLength = [y_dayLength mean(Tss.day_length(Tss.doy == undoys(iDoy)),1)];
