@@ -139,16 +139,16 @@ for iSeason = 1:4
         mast_xs(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),'off');
     if p < 0.05
         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'k-','linewidth',3);
-        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('***%1.2e',p),...
-            'horizontalalignment','center','verticalalignment','bottom','fontsize',12);
+        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('***p = %1.2e',p),...
+            'horizontalalignment','center','verticalalignment','bottom','fontsize',11);
     elseif p > 0.99 % winter mast
         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'color',repmat(0.75,[1,3]),'linewidth',3);
         text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,'N/A',...
-            'horizontalalignment','center','verticalalignment','bottom','fontsize',12,'color',repmat(0.75,[1,3]));
+            'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
     else
         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'color',repmat(0.75,[1,3]),'linewidth',3);
-        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('%1.2e',p),...
-            'horizontalalignment','center','verticalalignment','bottom','fontsize',12,'color',repmat(0.75,[1,3]));
+        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('p = %1.2e',p),...
+            'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
     end
 end
 title('Rhythmicity Index Mast vs. Non-mast Years');

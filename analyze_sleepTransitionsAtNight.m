@@ -161,8 +161,8 @@ for iSeason = 1:4
     end
     
     % uncomment for PDF
-%     [counts,edges] = histcounts(sleepDurations/3600,linspace(0,8,(8/24)*1440));
-%     plot(edges(1:end-1),normalize(smoothdata(counts,'gaussian',20),'range'),'color',colors(iSeason,:),'linewidth',2);
+%     [counts,edges] = histcounts(sleepDurations/60,linspace(0,8,(8/24)*1440));
+%     plot(edges(1:end-1),normalize(smoothdata(counts,'gaussian',5),'range'),'color',colors(iSeason,:),'linewidth',2);
 %     hold on; 
     
     % uncomment for CDF
@@ -306,6 +306,8 @@ useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
 
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
+lw1 = 3;
+lw2 = 1;
 close all
 ff(1200,900);
 % iSeason = 4;
