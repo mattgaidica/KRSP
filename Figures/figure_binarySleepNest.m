@@ -27,7 +27,7 @@ xlabel('hour of day');
 yyaxis left;
 yticks([-2.5,-1.75,-1.25,-.5,0:2:10]);
 yticklabels({'Out Nest','In Nest','Asleep','Awake',0,2,4,6,8,10});
-ylabel('\DeltaOA (g)');
+ylabel('OA (g)');
 
 yyaxis right;
 yticks(14:2:30);

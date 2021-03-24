@@ -4,7 +4,7 @@ function [T,W_z] = detect_sleepWake2(T,dls)
 if numel(dls) == 1
     error('use DLS version');
 end
-doPlot = false;
+doPlot = true;
 baseSec = 1440;
 n = baseSec / 24;
 
@@ -16,13 +16,13 @@ dlsMinBlock = min([dls,baseSec-dls],[],2);
 if doPlot
     colors = magma(n);
     close all;
-    ff(1200,900);
+    ff(900,900);
     subplot(211);
     plot(T.odba,'k');
     xlim([1 numel(T.odba)]);
 %     xlim([1 3500]);
     ylim([0 12]);
-    ylabel('\DeltaOA');
+    ylabel('OA');
     xlabel('Time (min)');
     set(gca,'fontsize',16);
     hold on;
@@ -62,8 +62,8 @@ if doPlot
     histogram(T.odba(W_norm < 0),linspace(0,2,50));
     hold on;
     histogram(T.odba(W_norm >= 0),linspace(0,2,50));
-    legend({'night \DeltaOA','day \DeltaOA'});
-    xlabel('\DeltaOA');
+    legend({'night OA','day OA'});
+    xlabel('OA');
     ylabel('count');
     set(gca,'fontsize',16);
 end

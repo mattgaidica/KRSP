@@ -103,15 +103,19 @@ if do
         end
         
         % /Users/matt/Documents/MATLAB/KRSP/analyze_nestSleepOverlap.m
-        iCount = iCount + 1;
         T.nest_bin = strcmp(T.nest,'Nest');
-        overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
-        overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
-        overlapStats(iCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
-        overlapStats(iCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
-        mean_doys(iCount) = mean(unique(day(T.datetime,'dayofyear')));
-        sq_inNestMin(iCount) = sum(T.nest_bin) ./ size(T,1);
-        sq_asleepMin(iCount) = sum(T.asleep) ./ size(T,1);
+        thisNestMin = sum(T.nest_bin) ./ size(T,1); % fraction of day
+        if thisNestMin*24 > 1 && isValidT(T,true)% must be in nest for at least an hour
+            iCount = iCount + 1;
+            sq_inNestMin(iCount) = thisNestMin;
+            sq_asleepMin(iCount) = sum(T.asleep) ./ size(T,1);
+
+            overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
+            overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
+            overlapStats(iCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
+            overlapStats(iCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
+            mean_doys(iCount) = mean(unique(day(T.datetime,'dayofyear')));
+        end
 
         % /Users/matt/Documents/MATLAB/KRSP/analyze_sleepTransitionsAtNight.m
         trans_at = [trans_at secDay(Tawake.datetime)'];

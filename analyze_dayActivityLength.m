@@ -58,14 +58,14 @@ ff(750,1000);
 subplot(rows,cols,1);
 scatter(sq_dayLength/60/60,dayOdba,S,colors_season,'filled');
 xlabel('dayLength (hrs)');
-ylabel('sum day \DeltaOA')
+ylabel('sum day OA')
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,2);
 scatter(sq_dayLength/60/60,dayOdba,S,colors_sex,'filled');
 xlabel('dayLength (hrs)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 hold on;
 mf_lns = []; % do once
@@ -77,14 +77,14 @@ title('');
 subplot(rows,cols,3);
 scatter(temps,dayOdba,S,colors_season,'filled');
 xlabel('temp (C)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,4);
 scatter(temps,dayOdba,S,colors_sex,'filled');
 xlabel('temp (C)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
@@ -126,14 +126,14 @@ ff(750,1000);
 subplot(rows,cols,1);
 scatter(sq_dayLength/60/60,dayOdba,S,colors_season,'filled');
 xlabel('dayLength (hrs)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,2);
 scatter(sq_dayLength/60/60,dayOdba,S,colors_mast,'filled');
 xlabel('dayLength (hrs)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 hold on;
 mf_lns = []; % do once
@@ -145,28 +145,28 @@ title('');
 subplot(rows,cols,3);
 scatter(sq_dayLength/60/60,nightOdba,S,colors_season,'filled');
 xlabel('dayLength (hrs)');
-ylabel('sum night \DeltaOA');
+ylabel('sum night OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,4);
 scatter(sq_dayLength/60/60,nightOdba,S,colors_mast,'filled');
 xlabel('dayLength (hrs)');
-ylabel('sum night \DeltaOA');
+ylabel('sum night OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,5);
 scatter(temps,dayOdba,S,colors_season,'filled');
 xlabel('temp (C)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,6);
 scatter(temps,dayOdba,S,colors_mast,'filled');
 xlabel('temp (C)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
@@ -227,42 +227,42 @@ title('');
 subplot(rows,cols,3);
 scatter(asleep_trans,dayOdba,S,colors_season,'filled');
 xlabel('sleep transitions (all day)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,4);
 scatter(asleep_trans,dayOdba,S,colors_sex,'filled');
 xlabel('sleep transitions (all day)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,5);
 scatter(asleep_trans_day,dayOdba,S,colors_season,'filled');
 xlabel('sleep transitions (day frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,6);
 scatter(asleep_trans_day,dayOdba,S,colors_sex,'filled');
 xlabel('sleep transitions (day frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,7);
 scatter(asleep_trans_night,dayOdba,S,colors_season,'filled');
 xlabel('sleep transitions (night frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,8);
 scatter(asleep_trans_night,dayOdba,S,colors_sex,'filled');
 xlabel('sleep transitions (night frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
@@ -270,7 +270,7 @@ title('');
 % % subplot(2,2,2);
 % % scatter(sq_dayLength/60/60,nightOdba,10,colors_season,'filled');
 % % xlabel('dayLength (hrs)');
-% % ylabel('sum \DeltaOA');
+% % ylabel('sum OA');
 % % set(gca,'fontsize',14);
 % % title('Night');
 
@@ -316,14 +316,14 @@ title('');
 subplot(rows,cols,3);
 scatter(asleep_trans,dayOdba,S,colors_season,'filled');
 xlabel('sleep transitions (all day)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,4);
 scatter(asleep_trans,dayOdba,S,colors_mast,'filled');
 xlabel('sleep transitions (all day)');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 hold on;
 mf_lns = []; % do once
@@ -335,28 +335,28 @@ title('');
 subplot(rows,cols,5);
 scatter(asleep_trans_day,dayOdba,S,colors_season,'filled');
 xlabel('sleep transitions (day frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,6);
 scatter(asleep_trans_day,dayOdba,S,colors_mast,'filled');
 xlabel('sleep transitions (day frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,7);
 scatter(asleep_trans_night,dayOdba,S,colors_season,'filled');
 xlabel('sleep transitions (night frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
 subplot(rows,cols,8);
 scatter(asleep_trans_night,dayOdba,S,colors_mast,'filled');
 xlabel('sleep transitions (night frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',14);
 title('');
 
@@ -364,7 +364,7 @@ title('');
 % % subplot(2,2,2);
 % % scatter(sq_dayLength/60/60,nightOdba,10,colors_season,'filled');
 % % xlabel('dayLength (hrs)');
-% % ylabel('sum \DeltaOA');
+% % ylabel('sum OA');
 % % set(gca,'fontsize',14);
 % % title('Night');
 
@@ -387,14 +387,14 @@ ff(1200,700);
 subplot(2,cols,1);
 scatter(asleep_trans_day,dayOdba,10,colors_season,'filled');
 xlabel('sleep transitions (day frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',22);
 title('');
 
 subplot(2,cols,2);
 scatter(asleep_trans_night,dayOdba,10,colors_season,'filled');
 xlabel('sleep transitions (night frac_{norm})');
-ylabel('sum day \DeltaOA');
+ylabel('sum day OA');
 set(gca,'fontsize',22);
 title('');
 

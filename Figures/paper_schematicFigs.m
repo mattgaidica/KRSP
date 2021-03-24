@@ -10,7 +10,7 @@ color1 = [0 0 0];
 color2 = [254/255,174/255,0];
 lw = 2;
 
-close all
+% close all
 ff(1400,800);
 subplot(211);
 data1 = T.odba((2280:5000)+900);
@@ -52,14 +52,17 @@ ylim([-1 6]);
 xlim([-10 numel(dec_data2)+10]);
 hold on;
 
-filtData = smoothdata(T.odba,'loess',numel(T.odba)/(dF));
-plot(normalize(decimate(filtData(dR),dF),'range')*2+1,'linewidth',lw,'color',colors(2,:));
+filtData1 = smoothdata(T.odba,'loess',numel(T.odba)/(dF));
+filtData1 = normalize(decimate(filtData1(dR),dF),'range')*2+1;
+plot(filtData1,'linewidth',lw,'color',colors(2,:));
 
-filtData = smoothdata(T.odba,'loess',numel(T.odba)/(4*dF));
-plot(normalize(decimate(filtData(dR),dF),'range')*2+2,'linewidth',lw,'color',colors(5,:));
+filtData2 = smoothdata(T.odba,'loess',numel(T.odba)/(4*dF));
+filtData2 = normalize(decimate(filtData2(dR),dF),'range')+0.5;
+plot(filtData1+filtData2,'linewidth',lw,'color',colors(5,:));
 
-filtData = smoothdata(T.odba,'loess',numel(T.odba)/(12*dF));
-plot(normalize(decimate(filtData(dR),dF),'range')*2+3,'linewidth',lw,'color',colors(10,:));
+filtData3 = smoothdata(T.odba,'loess',numel(T.odba)/(12*dF));
+filtData3 = normalize(decimate(filtData3(dR),dF),'range')+0.5;
+plot(filtData1+filtData2+filtData3,'linewidth',lw,'color',colors(10,:));
 
 %% homeograph
 % run with doPlot = 1; >> T = loadTStruct(iSq,sqkey,Tss);
@@ -68,11 +71,11 @@ xlim([min(dR) max(dR)]); % see above
 % select left axis
 ylim([0 60]);
 % select right axis
-ylim([-10 10]);
+ylim([-12 12]);
 yticks(0);
 ylabel('Homeograph (H)');
 xticks([]);
 xlabel('Time');
 set(gca,'fontsize',20)
 % zoom in
-xlim(17698,17698+100);
+xlim([17698,17698+100]);
