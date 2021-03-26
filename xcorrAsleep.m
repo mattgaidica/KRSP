@@ -97,13 +97,13 @@ mast_cmap = [];
 for iSeason = 1:4
     for iMast = 1:2
         if iMast==1 %nmast
-            useIds = ismember(sq_xcorr_doys,useDoys{iSeason}) & ~ismember(sq_xcorr_yrs,[2014,2019]);
+            theseIds = ismember(sq_xcorr_doys,useDoys{iSeason}) & ~ismember(sq_xcorr_yrs,[2014,2019]);
             useOffset = -0.2;
             mast_cmap = [mast_cmap;colors(iSeason,:)];
         else %mast
-            useIds = ismember(sq_xcorr_doys,useDoys{iSeason}) & ismember(sq_xcorr_yrs,[2014,2019]);
+            theseIds = ismember(sq_xcorr_doys,useDoys{iSeason}) & ismember(sq_xcorr_yrs,[2014,2019]);
             useOffset = 0.2;
-            if sum(useIds) == 0 % winter mast is missing, super hacky but works
+            if sum(theseIds) == 0 % winter mast is missing, super hacky but works
                 mast_xs = [mast_xs;mast_xs+useOffset*2];
                 mast_ys = [mast_ys;mast_ys];
                 mast_cmap = [mast_cmap;[NaN NaN NaN]];
@@ -111,9 +111,9 @@ for iSeason = 1:4
                 mast_cmap = [mast_cmap;colors(iSeason,:).^2];
             end
         end
-        if sum(useIds) ~= 0 % winter mast
-            mast_xs = [mast_xs;iSeason*ones(sum(useIds),1)+useOffset];
-            mast_ys = [mast_ys;all_RI(useIds)'];
+        if sum(theseIds) ~= 0 % winter mast
+            mast_xs = [mast_xs;iSeason*ones(sum(theseIds),1)+useOffset];
+            mast_ys = [mast_ys;all_RI(theseIds)'];
         end
     end
 end
@@ -199,32 +199,39 @@ for iZoom = 1:2
             xticks(-1440*3:720:1440*3);
             xticklabels(compose('%i',xticks/60));
             yticks([-0.5 0 0.5 1]);
-        elseif iZoom == 2 || iZoom == 3
+        elseif iZoom == 2
             midVal = 720;
             midIdx = closest(sq_xcorr_lags,midVal);
             xlim([midVal-360 midVal+360]);
-            ylim([xcorrMean(midIdx)-.03 xcorrMean(midIdx)+.03]);
-            usePeaks = sq_xcorr_lags(locs) >= min(xlim) & sq_xcorr_lags(locs) <= max(xlim);
-            plot(sq_xcorr_lags(locs(usePeaks)),xcorrMean(locs(usePeaks)),'r|','markersize',20,'linewidth',1.5);
-            text(sq_xcorr_lags(locs(usePeaks)),xcorrMean(locs(usePeaks))+(diff(ylim)/20),...
-                compose('RP_2 = %1.2f',mod(sq_xcorr_lags(locs(usePeaks))/60,24)),'fontsize',12,...
+            ylim([xcorrMean(midIdx)-.04 xcorrMean(midIdx)+.04]);
+            usePeaks = find(sq_xcorr_lags(locs) >= min(xlim) & sq_xcorr_lags(locs) <= max(xlim));
+            plot(sq_xcorr_lags(locs(usePeaks(1))),xcorrMean(locs(usePeaks(1))),'r|','markersize',20,'linewidth',1.5);
+            text(sq_xcorr_lags(locs(usePeaks(1))),xcorrMean(locs(usePeaks(1)))+(diff(ylim)/20),...
+            compose('RP_2 = %1.2f',mod(sq_xcorr_lags(locs(usePeaks(1)))/60,24)),'fontsize',12,...
                 'horizontalalignment','center','verticalalignment','bottom');
-%             if ii == 3 % 24-hr peaks
-%                 midVal = 1440;
-%                 midIdx = closest(sq_xcorr_lags,midVal);
-%                 xlim([midVal-400 midVal+400]);
-%                 xticks(-1440*3:720:1440*3);
-%                 xticklabels(compose('%i',xticks/60));
-%                 ylim([xcorrMean(midIdx)-xcorrStd(midIdx)-0.1 xcorrMean(midIdx)+xcorrStd(midIdx)+0.1]);
-%                 title([seasonLabels{iSeason},' (zoomed)']);
-%                 yticks([]);
-%             else % nap peaks
-                xticks(-1440*3:180:1440*3);
-                xticklabels(compose('%i',xticks/60));
-                title("ultradian peaks");
-                yticks(ylim);
-                yticklabels(compose('%1.2f',yticks));
-%             end
+            xticks(-1440*3:180:1440*3);
+            xticklabels(compose('%i',xticks/60));
+            title("ultradian peaks");
+            yticks(ylim);
+            yticklabels(compose('%1.2f',yticks));
+            
+            leftY = ylim;
+            yyaxis right;
+            ylim(leftY);
+            subData = xcorrMean(round(numel(xcorrMean)/2):round(numel(xcorrMean)/2)+1440-1);
+            [v,k] = min(subData);
+            yticks(sort([v,xcorrMean(locs(usePeaks(1)))]));
+            deltaUltraPeak = xcorrMean(locs(usePeaks(1)))-v;
+            set(gca,'ycolor','k');
+            yticklabels([]);
+            yline(v,'k:');
+            yline(xcorrMean(locs(usePeaks(1))),'k:');
+            vertalign = 'bottom';
+            if v - min(ylim) > .01
+                vertalign = 'top';
+            end
+            text(max(xlim)-15,v,['\DeltaRP_2 = ',sprintf('%1.4f',deltaUltraPeak)],...
+                'fontsize',12,'horizontalalignment','right','verticalalignment',vertalign);
         end
         xtickangle(60)
         set(gca,'fontsize',14);

@@ -47,7 +47,9 @@ fprintf('Min Day Length: %s doy=%i, %1.2f hrs\n',datestr(Tss.noon(k),'mmm dd'),k
 % % % % % plot(normalize(Tss.day_length,'scale'));
 % % % % % plot(normalize(cellfun(@mean,sqs_odba),'scale'));
 
-[sunYear,sunYearAvg,sunMonth,sunHeader,monthNames] = getSunData(1:12);
+% [sunYear,sunYearAvg,sunMonth,sunHeader,monthNames] = getSunData(1:12);
+
+sunYear = Tss.day_length(Tss.year==2016);
 
 close all;
 fh = ff(400,400);
@@ -65,8 +67,8 @@ h.EdgeColor = 'none';
 hold on;
 
 % day
-edges = linspace(-pi,pi,size(sunYear,1)+1);
-counts = sunYear(:,4) / 60 / 24;
+edges = linspace(-pi,pi,numel(sunYear)+1);
+counts = sunYear / 60 / 60 / 24;
 h = polarhistogram('BinEdges',edges,'BinCounts',counts,...
     'FaceAlpha',1,'FaceColor',sunColor,'EdgeColor','none');
 h = polarplot(edges,ones(size(edges)));
@@ -109,8 +111,8 @@ h = polarhistogram('BinEdges',edges,'BinCounts',counts,...
 h.DisplayStyle = 'stairs';
 h.EdgeColor = 'k';
 
-% season outlines
-seasons = linspace(-pi,pi,5)-2*((2*pi)/12);
+% season outlines, winter begins Oct 14
+seasons = linspace(-pi,pi,5)-1.8*((2*pi)/12);
 n = 1000;
 spacing = pi/128;
 for iS = 1:4
@@ -134,7 +136,7 @@ text(-2.65,-1.8,'0°C','FontSize',fs,'Color','k','color','k');
 text(-1.1,-2.4,'activity','FontSize',fs,'Color','k');
 thetaticklabels(circshift(monthNames,6));
 
-if doExport
+if true
     saveas(fh,fullfile(exportPath,'environmentalPolarPlot.png'));
     close(fh);
 end

@@ -10,7 +10,6 @@ months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
 
 close all
 ff(1300,900);
-% useDoys = 190:260;
 binEdges = linspace(1,86400,100); % rm 0 entries, are those subsequent animal entries?
 
 nHalfWindow = 30;
@@ -25,7 +24,6 @@ for iSun = 1:2
     for iDoy = 1:366
         shiftDoys = circshift(allDoys,-iDoy+1+nHalfWindow);
         useDoys = shiftDoys(1:nHalfWindow*2+1);
-        % just use 2016, or take mean?
         shiftBy = closest(t,mean(secDay(Tss.noon(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);
         if iSun == 1
             shiftBy = closest(t,mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);

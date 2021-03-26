@@ -1,7 +1,7 @@
 loadPath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 sqkey = readtable('sqkey.txt');
 exportPath = '/Users/matt/Documents/MATLAB/KRSP/export';
-seasonShiftDays = 56; %  center by light
+seasonShiftDays = 56; %  center by light, *seasonDoys(1) = 311
 % seasonShiftDays = 56 - 21; %  center by temp
 sIds = round(linspace(1,366,5));
 seasonDoys = circshift(1:366,seasonShiftDays);
@@ -175,6 +175,7 @@ all_diff = [];
 iCount = 0;
 useshift = 40:80;
 for ii = useshift
+    disp(ii);
     seasonDoys = circshift(1:366,ii);
     meanDayLength_spring = mean(Tss.day_length(seasonDoys(sIds(2):sIds(3))));
     meanDayLength_autumn = mean(Tss.day_length(seasonDoys(sIds(4):sIds(5))));

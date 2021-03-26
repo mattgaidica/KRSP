@@ -58,10 +58,10 @@ for iSun = 1:2
     theseAsleep_mean = [];
     for iDoy = 1:366
         shiftDoys = circshift(allDoys,-iDoy+1+nHalfWindow);
-        useDoys = shiftDoys(1:nHalfWindow*2+1);
-        useIds = find(ismember(sq_doys,useDoys));% & ismember(sq_sex,iSex));
-        sunrises(iDoy) = round(mean(secDay(Tss.sunrise(ismember(Tss.doy,useDoys))),1)/60); % minutes
-        sunsets(iDoy) = round(mean(secDay(Tss.sunset(ismember(Tss.doy,useDoys))),1)/60);
+        theseDoys = shiftDoys(1:nHalfWindow*2+1);
+        useIds = find(ismember(sq_doys,theseDoys));% & ismember(sq_sex,iSex));
+        sunrises(iDoy) = round(mean(secDay(Tss.sunrise(ismember(Tss.doy,theseDoys))),1)/60); % minutes
+        sunsets(iDoy) = round(mean(secDay(Tss.sunset(ismember(Tss.doy,theseDoys))),1)/60);
         if numel(useIds) > 1
             % data comes in uncentered
             if iSun == 1
