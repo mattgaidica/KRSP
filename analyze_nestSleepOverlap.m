@@ -20,8 +20,6 @@ for ii = 1:size(overlapStats,1)
     end
 end
 
-sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,60);
 for iSeason = 1:4
     ss = ismember(mean_doys,seasonDoys(sIds(iSeason):sIds(iSeason+1)));
     theseStats = mean(overlapStats(ss,:));

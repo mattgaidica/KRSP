@@ -101,12 +101,6 @@ end
 %% CDF plots
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
-sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,57); % centers at 171, so light is equal
-% seasonDoys = circshift(1:366,57-21); % centers at 192, so temp is equal
-useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
-    seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
-
 % main plot
 close all
 ff(1000,400);
@@ -299,12 +293,6 @@ for iSeason = 1:4
 end
 
 %% test each year
-sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,57); % centers at 171, so light is equal
-% seasonDoys = circshift(1:366,57-21); % centers at 192, so temp is equal
-useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
-    seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
-
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
 lw1 = 3;
 lw2 = 1;

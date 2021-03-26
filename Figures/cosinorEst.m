@@ -3,8 +3,7 @@ filePath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 nBins = 96;
 nInt = 1440/96;
 squirrelId = 0;
-sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,60);
+
 if do
     cosStats = [];
     seasonMap = [];

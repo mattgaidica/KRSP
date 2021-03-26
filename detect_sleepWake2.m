@@ -4,7 +4,7 @@ function [T,W_z] = detect_sleepWake2(T,dls)
 if numel(dls) == 1
     error('use DLS version');
 end
-doPlot = true;
+doPlot = false;
 baseSec = 1440;
 n = baseSec / 24;
 

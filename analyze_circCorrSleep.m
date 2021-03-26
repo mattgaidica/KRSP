@@ -42,9 +42,9 @@ for iSex = 0:1
     xlim([1 366]);
 end
 
-%% sleep mean (and old) onsistency plots
+%% sleep mean (and old) consistency plots
 close all
-ff(1200,800);
+ff(800,400);
 nHalfWindow = 30;
 allDoys = 1:366;
 op = 0.1;
@@ -69,7 +69,7 @@ for iSun = 1:2
             else
                 asleepDay_mean = circshift(mean(sq_asleep(useIds,:)),-round(mean(secDay(Tss.noon(iDoy)),1)/60));
             end
-            theseAsleep_mean(iDoy,:) = imgaussfilt(asleepDay_mean,1440/24,'padding','circular');
+            theseAsleep_mean(iDoy,:) = imgaussfilt(asleepDay_mean,1,'padding','circular');
         else
             theseAsleep_mean(iDoy,:) = NaN(1,1440);
         end
@@ -210,12 +210,6 @@ end
 
 %% seasonal sleep w/ std
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
-
-sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,57); % centers at 171, so light is equal
-% seasonDoys = circshift(1:366,57-21); % centers at 192, so temp is equal
-useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
-    seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
 
 close all
 h = ff(800,900);

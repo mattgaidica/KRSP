@@ -1,6 +1,14 @@
 loadPath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
 sqkey = readtable('sqkey.txt');
 exportPath = '/Users/matt/Documents/MATLAB/KRSP/export';
+seasonShiftDays = 56; %  center by light
+% seasonShiftDays = 56 - 21; %  center by temp
+sIds = round(linspace(1,366,5));
+seasonDoys = circshift(1:366,seasonShiftDays);
+useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
+    seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
+sTitles = {'Winter','Spring','Summer','Autumn'};
+seasonLabels = {'Winter','Spring','Summer','Autumn'};
 clc
 if do
     weather = readtable('HainesJunction_DailyTemps_Master.csv');
@@ -158,3 +166,22 @@ if do
     do = false;
     chime;
 end
+
+%% find ideal season doy
+close all
+sTitles = {'winter','spring','summer','autumn'};
+sIds = round(linspace(1,366,5));
+all_diff = [];
+iCount = 0;
+useshift = 40:80;
+for ii = useshift
+    seasonDoys = circshift(1:366,ii);
+    meanDayLength_spring = mean(Tss.day_length(seasonDoys(sIds(2):sIds(3))));
+    meanDayLength_autumn = mean(Tss.day_length(seasonDoys(sIds(4):sIds(5))));
+    iCount = iCount + 1;
+    all_diff(iCount) = abs(meanDayLength_autumn - meanDayLength_spring);
+end
+ff(1200,400);
+plot(all_diff);
+[v,k] = min(all_diff);
+title(sprintf('min shift has discrepency of %1.2fs at %1.0f',v,useshift(k)));

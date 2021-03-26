@@ -139,10 +139,8 @@ if doExport
     close(fh);
 end
 %% top table stats, see also /Users/matt/Documents/MATLAB/KRSP/Figures/cosinorEst.m
+% setup seasons in /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
 clc
-sTitles = {'winter','spring','summer','fall'};
-sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,60);
 
 rowNames = {'Day Length (hrs)';'Sleep per day (hrs)';'Sleep in daylight (hrs)';'Sleep in darkness (hrs)';...
     'Total sleep transitions';'Sleep transitions in daylight';'Sleep transitions in darkness'};
@@ -196,7 +194,7 @@ iS = iS + 1;
 meanDayLength = mean(Tss.day_length(seasonDoys(1:366)));
 stdDayLength = std(Tss.day_length(seasonDoys(1:366)));
 fprintf('%s: day length: %1.2f ± %1.2f\n','All',meanDayLength/3600,stdDayLength/3600);
-dayLength{iS} = fprintf('%1.2f ± %1.2f',meanDayLength/3600,stdDayLength/3600);
+dayLength{iS} = sprintf('%1.2f ± %1.2f',meanDayLength/3600,stdDayLength/3600);
     
 meanAsleep = nanmean([sqs_asleep{seasonDoys(1:366)}]);
 stdAsleep = nanstd([sqs_asleep{seasonDoys(1:366)}]);
@@ -231,7 +229,7 @@ sleepTransDarkness{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
 Tstats = table(dayLength',sleepPerDay',sleepDaylight',sleepDarkness',sleepTrans',sleepTransDaylight',sleepTransDarkness',...
     'VariableNames',rowNames,'RowNames',varNames);
 Tstats = rows2vars(Tstats);
-writetable(Tstats,'Tstats_mast.xlsx');
+writetable(Tstats,'Tstats.xlsx');
 
 %% what best correlates with ODBA?
 close all

@@ -4,9 +4,9 @@ close all;
 ff(1200,500);
 maxs = [];
 for ii = 1:numel(useYears)
-    useIds = find(T_weather.Year == useYears(ii));
-    plot(smoothdata(T_weather.Max_Temp(useIds),'movmean',30),'color',colors(ii),'linewidth',2);
-    [v,k] = max(smoothdata(T_weather.Max_Temp(useIds),'movmean',30));
+    useIds = find(weather.Year == useYears(ii));
+    plot(smoothdata(weather.Max_Temp(useIds),'movmean',30),'color',colors(ii),'linewidth',2);
+    [v,k] = max(smoothdata(weather.Max_Temp(useIds),'movmean',30));
     maxs(ii) = k;
     hold on;
 end
@@ -26,4 +26,5 @@ set(gca,'ycolor','b');
 
 legend(compose('%i',useYears));
 
-fprintf("%i mean temp doy\n",round(mean(maxs)));
+[v,k] = max(Tss.day_length(1:366));
+fprintf("mean temp doy: %i, light doy: %i, diff: %i days\n",round(mean(maxs)),k,round(mean(maxs))-k);

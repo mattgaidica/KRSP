@@ -1,9 +1,3 @@
-sIds = round(linspace(1,366,5));
-seasonDoys = circshift(1:366,57); % centers at 171, so light is equal
-% seasonDoys = circshift(1:366,57-21); % centers at 192, so temp is equal
-useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
-    seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
-
 % two ways to do this: per squirrel or per season
 % per season bad because it's weighted more for longer rec sessions
 % per squirrel should still shuffle days to remove season influence
