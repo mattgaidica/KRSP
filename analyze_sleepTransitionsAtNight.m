@@ -16,33 +16,33 @@ nHalfWindow = 30;
 allDoys = 1:366;
 colors = seasonColors(1:366); % this will use all doys because it's windowed
 op = 0.2;
-nS = 3;
+nS = 1;
 t = linspace(0,24,numel(binEdges)-1);
 
-useylim = 0.03;
+useylim = 0.035;
 for iSun = 1:2
     for iDoy = 1:366
         shiftDoys = circshift(allDoys,-iDoy+1+nHalfWindow);
-        useDoys = shiftDoys(1:nHalfWindow*2+1);
+        theseDoys = shiftDoys(1:nHalfWindow*2+1);
         shiftBy = closest(t,mean(secDay(Tss.noon(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);
         if iSun == 1
             shiftBy = closest(t,mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);
         end
 
         subplot(2,2,prc(2,[iSun,1]));
-        useIds = trans_to==1 & ismember(trans_on,useDoys);
+        useIds = trans_to==1 & ismember(trans_on,theseDoys);
         counts = histcounts(trans_at(useIds),binEdges) / sum(useIds);
         plot(t,circshift(imgaussfilt(counts,nS,'padding','circular'),-shiftBy),'color',[colors(iDoy,:),op]);
         hold on;
         if iDoy == 1
-            title('transition to awake');
+            title('Transition to Awake');
             xlim([0 24]);
             ylim([0 useylim]);
-            ylabel('probability')
+            ylabel('Probability')
             if iSun == 1
-                xlabel('hours relative to sunrise');
+                xlabel('Relative to Sunrise (hrs)');
             else
-                xlabel('hours relative to solar noon');
+                xlabel('Relative to Solar Noon (hrs)');
             end
             xticks(0:6:24);
             xticklabels({'±12','-6','0','+6','±12'});
@@ -64,21 +64,21 @@ for iSun = 1:2
         end
 
         subplot(2,2,prc(2,[iSun,2]));
-        useIds = trans_to==0 & ismember(trans_on,useDoys);
+        useIds = trans_to==0 & ismember(trans_on,theseDoys);
         counts = histcounts(trans_at(useIds),binEdges) / sum(useIds);
         plot(t,circshift(imgaussfilt(counts,nS,'padding','circular'),-shiftBy),'color',[colors(iDoy,:),op]);
         hold on;
         if iDoy == 1
-            title('transition to sleep');
+            title('Transition to Asleep');
             xlim([0 24]);
             ylim([0 useylim]);
             xticks(0:6:24);
             xticklabels({'±12','-6','0','+6','±12'});
-            ylabel('probability');
+            ylabel('Probability');
             if iSun == 1
-                xlabel('hours relative to sunset');
+                xlabel('Relative to Sunset (hrs)');
             else
-                xlabel('hours relative to solar noon');
+                xlabel('Relative to Solar Noon (hrs)');
             end
             set(gca,'fontsize',16)
             grid on;
@@ -88,7 +88,7 @@ for iSun = 1:2
             c.Ticks = linspace(0,1,12);
             c.TickLabels = months;
             c.TickDirection = 'out';
-            c.FontSize = 9;
+            c.FontSize = 11;
             plot([12 12],ylim,'k:');
             plot([36 36],ylim,'k:');
         end

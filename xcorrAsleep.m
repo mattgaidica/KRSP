@@ -18,6 +18,7 @@ for iSq = 1:numel(unSqs)
             % can use sq_odba_z here as comparison, rescale to +/-1
             theseAsleep = [theseAsleep 2*(sq_asleep(thisId,:)-0.5)];
         end
+        disp(size(theseAsleep));
         [c,sq_xcorr_lags] = xcorr(theseAsleep,sq_xcorr_l,'coeff');
         sq_xcorr(iCount,:) = c;
         sq_xcorr_doys(iCount) = sq_doys(useIds(round(numel(useIds)/2)));
