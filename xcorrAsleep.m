@@ -26,7 +26,7 @@ for iSq = 1:numel(unSqs)
     end
 end
 
-%% all lines, colored by season
+%% all lines, colored by season, NOT USED
 close all
 
 % ff(1200,600);
@@ -42,7 +42,7 @@ for iSq = 1:size(sq_xcorr,1)
 end
 xlim([min(sq_xcorr_lags) max(sq_xcorr_lags)]);
 
-%% RI by squirrel
+%% RI by squirrel, IN PAPER
 close all
 
 all_RI = [];

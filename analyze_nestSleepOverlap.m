@@ -56,6 +56,8 @@ f = fit(sq_inNestMin'*24,sq_asleepMin'*24,'poly1');
 
 subplot(132);
 season_residuals = {};
+% code for interaction
+test_timeInNest = [];
 for iSeason = 1:4
     ss = ismember(mean_doys,seasonDoys(sIds(iSeason):sIds(iSeason+1)));
     x = sq_inNestMin(ss)*24;

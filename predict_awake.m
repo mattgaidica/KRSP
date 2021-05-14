@@ -30,6 +30,7 @@ if do
     alignBySunrise = false; % false = aligns to t=00:00
     
     overlapStats = [];
+    overlapMeta = table;
     iCount = 0;
     mean_doys = [];
     sq_inNestMin = [];
@@ -66,7 +67,9 @@ if do
             continue;
         end
         
-        if strcmp(sqkey.sex_status,'lactating') | strcmp(sqkey.sex_status,'pregnant') | strcmp(sqkey.sex_status,'Pre-pregnancy')
+        if strcmp(sqkey.sex_status{iSq},'lactating') | strcmp(sqkey.sex_status{iSq},'pregnant') |...
+                strcmp(sqkey.sex_status{iSq},'Pre-pregnancy')
+            disp('skipping female');
             continue;
         end
         Tawake = make_Tawake(T); % transition table
@@ -122,7 +125,21 @@ if do
             overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
             overlapStats(iCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
             overlapStats(iCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
-            mean_doys(iCount) = mean(unique(day(T.datetime,'dayofyear')));
+            mean_doys(iCount) = round(mean(unique(day(T.datetime,'dayofyear'))));
+            
+            % new, for Ben
+            overlapMeta.squirrelId{iCount} = sqkey.squirrel_id(iSq);
+            overlapMeta.in_awake{iCount} = overlapStats(iCount,1);
+            overlapMeta.in_asleep{iCount} = overlapStats(iCount,2);
+            overlapMeta.out_awake{iCount} = overlapStats(iCount,3);
+            overlapMeta.out_asleep{iCount} = overlapStats(iCount,4);
+            overlapMeta.is_female{iCount} = strcmp(sqkey.sex{iSq},'F');
+            overlapMeta.is_mast{iCount} = ismember(sqkey.year(iSq),[2014,2019]);
+            for iSeason = 1:4
+                if ismember(mean_doys(iCount),seasonDoys(sIds(iSeason):sIds(iSeason+1)))
+                    overlapMeta.meanSeason{iCount} = iSeason;
+                end
+            end
         end
 
         % /Users/matt/Documents/MATLAB/KRSP/analyze_sleepTransitionsAtNight.m
@@ -166,6 +183,7 @@ if do
     do = false;
     chime;
 end
+writetable(overlapMeta,'nestAsleepOverlap.csv'); % for Ben
 
 %% find ideal season doy
 close all
