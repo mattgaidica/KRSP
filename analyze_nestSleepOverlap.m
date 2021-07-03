@@ -54,21 +54,42 @@ box off;
 %%
 f = fit(sq_inNestMin'*24,sq_asleepMin'*24,'poly1');
 
+% newer code, plots each point individually
 subplot(132);
+for ii = 1:numel(sq_inNestMin)
+    nrecs = numel(find(overlapMeta.squirrelId{ii} == [overlapMeta.squirrelId{:}]));
+    x = sq_inNestMin(ii)*24;
+    y = sq_asleepMin(ii)*24;
+    iSeason = overlapMeta.meanSeason{ii};
+    useMarkerSize = 7;
+    if nrecs == 1
+        useMarker = '.';
+        useMarkerSize = 15;
+    elseif nrecs == 2
+        useMarker = '^';
+    else
+        useMarker = 'o';
+    end
+    plot(x,y,useMarker,'color',colors(iSeason,:),'markersize',useMarkerSize,'linewidth',1);
+    hold on;
+end
+
+% older code, plots points for each season
 season_residuals = {};
 % code for interaction
-test_timeInNest = [];
 for iSeason = 1:4
     ss = ismember(mean_doys,seasonDoys(sIds(iSeason):sIds(iSeason+1)));
     x = sq_inNestMin(ss)*24;
     y = sq_asleepMin(ss)*24;
     season_residuals{iSeason} = f(x)'-y;
-    plot(x,y,'.','color',colors(iSeason,:),'markersize',15);
-    hold on;
+%     plot(x,y,'.','color',colors(iSeason,:),'markersize',15);
+%     hold on;
 end
-xlim([0 24]);
-xticks(0:4:24);
-ylim([2 16]);
+
+xlim([8 24]);
+xticks(8:4:24);
+ylim([6 14]);
+yticks(6:4:14);
 
 % f(x) = p1*x + p2
 lns = [];
@@ -86,8 +107,8 @@ grid on;
 set(gca,'fontsize',16);
 legend(lns,{'Squirrel Mean','Linear Fit','95% Confidence'},'location','northwest');
 
-text(12,3.35,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center','fontsize',14);
-text(12,2.65,sprintf('asleep = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
+text(mean(xlim),min(ylim)+0.75,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center','fontsize',14);
+text(mean(xlim),min(ylim)+0.35,sprintf('asleep = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
 
 %% season_residuals
 resBins = linspace(-2,2,15);

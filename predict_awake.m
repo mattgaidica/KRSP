@@ -139,7 +139,9 @@ if do
             overlapMeta.year{iCount} = sqkey.year(iSq);
             overlapMeta.start_dt{iCount} = T.datetime(1);
             overlapMeta.end_dt{iCount} = T.datetime(end);
-            overlapMeta.duration{iCount} = hours(T.datetime(end)-T.datetime(1));
+            overlapMeta.durationInMinutes{iCount} = minutes(T.datetime(end)-T.datetime(1));
+            overlapMeta.inNestInMinutes{iCount} = sum(T.nest_bin);
+            overlapMeta.asleepInMinutes{iCount} = sum(~T.awake);
             % add year, start date, end date, start time, end time
             for iSeason = 1:4
                 if ismember(mean_doys(iCount),seasonDoys(sIds(iSeason):sIds(iSeason+1)))
@@ -191,61 +193,97 @@ if do
 end
 writetable(overlapMeta,'nestAsleepOverlap_v2.csv'); % for Ben
 
-%% redo stuff that should be by squirrel
+%%
+close all
 
-allIds = [overlapMeta.squirrelId{:}];
-[uniqSqs,IA,IC] = unique(allIds);
-for iSq = 1:numel(uniqSqs)
-    theseSqKeyIds = find(sqkey.squirrel_id == uniqSqs(iSq));
-    for jSq = 1:numel(theseSqKeyIds)
-        T = loadTStruct(iSq,sqkey,Tss);
-        
-        if isempty(T)
-            continue;
-        end
-        
-        if strcmp(sqkey.sex_status{iSq},'lactating') | strcmp(sqkey.sex_status{iSq},'pregnant') |...
-                strcmp(sqkey.sex_status{iSq},'Pre-pregnancy')
-            disp('skipping female');
-            continue;
-        end
-% % % %         Tawake = make_Tawake(T); % transition table
-        
-        iCount = iCount + 1;
-        
-        T.nest_bin = strcmp(T.nest,'Nest');
-        thisNestMin = sum(T.nest_bin) ./ size(T,1); % fraction of day
-        if thisNestMin*24 > 1 && isValidT(T,true)% must be in nest for at least an hour
-            sq_inNestMin(iCount) = thisNestMin;
-            sq_asleepMin(iCount) = sum(T.asleep) ./ size(T,1);
-
-            overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
-            overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
-            overlapStats(iCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
-            overlapStats(iCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
-            mean_doys(iCount) = round(mean(unique(day(T.datetime,'dayofyear'))));
-        end
-    end
-end
-
-
-%% find unique animals based on rec duration (overlapMeta.duration (in hours))
+% find unique animals based on rec duration (overlapMeta.duration (in hours))
 clc
 allIds = [overlapMeta.squirrelId{:}];
 [C,IA,IC] = unique(allIds);
-recStats = [];
+recStatsF = [];
+recStatsM = [];
 for ii = 1:numel(C)
     theseIds = find(C(ii) == allIds);
     fprintf("%i - ",allIds(theseIds(1)));
-    recStats(ii) = numel(theseIds);
+    if overlapMeta.is_female{theseIds(1)}
+        recStatsF = [recStatsF numel(theseIds)];
+    else
+        recStatsM = [recStatsM numel(theseIds)];
+    end
     for jj = 1:numel(theseIds)
         if jj > 1
             fprintf(" | ");
         end
-        fprintf("%i/%i:%ihrs",month(overlapMeta.start_dt{theseIds(jj)}),year(overlapMeta.start_dt{theseIds(jj)}),round(overlapMeta.duration{theseIds(jj)}));
+        fprintf("%i/%i:%ihrs",month(overlapMeta.start_dt{theseIds(jj)}),year(overlapMeta.start_dt{theseIds(jj)}),round(overlapMeta.durationInMinutes{theseIds(jj)}/3600));
     end
     fprintf('\n');
 end
+
+colors = lines(7);
+ff(500,600);
+rows = 2;
+cols = 2;
+
+% histogram by year, color mast season
+subplot(rows,cols,1);
+fcounts = histcounts([overlapMeta.year{[overlapMeta.is_female{:}]}],2013.5:2019.5);
+mcounts = histcounts([overlapMeta.year{~[overlapMeta.is_female{:}]}],2013.5:2019.5);
+b = bar(2014:2019,[mcounts' fcounts'],'stacked');
+b(1).FaceColor = colors(6,:);
+b(2).FaceColor = colors(7,:);
+set(gca,'fontsize',14);
+legend({'Male','Female'});
+xtickangle(45);
+ylabel('Recording Sessions');
+grid on;
+legend box off;
+
+% histogram by rec sessions
+subplot(rows,cols,2);
+fcounts = histcounts(recStatsF,0.5:8.5);
+mcounts = histcounts(recStatsM,0.5:8.5);
+b = bar(1:8,[mcounts' fcounts'],'stacked');
+b(1).FaceColor = colors(6,:);
+b(2).FaceColor = colors(7,:);
+set(gca,'fontsize',14);
+legend({'Male','Female'});
+ylabel('Recording Sessions');
+xlabel('Repeat Sessions');
+grid on;
+legend box off;
+
+% timeline by recording
+subplot(rows,cols,[3,4]);
+[~,k] = sort(day([overlapMeta.start_dt{:}],'dayofyear'));
+
+useShift = 1:366;
+for ii = 1:size(overlapMeta,1)
+    shiftDoy = day(overlapMeta.start_dt{k(ii)},'dayofyear');
+    recDays = ceil(overlapMeta.durationInMinutes{ii} / 3600);
+    xs = circshift(useShift,-shiftDoy);
+    xs = xs(1:recDays);
+    if overlapMeta.is_female{ii}
+        useColor = colors(7,:);
+    else
+        useColor = colors(6,:);
+    end
+
+    plot(xs,repmat(ii,size(xs)),'.','color',useColor); % add color M/F
+    hold on;
+end
+lns = [];
+lns(1) = plot(0,0,'-','linewidth',3,'color',colors(6,:));
+lns(2) = plot(0,0,'-','linewidth',3,'color',colors(7,:));
+
+xlim([1,366]);
+ylim([1,size(overlapMeta,1)]);
+yticks(ylim);
+grid on;
+set(gca,'fontsize',14);
+ylabel('Recording Session');
+xlabel('Day of Year');
+legend(lns,{'Male','Female'},'location','southeast');
+legend box off;
 
 %% find ideal season doy
 close all
