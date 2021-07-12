@@ -1,5 +1,5 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
-months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
+useMonths =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 if ~exist('T_weather','var')
     weatherPath = '/Users/matt/Documents/Data/KRSP/HainesJunction_DailyTemps_Master.csv';
     T_weather = readtable(weatherPath);
@@ -44,7 +44,9 @@ end
 
 %% sleep mean (and old) consistency plots
 close all
-ff(800,400);
+h = ff(800,400);
+subplotMargins = [.15,0]; % [vert, horz]
+doSave = true;
 nHalfWindow = 30;
 allDoys = 1:366;
 op = 0.1;
@@ -123,7 +125,7 @@ for iSun = 1:2
     colormap(colors);
     c.Limits = [0,1];
     c.Ticks = linspace(0,1,12);
-    c.TickLabels = months;
+    c.TickLabels = useMonths;
     c.TickDirection = 'out';
     c.FontSize = 9;
     %     title(['Asleep Mean, ',titles{iSex+1}]);
@@ -206,6 +208,18 @@ for iSun = 1:2
 % % % %         text(0,-maxR,["100%","\downarrow"],'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
 % % % %     end
 %     text(0.55,.38,"Hour of Day",'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
+end
+
+% XY = [-.1,1;-.1,1];
+% addFigureLabels(h,XY);
+% setFig('','',2); % not sure if this is needed?
+set(h,'PaperPositionMode','auto');
+
+if doSave
+%     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
+    saveas(h,fullfile(exportPath,'circularSleep.eps'),'epsc');
+    saveas(h,fullfile(exportPath,'circularSleep.jpg'),'jpg');
+    close(h);
 end
 
 %% seasonal sleep w/ std

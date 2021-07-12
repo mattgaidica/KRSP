@@ -1,10 +1,13 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
+doSave = true;
+subplotMargins = [.15,.07]; % [vert, horz]
+
 close all
 % statsMult = [1 -1;-1 1;1 1;-1 -1];
 statsMult = [0 -1;0 1;1 0;-1 0];
-ff(1200,400);
+h = ff(1200,400);
 
-subplot(131);
+subplot_tight(1,3,1,subplotMargins);
 op = 0.075;
 useIds = [2,3,1,4,2];
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
@@ -55,7 +58,7 @@ box off;
 f = fit(sq_inNestMin'*24,sq_asleepMin'*24,'poly1');
 
 % newer code, plots each point individually
-subplot(132);
+subplot_tight(1,3,2,subplotMargins);
 for ii = 1:numel(sq_inNestMin)
     nrecs = numel(find(overlapMeta.squirrelId{ii} == [overlapMeta.squirrelId{:}]));
     x = sq_inNestMin(ii)*24;
@@ -112,7 +115,7 @@ text(mean(xlim),min(ylim)+0.35,sprintf('asleep = %1.2f × in nest + %1.2f',f.p1,
 
 %% season_residuals
 resBins = linspace(-2,2,15);
-subplot(133);
+subplot_tight(1,3,3,subplotMargins);
 for iSeason = 1:4
     counts = histcounts(season_residuals{iSeason},resBins) ./ numel(season_residuals{iSeason});
     plot(linspace(min(resBins),max(resBins),numel(counts)),...
@@ -131,3 +134,14 @@ text(min(xlim)+0.05,0.335,'\leftarrow more sleeping in nest','horizontalalignmen
     'verticalalignment','middle','fontsize',14);
 text(max(xlim)-0.05,0.315,'less sleeping in nest \rightarrow ','horizontalalignment','right',...
     'verticalalignment','middle','fontsize',14);
+
+addFigureLabels(h);
+% setFig('','',2); % not sure if this is needed?
+set(h,'PaperPositionMode','auto');
+
+if doSave
+%     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
+    saveas(h,fullfile(exportPath,'nestSleepOverlap.eps'),'epsc');
+    saveas(h,fullfile(exportPath,'nestSleepOverlap.jpg'),'jpg');
+    close(h);
+end

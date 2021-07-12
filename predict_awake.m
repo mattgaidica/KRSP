@@ -194,6 +194,7 @@ end
 writetable(overlapMeta,'nestAsleepOverlap_v2.csv'); % for Ben
 
 %%
+doSave = true;
 close all
 
 % find unique animals based on rec duration (overlapMeta.duration (in hours))
@@ -219,13 +220,14 @@ for ii = 1:numel(C)
     fprintf('\n');
 end
 
+subplotMargins = [.1,.15]; % [vert, horz]
 colors = lines(7);
-ff(500,600);
+h = ff(500,600);
 rows = 2;
 cols = 2;
 
 % histogram by year, color mast season
-subplot(rows,cols,1);
+subplot_tight(rows,cols,1,subplotMargins);
 fcounts = histcounts([overlapMeta.year{[overlapMeta.is_female{:}]}],2013.5:2019.5);
 mcounts = histcounts([overlapMeta.year{~[overlapMeta.is_female{:}]}],2013.5:2019.5);
 b = bar(2014:2019,[mcounts' fcounts'],'stacked');
@@ -239,7 +241,7 @@ grid on;
 legend box off;
 
 % histogram by rec sessions
-subplot(rows,cols,2);
+subplot_tight(rows,cols,2,subplotMargins);
 fcounts = histcounts(recStatsF,0.5:8.5);
 mcounts = histcounts(recStatsM,0.5:8.5);
 b = bar(1:8,[mcounts' fcounts'],'stacked');
@@ -248,12 +250,12 @@ b(2).FaceColor = colors(7,:);
 set(gca,'fontsize',14);
 legend({'Male','Female'});
 ylabel('Recording Sessions');
-xlabel('Repeat Sessions');
+xlabel({'Sessions per Squirrel'});
 grid on;
 legend box off;
 
 % timeline by recording
-subplot(rows,cols,[3,4]);
+subplot_tight(rows,cols,[3,4],subplotMargins);
 [~,k] = sort(day([overlapMeta.start_dt{:}],'dayofyear'));
 
 useShift = 1:366;
@@ -285,6 +287,14 @@ xlabel('Day of Year');
 legend(lns,{'Male','Female'},'location','southeast');
 legend box off;
 
+XY = [-.25,1.1;-.25,1.1;-.1,1.1];
+addFigureLabels(h,XY);
+set(h,'PaperPositionMode','auto');
+if doSave
+    saveas(h,fullfile(exportPath,'dataLandscape.eps'),'epsc');
+    saveas(h,fullfile(exportPath,'dataLandscape.jpg'),'jpg');
+    close(h);
+end
 %% find ideal season doy
 close all
 sTitles = {'winter','spring','summer','autumn'};

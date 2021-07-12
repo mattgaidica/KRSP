@@ -144,10 +144,13 @@ end
 % setup seasons in /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
 clc
 
-rowNames = {'Day Length (hrs)';'Sleep per day (hrs)';'Sleep in daylight (hrs)';'Sleep in darkness (hrs)';...
+rowNames = {'Day of Year';'Recording Sessions';'Squirrels';'Day Length (hrs)';'Sleep per day (hrs)';'Sleep in daylight (hrs)';'Sleep in darkness (hrs)';...
     'Total sleep transitions';'Sleep transitions in daylight';'Sleep transitions in darkness'};
-varNames = {'Winter (Nov–Jan)','Spring (Feb–Apr)','Summer (May–Jul)','Autumn (Aug–Oct)','All'};
+varNames = {'Winter','Spring','Summer','Autumn','All'};
 
+seasonDoy = {};
+recordingSessions = {};
+squirrels = {};
 dayLength = {};
 sleepPerDay = {};
 sleepDaylight = {};
@@ -157,6 +160,11 @@ sleepTransDaylight = {};
 sleepTransDarkness = {};
 
 for iS = 1:4
+    seasonDoy{iS} = sprintf('%i-%i',seasonDoys(sIds(iS)),seasonDoys(sIds(iS+1))-1);
+    metaSeasonIds = find([overlapMeta.meanSeason{:}]==iS);
+    recordingSessions{iS} = sprintf('%i',numel(metaSeasonIds));
+    squirrels{iS} = numel(unique([overlapMeta.squirrelId{metaSeasonIds}]));
+    
     meanDayLength = mean(Tss.day_length(seasonDoys(sIds(iS):sIds(iS+1))));
     stdDayLength = std(Tss.day_length(seasonDoys(sIds(iS):sIds(iS+1))));
     fprintf('%s: day length: %1.2f ± %1.2f\n',sTitles{iS},meanDayLength/3600,stdDayLength/3600);
@@ -193,6 +201,10 @@ for iS = 1:4
     sleepTransDarkness{iS} = sprintf('%1.0f ± %1.0f\n\n',meanTrans,stdTrans);
 end
 iS = iS + 1;
+seasonDoy{iS} = "1-366";
+recordingSessions{iS} = sprintf('%i',numel(overlapMeta.meanSeason));
+squirrels{iS} = numel(unique([overlapMeta.squirrelId{:}]));
+
 meanDayLength = mean(Tss.day_length(seasonDoys(1:366)));
 stdDayLength = std(Tss.day_length(seasonDoys(1:366)));
 fprintf('%s: day length: %1.2f ± %1.2f\n','All',meanDayLength/3600,stdDayLength/3600);
@@ -228,7 +240,7 @@ stdTrans = nanstd([sqs_transNight{seasonDoys(1:366)}]);
 fprintf('%s: NIGHTtrans: %1.0f ± %1.0f\n\n','All',meanTrans,stdTrans);
 sleepTransDarkness{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
 
-Tstats = table(dayLength',sleepPerDay',sleepDaylight',sleepDarkness',sleepTrans',sleepTransDaylight',sleepTransDarkness',...
+Tstats = table(seasonDoy',recordingSessions',squirrels',dayLength',sleepPerDay',sleepDaylight',sleepDarkness',sleepTrans',sleepTransDaylight',sleepTransDarkness',...
     'VariableNames',rowNames,'RowNames',varNames);
 Tstats = rows2vars(Tstats);
 writetable(Tstats,'Tstats.xlsx');
