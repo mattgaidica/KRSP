@@ -144,7 +144,7 @@ end
 % setup seasons in /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
 clc
 
-rowNames = {'Day of Year';'Recording Sessions';'Squirrels';'Day Length (hrs)';'Sleep per day (hrs)';'Sleep in daylight (hrs)';'Sleep in darkness (hrs)';...
+rowNames = {'Julian Day of Year';'Recording Sessions';'Unique Squirrels';'Day Length (hrs)';'Sleep per day (hrs)';'Sleep in daylight (hrs)';'Sleep in darkness (hrs)';...
     'Total sleep transitions';'Sleep transitions in daylight';'Sleep transitions in darkness'};
 varNames = {'Winter','Spring','Summer','Autumn','All'};
 

@@ -54,7 +54,7 @@ end
 
 months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',366);
-ff(500,900);
+h = ff(500,900);
 [sort_RI,I] = sort(all_RI);
 sort_doy = sq_xcorr_doys(I);
 sort_yr = sq_xcorr_yrs(I);
@@ -88,7 +88,7 @@ c.Ticks = linspace(0,1,12);
 c.TickLabels = months;
 c.TickDirection = 'out';
 c.FontSize = 11;
-title('Rythmicity Index by Individual');
+title('Rythmicity Index by Recording Session');
 
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 subplot(212);
@@ -147,6 +147,14 @@ for iSeason = 1:4
     end
 end
 title('Rhythmicity Index Mast vs. Non-mast Years');
+
+set(h,'PaperPositionMode','auto');
+
+if doSave
+    print(h,'-painters','-depsc',fullfile(exportPath,'rhythmicityMastYears.eps')); % required for vector lines
+    saveas(h,fullfile(exportPath,'rhythmicityMastYears.jpg'),'jpg');
+    close(h);
+end
 
 %% by season, zoom on ultradian rhythm
 close all

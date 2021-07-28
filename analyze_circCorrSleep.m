@@ -49,7 +49,7 @@ subplotMargins = [.15,0]; % [vert, horz]
 doSave = true;
 nHalfWindow = 30;
 allDoys = 1:366;
-op = 0.1;
+op = 1; %0.1; % make =1 to export, then change back to 10% in illustrator
 ms = 20;
 titleLabels = {'Hour of Day','Solar Noon'};
 
@@ -216,8 +216,8 @@ end
 set(h,'PaperPositionMode','auto');
 
 if doSave
-%     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
-    saveas(h,fullfile(exportPath,'circularSleep.eps'),'epsc');
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'circularSleep.eps')); % required for vector lines
+%     saveas(h,fullfile(exportPath,'circularSleep.eps'),'epsc');
     saveas(h,fullfile(exportPath,'circularSleep.jpg'),'jpg');
     close(h);
 end
