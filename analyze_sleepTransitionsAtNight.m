@@ -202,6 +202,7 @@ legend(lns,seasonLabels,'location','southeast','AutoUpdate','off');
 
 % mast plots
 useSubplots = [3,4,7,8];
+all_sleepDurations = [];
 for iSeason = 1:4
     lns = NaN(2,1);
     sleepDurations_mast = {};
@@ -250,6 +251,7 @@ for iSeason = 1:4
             end
             sleepDurations = [sleepDurations theseDurations];
         end
+        all_sleepDurations = [all_sleepDurations sleepDurations];
         
         sleepDurations_mast{iMast} = sleepDurations;
         if ~isempty(sleepDurations)

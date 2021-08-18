@@ -20,18 +20,19 @@ if do
     sq_odba_max = [];
     sq_awake = [];
     sq_ids = [];
+    sq_ids_un = [];
     sq_doys = [];
     sq_years = [];
     sq_dayLength = [];
     sq_asleep = [];
     iRow = 0;
-    squirrelId = 0;
+    recordingId = 0;
     
     alignBySunrise = false; % false = aligns to t=00:00
     
     overlapStats = [];
     overlapMeta = table;
-    iCount = 0;
+    iNestCount = 0;
     mean_doys = [];
     sq_inNestMin = [];
     sq_asleepMin = [];
@@ -87,7 +88,7 @@ if do
         [undoys,IA] = unique(dtdoys);
         unyears = dtyears(IA);
         % !! what if I just use sqkey.squirrel_id(iSq) here?
-        squirrelId = squirrelId + 1;
+        recordingId = recordingId + 1;
         for iDoy = 1:numel(undoys)
             theseDoys = find(dtdoys == undoys(iDoy));
             if numel(theseDoys) == 1440 % require full day for now
@@ -99,7 +100,8 @@ if do
                 end
                 if min(theseDoys) > 1 && max(theseDoys) < numel(T.datetime)
                     iRow = iRow + 1;
-                    sq_ids(iRow) = squirrelId;
+                    sq_ids(iRow) = recordingId;
+                    sq_ids_un(iRow) = sqkey.squirrel_id(iSq);
                     sq_sex(iRow) = strcmp(sqkey.sex{iSq},'M'); % 0 = Female, 1 = Male
                     sq_doys(iRow) = undoys(iDoy);
                     sq_odba(iRow,:) = T.odba(theseDoys);
@@ -118,34 +120,34 @@ if do
         T.nest_bin = strcmp(T.nest,'Nest');
         thisNestMin = sum(T.nest_bin) ./ size(T,1); % fraction of day
         if thisNestMin*24 > 1 && isValidT(T,true)% must be in nest for at least an hour
-            iCount = iCount + 1;
-            sq_inNestMin(iCount) = thisNestMin;
-            sq_asleepMin(iCount) = sum(T.asleep) ./ size(T,1);
+            iNestCount = iNestCount + 1;
+            sq_inNestMin(iNestCount) = thisNestMin;
+            sq_asleepMin(iNestCount) = sum(T.asleep) ./ size(T,1);
 
-            overlapStats(iCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
-            overlapStats(iCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
-            overlapStats(iCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
-            overlapStats(iCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
-            mean_doys(iCount) = round(mean(unique(day(T.datetime,'dayofyear'))));
+            overlapStats(iNestCount,1) = sum(T.nest_bin & T.awake) / size(T,1); % in-awake
+            overlapStats(iNestCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
+            overlapStats(iNestCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
+            overlapStats(iNestCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
+            mean_doys(iNestCount) = round(mean(unique(day(T.datetime,'dayofyear'))));
             
             % new, for Ben
-            overlapMeta.squirrelId{iCount} = sqkey.squirrel_id(iSq);
-            overlapMeta.in_awake{iCount} = overlapStats(iCount,1);
-            overlapMeta.in_asleep{iCount} = overlapStats(iCount,2);
-            overlapMeta.out_awake{iCount} = overlapStats(iCount,3);
-            overlapMeta.out_asleep{iCount} = overlapStats(iCount,4);
-            overlapMeta.is_female{iCount} = strcmp(sqkey.sex{iSq},'F');
-            overlapMeta.is_mast{iCount} = ismember(sqkey.year(iSq),[2014,2019]);
-            overlapMeta.year{iCount} = sqkey.year(iSq);
-            overlapMeta.start_dt{iCount} = T.datetime(1);
-            overlapMeta.end_dt{iCount} = T.datetime(end);
-            overlapMeta.durationInMinutes{iCount} = minutes(T.datetime(end)-T.datetime(1));
-            overlapMeta.inNestInMinutes{iCount} = sum(T.nest_bin);
-            overlapMeta.asleepInMinutes{iCount} = sum(~T.awake);
+            overlapMeta.squirrelId{iNestCount} = sqkey.squirrel_id(iSq);
+            overlapMeta.in_awake{iNestCount} = overlapStats(iNestCount,1);
+            overlapMeta.in_asleep{iNestCount} = overlapStats(iNestCount,2);
+            overlapMeta.out_awake{iNestCount} = overlapStats(iNestCount,3);
+            overlapMeta.out_asleep{iNestCount} = overlapStats(iNestCount,4);
+            overlapMeta.is_female{iNestCount} = strcmp(sqkey.sex{iSq},'F');
+            overlapMeta.is_mast{iNestCount} = ismember(sqkey.year(iSq),[2014,2019]);
+            overlapMeta.year{iNestCount} = sqkey.year(iSq);
+            overlapMeta.start_dt{iNestCount} = T.datetime(1);
+            overlapMeta.end_dt{iNestCount} = T.datetime(end);
+            overlapMeta.durationInMinutes{iNestCount} = minutes(T.datetime(end)-T.datetime(1));
+            overlapMeta.inNestInMinutes{iNestCount} = sum(T.nest_bin);
+            overlapMeta.asleepInMinutes{iNestCount} = sum(~T.awake);
             % add year, start date, end date, start time, end time
             for iSeason = 1:4
-                if ismember(mean_doys(iCount),seasonDoys(sIds(iSeason):sIds(iSeason+1)))
-                    overlapMeta.meanSeason{iCount} = iSeason;
+                if ismember(mean_doys(iNestCount),seasonDoys(sIds(iSeason):sIds(iSeason+1)))
+                    overlapMeta.meanSeason{iNestCount} = iSeason;
                 end
             end
         end
@@ -300,15 +302,15 @@ close all
 sTitles = {'winter','spring','summer','autumn'};
 sIds = round(linspace(1,366,5));
 all_diff = [];
-iCount = 0;
+iNestCount = 0;
 useshift = 40:80;
 for ii = useshift
     disp(ii);
     seasonDoys = circshift(1:366,ii);
     meanDayLength_spring = mean(Tss.day_length(seasonDoys(sIds(2):sIds(3))));
     meanDayLength_autumn = mean(Tss.day_length(seasonDoys(sIds(4):sIds(5))));
-    iCount = iCount + 1;
-    all_diff(iCount) = abs(meanDayLength_autumn - meanDayLength_spring);
+    iNestCount = iNestCount + 1;
+    all_diff(iNestCount) = abs(meanDayLength_autumn - meanDayLength_spring);
 end
 ff(1200,400);
 plot(all_diff);
