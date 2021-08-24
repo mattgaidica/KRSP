@@ -1,7 +1,7 @@
 function cb = cbAside(ax,labelText,cbColor,caxisVals)
-cbOffset = .001;
+cbOffset = .01;
 cb = colorbar(ax,'Location','east');
-% % cb.FontSize = 8;
+% cb.FontSize = 8;
 gcaPos = ax.Position;
 cbPos = cb.Position;
 set(cb,'position',[gcaPos(1) + gcaPos(3) + cbOffset gcaPos(2) cbPos(3)/2 gcaPos(4)]);
@@ -26,5 +26,7 @@ else
     end
 end
 cb.Ticks = caxis;
+cb.TickLabels = compose("%1.1e",caxis);
+cb.Label.Position(1) = cbPos(1)+0.1;
 
 cb.Box = 'off';
