@@ -4,3 +4,6 @@
 *.m~
 *.asv
 .DS_Store
+*.ai
+*.eps
+*.jpg

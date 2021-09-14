@@ -54,14 +54,13 @@ end
 
 months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',366);
-h = ff(500,900);
+h = ff(400,300);
 [sort_RI,I] = sort(all_RI);
 sort_doy = sq_xcorr_doys(I);
 sort_yr = sq_xcorr_yrs(I);
 
 mastR = [];
 nmastR = [];
-subplot(211);
 for iSq = 1:size(sq_xcorr,1)
     bar(iSq,sort_RI(iSq),'EdgeColor',colors(sort_doy(iSq),:),'FaceColor',colors(sort_doy(iSq),:));
     hold on;
@@ -78,7 +77,7 @@ ylabel('Rythmicity Index (RI)');
 yticks(0:0.2:1);
 text(mean(xlim),0.95,{'\uparrow','Mast Year'},...
     'horizontalalignment','center','verticalalignment','top','fontsize',12);
-xlabel('Squirrel (sorted by RI)');
+xlabel('Recording Session (sorted by RI)');
 xticks([]);
 grid on;
 c = colorbar('location','southoutside');
@@ -90,8 +89,16 @@ c.TickDirection = 'out';
 c.FontSize = 11;
 title('Rythmicity Index by Recording Session');
 
+set(gcf,'PaperPositionMode','auto');
+doSave = 1;
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'rhythmicityBySession.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'rhythmicityBySession.jpg'),'jpg');
+    close(gcf);
+end
+
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
-subplot(212);
+h = ff(400,300);
 mast_xs = [];
 mast_ys = [];
 mast_cmap = [];
@@ -148,12 +155,14 @@ for iSeason = 1:4
 end
 title('Rhythmicity Index Mast vs. Non-mast Years');
 
-set(h,'PaperPositionMode','auto');
-
+% need to re-open in illustrator, had to reshapre artboard, select > same >
+% fill color, delete winter mast
+set(gcf,'PaperPositionMode','auto');
+doSave = 1;
 if doSave
-    print(h,'-painters','-depsc',fullfile(exportPath,'rhythmicityMastYears.eps')); % required for vector lines
-    saveas(h,fullfile(exportPath,'rhythmicityMastYears.jpg'),'jpg');
-    close(h);
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'rhythmicityMastYears.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'rhythmicityMastYears.jpg'),'jpg');
+    close(gcf);
 end
 
 %% by season, zoom on ultradian rhythm
@@ -177,9 +186,13 @@ for iZoom = 1:2
         
         curve1 = xcorrMean + xcorrStd;
         curve2 = xcorrMean - xcorrStd;
+        plot(sq_xcorr_lags,curve1,':','color',colors(iSeason,:),'linewidth',1.5);
+         plot(sq_xcorr_lags,curve2,':','color',colors(iSeason,:),'linewidth',1.5);
+        
+        % fille isn't working on eps export
         t2 = [sq_xcorr_lags,fliplr(sq_xcorr_lags)];
         fillArea = [curve1,fliplr(curve2)];
-        fill(t2,fillArea,colors(iSeason,:),'FaceAlpha',0.15,'EdgeColor','none');
+%         fill(t2,fillArea,colors(iSeason,:),'FaceAlpha',0.15,'EdgeColor','none');
         
         % smooth to get rid of false positives
         [locs,pks] = peakseek(smoothdata(xcorrMean,'rloess',60),60);
@@ -220,7 +233,7 @@ for iZoom = 1:2
                 'horizontalalignment','center','verticalalignment','bottom');
             xticks(-1440*3:180:1440*3);
             xticklabels(compose('%i',xticks/60));
-            title("ultradian peaks");
+            title("Ultradian Peaks");
             yticks(ylim);
             yticklabels(compose('%1.2f',yticks));
             
@@ -245,11 +258,18 @@ for iZoom = 1:2
         xtickangle(60)
         set(gca,'fontsize',14);
         if iSeason == 4
-            xlabel('lag (hrs)');
+            xlabel('Lag (hrs)');
         end
         if iZoom == 1
             ylabel('Autocorrelation');
         end
         grid on;
     end
+end
+
+doSave = 1;
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'sleepRhythmicity.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'sleepRhythmicity.jpg'),'jpg');
+    close(gcf);
 end

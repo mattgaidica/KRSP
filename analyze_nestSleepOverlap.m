@@ -135,7 +135,7 @@ text(min(xlim)+0.05,0.335,'\leftarrow more sleeping in nest','horizontalalignmen
 text(max(xlim)-0.05,0.315,'less sleeping in nest \rightarrow ','horizontalalignment','right',...
     'verticalalignment','middle','fontsize',14);
 
-addFigureLabels(h);
+% addFigureLabels(h);
 % setFig('','',2); % not sure if this is needed?
 set(h,'PaperPositionMode','auto');
 

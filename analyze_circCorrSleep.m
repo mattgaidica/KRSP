@@ -44,8 +44,7 @@ end
 
 %% sleep mean (and old) consistency plots
 close all
-h = ff(800,400);
-subplotMargins = [.15,0]; % [vert, horz]
+subplotMargins = [.1,0]; % [vert, horz]
 doSave = true;
 nHalfWindow = 30;
 allDoys = 1:366;
@@ -54,6 +53,7 @@ ms = 20;
 titleLabels = {'Hour of Day','Solar Noon'};
 
 for iSun = 1:2
+    h = ff(400,400);
     sunBuffer = 0.05;
     sunrises = [];
     sunsets = [];
@@ -77,7 +77,6 @@ for iSun = 1:2
         end
     end
 
-    subplot(1,2,iSun);
     colors = seasonColors(1:366);
     modR = 0;
     
@@ -127,7 +126,7 @@ for iSun = 1:2
     c.Ticks = linspace(0,1,12);
     c.TickLabels = useMonths;
     c.TickDirection = 'out';
-    c.FontSize = 9;
+    c.FontSize = 11;
     %     title(['Asleep Mean, ',titles{iSex+1}]);
     title({'Asleep Mean',titleLabels{iSun}});
 
@@ -137,90 +136,22 @@ for iSun = 1:2
         text(0,-1,["100%","\downarrow"],'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
     end
 %     text(0.55,1.15,"Hour of Day",'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
+    set(h,'PaperPositionMode','auto');
 
-    % consistency
-% % % %     subplot(2,2,prc(2,[iSun,2]));
-% % % %     maxR = 1/3;
-% % % %     sunBuffer = sunBuffer * maxR;
-% % % %     theseAsleep = [];
-% % % %     for iDoy = 1:366
-% % % %         shiftDoys = circshift(allDoys,-iDoy+1+nHalfWindow);
-% % % %         useDoys = shiftDoys(1:nHalfWindow*2+1);
-% % % %         useIds = find(ismember(sq_doys,useDoys));% & ismember(sq_sex,iSex));
-% % % %         if numel(useIds) > 1
-% % % %             if iSun == 1
-% % % %                 monthData = maxR-var(sq_asleep(useIds,:));
-% % % %             else
-% % % %                 monthData = circshift(maxR-var(sq_asleep(useIds,:)),-round(secDay(Tss.solar_noon(iDoy))/60));
-% % % %             end
-% % % %             theseAsleep(iDoy,:) = imgaussfilt(monthData,1440/24,'padding','circular');
-% % % %         else
-% % % %             theseAsleep(iDoy,:) = NaN(1,1440);
-% % % %         end
-% % % %     end
-% % % % 
-% % % %     for iDoy = circshift(1:366,0) % for color overlay
-% % % %         polarplot(polarTime,theseAsleep(iDoy,:),'color',[colors(iDoy,:),op],'linewidth',2);
-% % % %         hold on;
-% % % %         if iSun == 1
-% % % %             ms = 15;
-% % % %             if iDoy > 366/2
-% % % %                 if iDoy < (366/2) + 366/4
-% % % %                     modR = modR - (.00027*maxR);
-% % % %                 else
-% % % %                     modR = modR + (.00027*maxR);
-% % % %                 end
-% % % %             else
-% % % %                 ms = 20;
-% % % %             end
-% % % %             polarplot(polarTime(round(sunrises(iDoy))),maxR+modR+sunBuffer,'.','color',[colors(iDoy,:),op],'markersize',ms);
-% % % %             polarplot(polarTime(round(sunsets(iDoy))),maxR+modR+sunBuffer,'.','color',[colors(iDoy,:),op],'markersize',ms);
-% % % %         end
-% % % %     end
-% % % %     pax = gca;
-% % % %     pax.ThetaTick = linspace(0,360,25);
-% % % %     pax.ThetaZeroLocation = 'top';
-% % % %     pax.ThetaDir = 'clockwise';
-% % % %     pax.FontSize = 14;
-% % % %     pax.Layer = 'top';
-% % % %     rlim([0 maxR+sunBuffer+(sunBuffer*.1)]);
-% % % %     rticks([]);
-% % % %     pax.Color = [1 1 1];
-% % % %     if iSun == 1
-% % % %         pax.ThetaTickLabel = 0:23;
-% % % %     else
-% % % %         pax.ThetaTickLabel = {'0','','','','','','+6','','','','','','±12','','','','','','-6','','','','','',};
-% % % %     end
-% % % % 
-% % % %     c = colorbar('location','southoutside');
-% % % %     colormap(colors);
-% % % %     c.Limits = [0,1];
-% % % %     c.Ticks = linspace(0,1,12);
-% % % %     c.TickLabels = months;
-% % % %     c.TickDirection = 'out';
-% % % %     c.FontSize = 9;
-% % % %     %     title(['Asleep Consistency, ',titles{iSex+1}]);
-% % % %     title({'Asleep Consistency',titleLabels{iSun}});
-% % % % 
-% % % %     polarplot(polarTime,maxR*ones(size(polarTime)),':','color',repmat(0,[3,1]));
-% % % %     fs = 14;
-% % % %     if iSun == 1
-% % % %         text(0,-maxR,["100%","\downarrow"],'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
-% % % %     end
-%     text(0.55,.38,"Hour of Day",'horizontalalignment','center','verticalalignment','bottom','fontsize',fs,'color',repmat(0.4,[3,1]));
+    % export to eps, open eps in illustrator, select > same > stroke
+    % weight, change opacity to 0.15, remove white background, then save as ai to embed in figure
+    if doSave
+        filename = sprintf("%s_%s",'circularSleep',num2str(iSun));
+        print(gcf,'-painters','-depsc',fullfile(exportPath,filename)); % required for vector lines
+%         saveas(h,fullfile(exportPath,filename),'epsc');
+        saveas(h,fullfile(exportPath,filename),'jpg');
+        close(h);
+    end
 end
 
 % XY = [-.1,1;-.1,1];
 % addFigureLabels(h,XY);
 % setFig('','',2); % not sure if this is needed?
-set(h,'PaperPositionMode','auto');
-
-if doSave
-    print(gcf,'-painters','-depsc',fullfile(exportPath,'circularSleep.eps')); % required for vector lines
-%     saveas(h,fullfile(exportPath,'circularSleep.eps'),'epsc');
-    saveas(h,fullfile(exportPath,'circularSleep.jpg'),'jpg');
-    close(h);
-end
 
 %% seasonal sleep w/ std
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
@@ -287,11 +218,11 @@ for iSun = 1:2
         xline(12,'k:');
         ylim([-0.25 1.25]);
         yticks([0 1]);
-        ylabel('asleep mean')
+        ylabel('Asleep Mean')
         if iSun == 1
-            xlabel('rel. to sunrise');
+            xlabel('Relative to Sunrise');
         else
-            xlabel('rel. to sunset');
+            xlabel('Relative to Sunset');
         end
         set(gca,'fontsize',14);
         title(seasonLabels{iSeason});
@@ -307,11 +238,11 @@ for iSun = 1:2
         xticklabels({'±12','','','','','','-6','','','','','','0','','','','','','+6','','','','','±12'});
 %         ylim([-0.25 1.25]);
         yticks([0 1]);
-        ylabel('asleep mean')
+        ylabel('Asleep Mean')
         if iSun == 1
-            xlabel('rel. to sunrise');
+            xlabel('Relative to Sunrise');
         else
-            xlabel('rel. to sunset');
+            xlabel('Relative to Sunset');
         end
         set(gca,'fontsize',14);
         title([seasonLabels{iSeason},' Mean']);
@@ -343,9 +274,9 @@ for iSun = 1:2
         ylim([-1 1]);
         ylabel('std (a.u.)')
         if iSun == 1
-            xlabel('rel. to sunrise');
+            xlabel('Relative to Sunrise');
         else
-            xlabel('rel. to sunset');
+            xlabel('Relative to Sunset');
         end
         set(gca,'fontsize',14);
         yticks([]);
@@ -372,4 +303,11 @@ for iSun = 1:2
             set(gca,'fontsize',14);
         end
     end
+end
+
+figure(h);
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'asleepMean.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'asleepMean.jpg'),'jpg');
+    close(gcf);
 end

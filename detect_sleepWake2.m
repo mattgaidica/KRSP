@@ -4,7 +4,7 @@ function [T,W_z] = detect_sleepWake2(T,dls)
 if numel(dls) == 1
     error('use DLS version');
 end
-doPlot = false;
+doPlot = true;
 baseSec = 1440;
 n = baseSec / 24;
 
@@ -36,7 +36,7 @@ for iFilt = 1:n
     % *2 because dlsMinBlock is only half a 'cycle'
     thisSmooth = smoothdata(dlsMinBlock*2 >= filtFactor,'gaussian',baseSec/2)...
         .* smoothdata(T.odba,'loess',filtFactor);
-    % must normalize or else 
+    % must normalize
     W = W + normalize(thisSmooth,'range',[0 1]);
     if doPlot
         plot(W,'color',colors(iFilt,:));
