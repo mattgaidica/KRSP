@@ -6,7 +6,7 @@ close all
 % statsMult = [1 -1;-1 1;1 1;-1 -1];
 statsMult = [0 -1;0 1;1 0;-1 0];
 h = ff(1200,400);
-
+fs = 14;
 subplot_tight(1,3,1,subplotMargins);
 op = 0.075;
 useIds = [2,3,1,4,2];
@@ -44,7 +44,6 @@ yticks(xticks);
 xticklabels(abs(xticks));
 yticklabels(xticklabels);
 offset = 0.05;
-fs = 14;
 text(0,max(ylim)-offset*2,'in-asleep','horizontalalignment','center','fontsize',fs);
 text(max(xlim),-offset*2,'out-awake','horizontalalignment','right','fontsize',fs);
 text(0,min(ylim)+offset*2,'in-awake','horizontalalignment','center','fontsize',fs);
