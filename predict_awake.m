@@ -1,4 +1,4 @@
-loadPath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
+loadPath = '/Users/matt/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
 sqkey = readtable('sqkey.txt');
 exportPath = '/Users/matt/Documents/MATLAB/KRSP/export';
 seasonShiftDays = 56; %  center by light, *seasonDoys(1) = 311
@@ -193,7 +193,7 @@ if do
     do = false;
     chime;
 end
-writetable(overlapMeta,'nestAsleepOverlap_v2.csv'); % for Ben
+writetable(overlapMeta,'nestAsleepOverlap_v3.csv'); % for Ben
 
 %%
 doSave = true;

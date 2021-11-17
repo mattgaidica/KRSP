@@ -3,7 +3,7 @@ warning ('off','all');
 weather = readtable('HainesJunction_DailyTemps_Master.csv');
 warning ('on','all');
 sqkey = readtable('sqkey');
-filePath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
+filePath = '/Users/matt/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
 
 Tss = makeTss(2014:2020);
 unyears = unique(sqkey.year);

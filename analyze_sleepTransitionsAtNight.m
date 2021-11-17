@@ -116,7 +116,7 @@ lw2 = 1;
 rows = 2;
 cols = 4;
 lns = [];
-showHours = 8;
+showHours = 4;
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
 sleepDurations_season = {};
 seasonMarkers = ['*','^','o','+'];
@@ -150,49 +150,48 @@ for iSeason = 1:4
         useDurations = sleepDurations(sleepDurations < showHours * 60);
         sleepDurations_season{iSeason} = useDurations;
 %         binEdges = linspace(0,showHours*60,nBins);
-        binEdges = 0:30:showHours*60-30;
+        binEdges = 0:10:showHours*60-10;
         y = histcounts(useDurations,binEdges,'Normalization','pdf');
         x = binEdges(1:end-1) + median(diff(binEdges));
-        y = y(~isinf(log(y)));
-        x = x(~isinf(log(y)));
-        coeffs = polyfit(x,log(y),1);
-        fprintf("%s \tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
-        fittedX = linspace(x(1), x(end), 100);
-        fittedLogY = polyval(coeffs, fittedX);
-        b = exp(coeffs(2));
-        m = exp(coeffs(1));
-        % Get y fitted another way
-        fittedY2 = b * m .^ fittedX; % b * m .^ fittedX;
-        lns(iSeason) = plot(x,y,seasonMarkers(iSeason),'color',colors(iSeason,:),'markerSize',15,'lineWidth',4);
+% % % %         coeffs = polyfit(x,log(y),1);
+% % % %         fprintf("%s \tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
+% % % %         fittedX = linspace(x(1), x(end), 100);
+% % % %         fittedLogY = polyval(coeffs, fittedX);
+% % % %         b = exp(coeffs(2));
+% % % %         m = exp(coeffs(1));
+% % % %         % Get y fitted another way
+% % % %         fittedY2 = b * m .^ fittedX; % b * m .^ fittedX;
+        % old markers: seasonMarkers(iSeason)
+        lns(iSeason) = plot(x,y,'.','color',colors(iSeason,:),'markerSize',15,'lineWidth',4);
         hold on;
-        plot(fittedX,fittedY2,'color',colors(iSeason,:),'lineWidth',4);
+%         plot(fittedX,fittedY2,'color',colors(iSeason,:),'lineWidth',4);
         set(gca,'yscale','log');
     end
 end
 
 % do stats
-ylab = flip(linspace(0.4,0.8,6));
-statCount = 0;
-fs = 12;
-statColor = repmat(0.5,[1,4]);
-for ii = 1:4
-    for jj = ii+1:4
-        % if p < 0.05 dist. are different
-        [h,p] = kstest2(sleepDurations_season{ii},sleepDurations_season{jj});
-        sigStr = '';
-        if p < 0.05 && p >= 0.01
-            sigStr = '*';
-        elseif p < 0.01 && p >= 0.001
-            sigStr = '**';
-        elseif p < 0.001
-            sigStr = '***';
-        end
-        statCount = statCount + 1;
-        sprintfString = sprintf('%s-%s %sp = %1.2e',seasonLabels{ii}(1:3),seasonLabels{jj}(1:3),sigStr,p);
-        disp(sprintfString);
-%         text(4,ylab(statCount),sprintfString,'fontsize',fs,'color',statColor);
-    end
-end
+% % % % ylab = flip(linspace(0.4,0.8,6));
+% % % % statCount = 0;
+% % % % fs = 12;
+% % % % statColor = repmat(0.5,[1,4]);
+% % % % for ii = 1:4
+% % % %     for jj = ii+1:4
+% % % %         % if p < 0.05 dist. are different
+% % % %         [h,p] = kstest2(sleepDurations_season{ii},sleepDurations_season{jj});
+% % % %         sigStr = '';
+% % % %         if p < 0.05 && p >= 0.01
+% % % %             sigStr = '*';
+% % % %         elseif p < 0.01 && p >= 0.001
+% % % %             sigStr = '**';
+% % % %         elseif p < 0.001
+% % % %             sigStr = '***';
+% % % %         end
+% % % %         statCount = statCount + 1;
+% % % %         sprintfString = sprintf('%s-%s %sp = %1.2e',seasonLabels{ii}(1:3),seasonLabels{jj}(1:3),sigStr,p);
+% % % %         disp(sprintfString);
+% % % % %         text(4,ylab(statCount),sprintfString,'fontsize',fs,'color',statColor);
+% % % %     end
+% % % % end
 
 legend(lns,seasonLabels);
 xlim([0 showHours*60 + median(diff(binEdges))]);
@@ -200,7 +199,7 @@ set(gca,'fontsize',16);
 xlabel('Duration t (min)');
 ylabel('Probability Density P');
 grid off; grid on;
-title('Sleep Periods');
+title('Quiescent Periods');
 ylimVals = ylim;
 xlimVals = xlim;
 
@@ -212,10 +211,13 @@ if doSave
 end
 
 %% mast stats
-h = ff(200,200);
-all_sleepDurations = [];
+showHours = 5;
+h = ff(800,800);
+all_x = {};
+all_y = {};
 lnmast = [];
 for iSeason = 1:4
+    subplot(2,2,iSeason);
     lns = NaN(2,1);
     sleepDurations_mast = {};
     for iMast = 1:2
@@ -229,7 +231,9 @@ for iSeason = 1:4
         uniqueSqs = unique(trans_is);
         sleepDurations = [];
         for iSq = uniqueSqs
-            theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
+%             theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
+%                 ismember(trans_on,useDoys{iSeason}) & ismember(trans_yr,useYears));
+             theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
                 ismember(trans_on,useDoys{iSeason}) & ismember(trans_yr,useYears));
             
             allEntries = find(trans_is==iSq);
@@ -250,60 +254,70 @@ for iSeason = 1:4
         useDurations = sleepDurations(sleepDurations < showHours * 60);
         sleepDurations_mast{iMast} = useDurations;
         
-        binEdges = 0:30:showHours*60-30;
+        binEdges = 0:10:showHours*60-10;
         y = histcounts(useDurations,binEdges,'Normalization','pdf');
         x = binEdges(1:end-1) + median(diff(binEdges));
-        y = y(~isinf(log(y)));
-        x = x(~isinf(log(y)));
-        coeffs = polyfit(x,log(y),1);
-        fprintf("%s tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
-        fittedX = linspace(x(1), x(end), 100);
-        fittedLogY = polyval(coeffs, fittedX);
-        b = exp(coeffs(2));
-        m = exp(coeffs(1));
-        % Get y fitted another way
-        fittedY2 = b * m .^ fittedX; % b * m .^ fittedX;
-%         lns(iSeason) = plot(x,y,seasonMarkers(iSeason),'color',colors(iSeason,:),'markerSize',15,'lineWidth',4);
-%         hold on;
-        if iSeason == 3 || iSeason == 4
-            if iMast == 1
-                plot(fittedX,fittedY2,'color',[colors(iSeason,:),1],'lineWidth',4);
-            else
-                plot(fittedX,fittedY2,':','color',[colors(iSeason,:),1],'lineWidth',4);
-            end
+%         y = y(~isinf(log(y)));
+%         x = x(~isinf(log(y)));
+        
+        all_x{iSeason,iMast} = x;
+        all_y{iSeason,iMast} = y;
+        
+% % % %         coeffs = polyfit(x,log(y),1);
+% % % %         fprintf("%s tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
+% % % %         fittedX = linspace(x(1), x(end), 100);
+% % % %         fittedLogY = polyval(coeffs, fittedX);
+% % % %         b = exp(coeffs(2));
+% % % %         m = exp(coeffs(1));
+% % % %         % Get y fitted another way
+% % % %         fittedY2 = b * m .^ fittedX; % b * m .^ fittedX;
+% % % %         % old use markers: seasonMarkers(iSeason)
+        
+        if iMast == 1
+            lns(iSeason) = plot(x,y,'.','color',colors(iSeason,:),'markerSize',15);
+        else
+            lns(iSeason) = plot(x,y,'x','color',colors(iSeason,:),'markerSize',5,'linewidth',2);
         end
+        hold on;
+%         if iSeason == 3 || iSeason == 4
+%             if iMast == 1
+%                 plot(fittedX,fittedY2,'color',[colors(iSeason,:),1],'lineWidth',4);
+%             else
+%                 plot(fittedX,fittedY2,':','color',[colors(iSeason,:),1],'lineWidth',4);
+%             end
+%         end
         lnmast(1) = plot(0,0,'k-','lineWidth',4);
         lnmast(2) = plot(0,0,'k:','lineWidth',4);
         hold on;
         grid on;
         set(gca,'yscale','log');
-        xlim(xlimVals);
-        ylim(ylimVals);
+%         xlim(xlimVals);
+%         ylim(ylimVals);
     end
     
-    if ~isempty(sleepDurations_mast{1}) && ~isempty(sleepDurations_mast{2})
-        [h,p] = kstest2(sleepDurations_mast{1},sleepDurations_mast{2});
-        sigStr = '';
-        if p < 0.05 && p >= 0.01
-            sigStr = '*';
-        elseif p < 0.01 && p >= 0.001
-            sigStr = '**';
-        elseif p < 0.001
-            sigStr = '***';
-        end
-        statString = sprintf('%s %sp = %1.2e',seasonLabels{iSeason},sigStr,p);
-        disp(statString);
-%         text(2,mean(ylab),,'fontsize',fs,'color',statColor);
-    else
-%         text(2,mean(ylab),'no mast data','fontsize',fs,'color',statColor);
-    end
+% % % %     if ~isempty(sleepDurations_mast{1}) && ~isempty(sleepDurations_mast{2})
+% % % %         [h,p] = kstest2(sleepDurations_mast{1},sleepDurations_mast{2});
+% % % %         sigStr = '';
+% % % %         if p < 0.05 && p >= 0.01
+% % % %             sigStr = '*';
+% % % %         elseif p < 0.01 && p >= 0.001
+% % % %             sigStr = '**';
+% % % %         elseif p < 0.001
+% % % %             sigStr = '***';
+% % % %         end
+% % % %         statString = sprintf('%s %sp = %1.2e',seasonLabels{iSeason},sigStr,p);
+% % % %         disp(statString);
+% % % % %         text(2,mean(ylab),,'fontsize',fs,'color',statColor);
+% % % %     else
+% % % % %         text(2,mean(ylab),'no mast data','fontsize',fs,'color',statColor);
+% % % %     end
 end
-legend(lnmast,{'Non-mast','Mast'},'location','southwest');
-set(gca,'fontsize',14);
-xticklabels({});
-yticklabels({});
-grid off;
-box off;
+% legend(lnmast,{'Non-mast','Mast'},'location','southwest');
+% set(gca,'fontsize',14);
+% xticklabels({});
+% yticklabels({});
+% grid off;
+% box off;
 
 doSave = 1;
 if doSave
@@ -312,8 +326,30 @@ if doSave
     close(gcf);
 end
 
+%%
+close all
+ff(800,200);
+for iSeason = 2:4
+    subplot(1,3,iSeason-1);
+    vals = all_y{iSeason,2} - all_y{iSeason,1};
+    binVals = (vals > 0) + ((vals <= 0) * -1);
+    y = [sum(vals > 0),sum(vals <= 0)];
+    plot(all_x{iSeason,2},binVals,'.','color',colors(iSeason,:),'markersize',30);
+    hold on;
+    plot(all_x{iSeason,2},binVals,'-','color',[colors(iSeason,:),0.15]);
+    ylim([-3 3]);
+    yticks([-1,1]);
+    yticklabels({'Non-mast','Mast'});
+    title(sprintf("%1.2f%% Mast",100*y(1)/sum(y)));
+    set(gca,'fontsize',14);
+    xlabel('Duration t (min)');
+%     pie(y);
+    hold on;
+%     legend({'Mast','Non-mast'});
+end
+saveas(gcf,fullfile(exportPath,'BinaryQuiescence_mast.jpg'),'jpg');
 
-%% CDF plots
+%% older CDF plots
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
 % main plot

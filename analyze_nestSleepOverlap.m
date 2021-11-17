@@ -1,5 +1,5 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
-doSave = true;
+doSave = false;
 subplotMargins = [.15,.07]; % [vert, horz]
 
 close all
