@@ -67,6 +67,8 @@ if do
         if isempty(T)
             continue;
         end
+%         saveas(gcf,sprintf("/Users/matt/Documents/MATLAB/KRSP/export/_QBDetect/%3d.jpg",iSq));
+%         close all;
         
         if strcmp(sqkey.sex_status{iSq},'lactating') | strcmp(sqkey.sex_status{iSq},'pregnant') |...
                 strcmp(sqkey.sex_status{iSq},'Pre-pregnancy')
@@ -131,6 +133,7 @@ if do
             mean_doys(iNestCount) = round(mean(unique(day(T.datetime,'dayofyear'))));
             
             % new, for Ben
+            overlapMeta.isq{iNestCount} = iSq;
             overlapMeta.squirrelId{iNestCount} = sqkey.squirrel_id(iSq);
             overlapMeta.in_awake{iNestCount} = overlapStats(iNestCount,1);
             overlapMeta.in_asleep{iNestCount} = overlapStats(iNestCount,2);
@@ -168,25 +171,27 @@ if do
             nightDoys = theseDoys(secDay(T.datetime(theseDoys)) < sunrise | secDay(T.datetime(theseDoys)) > sunset);
             [Y,M,D] = datevec(T.datetime(theseDoys(1)));
             useId = find(weather.Date == datetime(Y,M,D));
-% %             if ~ismember(Y,[2014,2019])
-% %                 continue;
-% %             end
-            if numel(theseDoys) == 1440 && ~isempty(useId) && ~isnan(weather.Mean_Temp(useId))
-                y_weather = [y_weather weather.Mean_Temp(useId)];
-                y_dayLength = [y_dayLength mean(Tss.day_length(Tss.doy == undoys(iDoy)),1)];
-                y_asleep = [y_asleep mean(T.asleep(theseDoys))];
-                y_nest = [y_nest sum(strcmp(T.nest(theseDoys),'Nest'))];
-                x_odba = [x_odba mean(T.odba_z(theseDoys))];
-                sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba(theseDoys))];
-                sqs_asleep{undoys(iDoy)} = [sqs_asleep{undoys(iDoy)} sum(T.asleep(theseDoys))];
-                sqs_asleepDay{undoys(iDoy)} = [sqs_asleepDay{undoys(iDoy)} sum(T.asleep(dayDoys))];
-                sqs_asleepNight{undoys(iDoy)} = [sqs_asleepNight{undoys(iDoy)} sum(T.asleep(nightDoys))];
+            
+             % FOR MAST NMAST TABLES
+            [Y,M,D] = datevec(T.datetime(theseDoys(1))); %% ??
+            if ismember(Y,2014:2020) % all: 2014:2020, mast: [2014,2019], nmast: [2015:2018,2020]
+                if numel(theseDoys) == 1440 && ~isempty(useId) && ~isnan(weather.Mean_Temp(useId))
+                    y_weather = [y_weather weather.Mean_Temp(useId)];
+                    y_dayLength = [y_dayLength mean(Tss.day_length(Tss.doy == undoys(iDoy)),1)];
+                    y_asleep = [y_asleep mean(T.asleep(theseDoys))];
+                    y_nest = [y_nest sum(strcmp(T.nest(theseDoys),'Nest'))];
+                    x_odba = [x_odba mean(T.odba_z(theseDoys))];
+                    sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba(theseDoys))];
+                    sqs_asleep{undoys(iDoy)} = [sqs_asleep{undoys(iDoy)} sum(T.asleep(theseDoys))];
+                    sqs_asleepDay{undoys(iDoy)} = [sqs_asleepDay{undoys(iDoy)} sum(T.asleep(dayDoys))];
+                    sqs_asleepNight{undoys(iDoy)} = [sqs_asleepNight{undoys(iDoy)} sum(T.asleep(nightDoys))];
 
-                sqs_nest{undoys(iDoy)} = [sqs_nest{undoys(iDoy)} sum(strcmp(T.nest(theseDoys),'Nest'))];
+                    sqs_nest{undoys(iDoy)} = [sqs_nest{undoys(iDoy)} sum(strcmp(T.nest(theseDoys),'Nest'))];
 
-                sqs_trans{undoys(iDoy)} = [sqs_trans{undoys(iDoy)} sum(abs(diff(T.asleep(theseDoys))))];
-                sqs_transDay{undoys(iDoy)} = [sqs_transDay{undoys(iDoy)} sum(abs(diff(T.asleep(dayDoys))))];
-                sqs_transNight{undoys(iDoy)} = [sqs_transNight{undoys(iDoy)} sum(abs(diff(T.asleep(nightDoys))))];
+                    sqs_trans{undoys(iDoy)} = [sqs_trans{undoys(iDoy)} sum(abs(diff(T.asleep(theseDoys))))];
+                    sqs_transDay{undoys(iDoy)} = [sqs_transDay{undoys(iDoy)} sum(abs(diff(T.asleep(dayDoys))))];
+                    sqs_transNight{undoys(iDoy)} = [sqs_transNight{undoys(iDoy)} sum(abs(diff(T.asleep(nightDoys))))];
+                end
             end
         end
     end

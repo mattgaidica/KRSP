@@ -1,5 +1,5 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
-doSave = false;
+doSave = true;
 subplotMargins = [.15,.07]; % [vert, horz]
 
 close all
@@ -29,30 +29,31 @@ for iSeason = 1:4
     for jj = 1:4
         xs = [theseStats(useIds(jj))*statsMult(useIds(jj),1),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),1)];
         ys = [theseStats(useIds(jj))*statsMult(useIds(jj),2),theseStats(useIds(jj+1))*statsMult(useIds(jj+1),2)];
-        lns(iSeason+1) = plot(xs,ys,'color',[colors(iSeason,:),1],'linewidth',2);
+        lns(iSeason+1) = plot(xs,ys,'color',[colors(iSeason,:),1],'linewidth',2.5);
         hold on;
     end
 end
 legend(lns,{'Individual','Winter','Spring','Summer','Autumn'});
 legend box off
-title('Nest-Asleep Overlap');
+title('Nest-QB Overlap');
 
 xlim([-0.5 0.75]);
-ylim([-0.75 0.75]);
+ylim([-0.25 1]);
 xticks(sort([0,xlim]));
-yticks(xticks);
+yticks(sort([0,ylim]));
 xticklabels(abs(xticks));
-yticklabels(xticklabels);
+yticklabels(abs(yticks));
 offset = 0.05;
-text(0,max(ylim)-offset*2,'in-asleep','horizontalalignment','center','fontsize',fs);
-text(max(xlim),-offset*2,'out-awake','horizontalalignment','right','fontsize',fs);
-text(0,min(ylim)+offset*2,'in-awake','horizontalalignment','center','fontsize',fs);
-text(min(xlim)+offset,offset*2,'out-asleep','horizontalalignment','left','fontsize',fs);
+text(-offset,max(ylim)-offset*2,'in-QB','horizontalalignment','right','fontsize',fs);
+text(0.3,-offset*2,'out-AB','horizontalalignment','left','fontsize',fs);
+text(-offset,min(ylim)+offset*2,'in-AB','horizontalalignment','right','fontsize',fs);
+text(-0.4,offset*2,'out-QB','horizontalalignment','left','fontsize',fs);
 % grid on;
 xlabel('Fraction of Day');
 ylabel('Fraction of Day');
 set(gca,'fontsize',16);
-box off;
+box on;
+grid on;
 %%
 f = fit(sq_inNestMin'*24,sq_asleepMin'*24,'poly1');
 
@@ -88,10 +89,10 @@ for iSeason = 1:4
 %     hold on;
 end
 
-xlim([8 24]);
-xticks(8:4:24);
-ylim([6 14]);
-yticks(6:4:14);
+xlim([6 24]);
+xticks(6:2:24);
+ylim([6 26]);
+yticks(6:2:24);
 
 % f(x) = p1*x + p2
 lns = [];
@@ -102,36 +103,38 @@ lns(3) = plot(xlim,[ci(1,1)*min(xlim)+ci(1,2),ci(1,1)*max(xlim)+ci(1,2)],'k:');
 plot(xlim,[ci(2,1)*min(xlim)+ci(2,2),ci(2,1)*max(xlim)+ci(2,2)],'k:');
 
 [r,p] = corr(sq_inNestMin'*24,sq_asleepMin'*24);
-title('Asleep vs. In Nest');
+title('QB vs. In Nest');
 xlabel('In Nest (hrs/day)');
-ylabel('Asleep (hrs/day)');
+ylabel('QB (hrs/day)');
 grid on;
 set(gca,'fontsize',16);
 legend(lns,{'Squirrel Mean','Linear Fit','95% Confidence'},'location','northwest');
+legend box off;
 
-text(mean(xlim),min(ylim)+0.75,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center','fontsize',14);
-text(mean(xlim),min(ylim)+0.35,sprintf('asleep = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
+text(mean(xlim),min(ylim)+2,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center','fontsize',14);
+text(mean(xlim),min(ylim)+1,sprintf('QB = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
 
 %% season_residuals
-resBins = linspace(-2,2,15);
+resBins = linspace(-4,4,20);
 subplot_tight(1,3,3,subplotMargins);
 for iSeason = 1:4
     counts = histcounts(season_residuals{iSeason},resBins) ./ numel(season_residuals{iSeason});
-    plot(linspace(min(resBins),max(resBins),numel(counts)),...
-        counts,'-','linewidth',4,'color',colors(iSeason,:));
+    x = linspace(min(resBins),max(resBins),numel(counts));
     hold on;
+    xline(sum(x.*counts),'color',colors(iSeason,:),'linewidth',2);
+    plot(x,counts,'-','linewidth',4,'color',colors(iSeason,:));
 end
 hold off;
 xlim([min(resBins),max(resBins)]);
 ylabel('Fraction of Squirrels');
 grid on;
 set(gca,'fontsize',16);
-title('Asleep vs. In Nest Residuals');
+title('QB vs. In Nest Residuals');
 xlabel('Residual (hrs)');
 ylim([0 0.35]);
-text(min(xlim)+0.05,0.335,'\leftarrow more sleeping in nest','horizontalalignment','left',...
+text(min(xlim)+0.05,0.335,'\leftarrow more QB in nest','horizontalalignment','left',...
     'verticalalignment','middle','fontsize',14);
-text(max(xlim)-0.05,0.315,'less sleeping in nest \rightarrow ','horizontalalignment','right',...
+text(max(xlim)-0.05,0.315,'less QB in nest \rightarrow ','horizontalalignment','right',...
     'verticalalignment','middle','fontsize',14);
 
 % addFigureLabels(h);

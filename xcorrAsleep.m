@@ -16,15 +16,15 @@ for iSq = 1:numel(unSqs)
         theseAsleep = [];
         for thisId = useIds
             % can use sq_odba_z here as comparison, rescale to +/-1
-            theseAsleep = [theseAsleep 2*(sq_asleep(thisId,:)-0.5)];
+            theseAsleep = [theseAsleep sq_asleep(thisId,:)];
         end
-        disp(size(theseAsleep));
-        [c,sq_xcorr_lags] = xcorr(theseAsleep,sq_xcorr_l,'coeff');
+        [c,sq_xcorr_lags] = xcorr(normalize(theseAsleep),sq_xcorr_l,'coeff');
         sq_xcorr(iCount,:) = c;
         sq_xcorr_doys(iCount) = sq_doys(useIds(round(numel(useIds)/2)));
         sq_xcorr_yrs(iCount) = sq_years(useIds(1));
     end
 end
+disp("done");
 
 %% all lines, colored by season, NOT USED
 close all
@@ -141,7 +141,7 @@ for iSeason = 1:4
         mast_xs(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),'off');
     if p < 0.05
         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'k-','linewidth',3);
-        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('***p = %1.2e',p),...
+        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('***p =\n%1.2e',p),...
             'horizontalalignment','center','verticalalignment','bottom','fontsize',11);
     elseif p > 0.99 % winter mast
         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'color',repmat(0.75,[1,3]),'linewidth',3);
@@ -149,7 +149,7 @@ for iSeason = 1:4
             'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
     else
         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'color',repmat(0.75,[1,3]),'linewidth',3);
-        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('p = %1.2e',p),...
+        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('p =\n%1.2e',p),...
             'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
     end
 end
@@ -165,7 +165,7 @@ if doSave
     close(gcf);
 end
 
-%% by season, zoom on ultradian rhythm
+%% by season, zoom on ultradian rhythm SUPPLEMENT FOR RI
 close all
 L = size(sq_xcorr,2);
 vcrit = sqrt(2)*erfinv(0.95);

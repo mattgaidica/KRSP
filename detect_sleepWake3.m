@@ -1,91 +1,92 @@
-function T = detect_sleepWake3(T)
+function [T,sleepThresh] = detect_sleepWake3(T)
 doPlot = false;
+doCalc = false;
+sleepThresh = NaN;
+if doCalc
+    meanArr = [];
+    minRef = linspace(0,86400,1440); % for each minute
+    secArr = secDay(T.datetime); % save compute time
+    for ii = 1:numel(minRef)-1
+        idx = find(secArr > minRef(ii) & secArr <= minRef(ii+1));
+        meanArr(ii) = mean(T.odba(idx));
+    end
 
-meanArr = [];
-medianArr = [];
-minRef = linspace(0,86400,1440); % for each minute
-for ii = 1:numel(minRef)-1
-    idx = find(secDay(T.datetime) > minRef(ii) & secDay(T.datetime) <= minRef(ii+1));
-    meanArr(ii) = mean(T.odba(idx));
-    medianArr(ii) = median(T.odba(idx));
+    [counts,binEdges] = histcounts(meanArr,'normalization','probability','BinMethod','sqrt');
+    xbins = binEdges(1:end-1) + mean(diff(binEdges))/2;
+    moreBy = 1000;
+    counts = equalVectors(counts,moreBy);
+    xbins = equalVectors(xbins,moreBy);
+    counts = smoothdata(counts,'gaussian',numel(counts)*0.1); % by percent
+    % smoothCounts = detrend(smoothCounts);
+    TF = islocalmin(counts);
+    firstTF = find(TF == 1,1,'first');
+    if xbins(firstTF) < max(xbins) * 0.25
+        sleepThresh = xbins(firstTF);
+    end
+else
+    sleepThresh = 0.204; % found empirically using doPlot=1
 end
 
-nBins = 24;
-[counts,bins] = histcounts(medianArr,nBins);
-maxBin = bins(2:end)';
-idx = kmeans(counts', 2);
-if mean(maxBin(idx==1)) > mean(maxBin(idx==2)) % k=2 is sleep
-    kSleep = 2;
-else % k=1 is sleep
-    kSleep = 1;
-end
-sleepThresh = max(maxBin(idx==kSleep));
+
+% % % % tRange = 1:60*3;
+% % % % sleepThresh = mean(meanArr(tRange)) + std(meanArr(tRange))*2;
+
+% counts = histcounts(T.odba,nBins);
+% sleepThresh = otsuthresh(counts);
+
 awakeIdx = T.odba > sleepThresh;
 asleepIdx = T.odba <= sleepThresh;
 T.awake = logical(awakeIdx);
 T.asleep = logical(asleepIdx);
 T.odba_z = (T.odba - mean(T.odba)) / std(T.odba);
 
-if doPlot
+if doPlot && ~isnan(sleepThresh)
     awakeOdba = T.odba;
-    awakeOdba(asleepIdx) = NaN;
     asleepOdba = T.odba;
     asleepOdba(awakeIdx) = NaN;
 
     rows = 2;
-    cols = 4;
+    cols = 2;
     fs = 14;
     close all;
-    ff(1200,800);
-    subplot(rows,cols,1:2);
-    plot(meanArr,'k-');
+    ff(800,500);
+    
+    subplot(rows,cols,1);
+    plot(meanArr,'k','linewidth',1);
+    xlim([1 numel(meanArr)]);
+    title('meanArr');
     set(gca,'fontsize',fs);
-    title(sprintf('Mean ODBA vs. Minute of Day for Squirrel %i\n(%i minutes)',iSq,numel(T.odba)));
     ylabel('ODBA');
     xlabel('Minute of Day');
-    xlim([0 1440]);
+    title('Mean ODBA by Minute of Day');
+    
+    subplot(rows,cols,2);
+    plot(xbins,counts,'k-','linewidth',2);
+    hold on;
+    ln1 = xline(sleepThresh,'r-','linewidth',2);
+    xticks(unique(sort([0:ceil(max(xbins)),sleepThresh])));
+    title('Mean ODBA Distribution with Local Minima');
+    set(gca,'fontsize',fs);
+    xlim([min(xbins) max(xbins)]);
+    grid on;
+    ylabel('Probability');
+    xlabel('ODBA');
+    legend(ln1,'AB-QB Threshold');
+    
+    colors = lines(5);
+    sleepColor = [0 0 0];
+    wakeColor = colors(5,:);
 
     subplot(rows,cols,3:4);
-    plot(medianArr,'k-');
-    set(gca,'fontsize',fs);
-    title(sprintf('Median ODBA vs. Minute of Day for Squirrel %i\n(%i minutes)',iSq,numel(T.odba)));
-    ylabel('ODBA');
-    xlabel('Minute of Day');
-    xlim([0 1440]);
-
-    subplot(rows,cols,5);
-    xlocs = diff(bins)/2+bins(1:end-1);
-    colors = lines(5);
-    lns = [];
-    for ii = 1:numel(counts)
-        if idx(ii) == kSleep
-            useColor = [0 0 0];
-            lnId = 1;
-        else
-            useColor = colors(5,:);
-            lnId = 2;
-        end
-        lns(lnId) = bar(xlocs(ii),counts(ii),mean(diff(bins)),'grouped','facecolor',useColor);
-        hold on;
-    end
-    legend({'Quiescent Behavior','Active Behavior'});
-    set(gca,'fontsize',fs);
-    xlim([min(bins) max(bins)]);
-    xticks(linspace(0,max(bins),10));
-    xticklabels(compose("%1.2f",xticks));
-    xtickangle(-90);
-    xlabel('ODBA');
-    title({'Median ODBA Distribution','Clustered by kmeans (n=2)'});
-    legend(lns,{'Quiescent Behavior','Active Behavior'});
-
-    subplot(rows,cols,6:8);
-    plot(asleepOdba,'k-');
+    plot(awakeOdba,'color',colors(5,:));
     hold on;
-    plot(awakeOdba,'-','color',colors(5,:));
+    plot(asleepOdba,'k-');
+    yline(sleepThresh,'r-');
     xlim([1 numel(asleepOdba)]);
     set(gca,'fontsize',fs);
-    title(sprintf('All ODBA (%i minutes) by "QB" and "AB"',numel(T.odba)));
+    title(sprintf('Session ODBA (%i minutes) by "QB" and "AB" (%s)',numel(T.odba),datestr(T.datetime(1),1)));
     xlabel('Sample (i.e. minute)');
     ylabel('ODBA');
-    legend({'Quiescent Behavior','Active Behavior'});
+    legend({'QB','AB','AB-QB Threshold'});
+    hold off;
 end

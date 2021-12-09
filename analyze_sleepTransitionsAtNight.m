@@ -105,43 +105,72 @@ if doSave
     close(gcf);
 end
 
-%% Probability Density plots
+%% Probability Density plots IN PAPER
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
+showHours = 3; % hours
+binWidth = 20; % mins
 % main plot
 close all
-h = ff(500,400);
+h = ff(1400,350);
 lw1 = 3;
 lw2 = 1;
 rows = 2;
 cols = 4;
 lns = [];
-showHours = 4;
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
 sleepDurations_season = {};
 seasonMarkers = ['*','^','o','+'];
 clc
+ys = {};
+allTransStarts = {};
+subplot(131);
 for iSeason = 1:4
     uniqueSqs = unique(trans_is);
     sleepDurations = [];
+    transStarts = [];
     for iSq = uniqueSqs
         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason}));
+        
+        % mast: [2014,2019], nmast: [2015:2018,2020]
+%         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason})...
+%             & ismember(trans_yr,[2014,2019]));
+
+        % START light/dark transitions
+% % % %         theseDoys = trans_on(theseSleepTrans);
+% % % %         meanSunrise = mean(secDay(Tss.sunrise(theseDoys)));
+% % % %         meanSunset = mean(secDay(Tss.sunset(theseDoys)));
+% % % %         temp = [];
+% % % %         for ii = theseSleepTrans
+% % % %             if trans_at(ii) > meanSunset || trans_at(ii) < meanSunrise
+% % % %                 temp = [temp ii];
+% % % %             end
+% % % %         end
+% % % %         if isempty(temp)
+% % % %             continue;
+% % % %         end
+% % % %         theseSleepTrans = temp;
+        % END light/dark code
+        
         if ~isempty(theseSleepTrans)
             allEntries = find(trans_is==iSq);
             % must end with awake transition to get time
             if trans_to(allEntries(end)) == 0
                 theseSleepTrans = theseSleepTrans(1:end-1);
             end
-            
-            theseTransStart = trans_at(theseSleepTrans); % asleep
             theseTransEnd = trans_at(theseSleepTrans+1); % awake
             % make minutes, that's the highest resolution from
             % predict_awake anyways
+            theseTransStart = trans_at(theseSleepTrans); % asleep
             theseDurations = (theseTransEnd - theseTransStart) / 60;
+            
             % fix transitions around next day (in seconds)
             for ii = find(theseDurations < 0)
                 theseDurations(ii) = theseDurations(ii) + 1440;
             end
+            % !! only save long transitions for next figure
+            transStarts = [transStarts theseTransStart(theseDurations > binWidth)];
+            
             sleepDurations = [sleepDurations theseDurations];
         end
     end
@@ -149,23 +178,70 @@ for iSeason = 1:4
     if ~isempty(sleepDurations)
         useDurations = sleepDurations(sleepDurations < showHours * 60);
         sleepDurations_season{iSeason} = useDurations;
-%         binEdges = linspace(0,showHours*60,nBins);
-        binEdges = 0:10:showHours*60-10;
-        y = histcounts(useDurations,binEdges,'Normalization','pdf');
-        x = binEdges(1:end-1) + median(diff(binEdges));
-% % % %         coeffs = polyfit(x,log(y),1);
-% % % %         fprintf("%s \tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
-% % % %         fittedX = linspace(x(1), x(end), 100);
-% % % %         fittedLogY = polyval(coeffs, fittedX);
-% % % %         b = exp(coeffs(2));
-% % % %         m = exp(coeffs(1));
-% % % %         % Get y fitted another way
-% % % %         fittedY2 = b * m .^ fittedX; % b * m .^ fittedX;
+        allTransStarts{iSeason} = transStarts;
+        %         binEdges = linspace(0,showHours*60,nBins);
+        binEdges = 0:binWidth:showHours*60;
+        [y,~,bin] = histcounts(useDurations,binEdges,'Normalization','pdf');
+        x = binEdges(1:end-1) + median(diff(binEdges))/2;
+        
         % old markers: seasonMarkers(iSeason)
-        lns(iSeason) = plot(x,y,'.','color',colors(iSeason,:),'markerSize',15,'lineWidth',4);
+        lns(iSeason) = plot(x,y,seasonMarkers(iSeason),'color',colors(iSeason,:),'markerSize',10,'lineWidth',3);
         hold on;
-%         plot(fittedX,fittedY2,'color',colors(iSeason,:),'lineWidth',4);
         set(gca,'yscale','log');
+
+        for iBin = 1:numel(x)
+            ys{iSeason,iBin} = useDurations(bin==iBin);
+        end
+% % % %         if iSeason == 4
+% % % %             pvals = [];
+% % % %             clc
+% % % %             for iBin = 1:numel(x)
+% % % %                 anova_y = [];
+% % % %                 anova_group = [];
+% % % %                 for anSeason = [2,4]
+% % % %                     anova_y = [anova_y ys{anSeason,iBin}];
+% % % %                     anova_group = [anova_group anSeason*ones(size(ys{anSeason,iBin}))];
+% % % %                 end
+% % % %                 p = anova1(anova_y',anova_group','off');
+% % % %                 fprintf("iBin = %i, p = %1.4f\n",iBin,p);
+% % % %                 pvals(iBin) = p;
+% % % %             end
+% % % %             yyaxis right;
+% % % %             plot(x,pvals,'-','color',repmat(0.7,[3,1]),'lineWidth',3);
+% % % %             hold on;
+% % % %             
+% % % %             pvals = [];
+% % % %             clc
+% % % %             for iBin = 1:numel(x)
+% % % %                 anova_y = [];
+% % % %                 anova_group = [];
+% % % %                 for anSeason = [1,3]
+% % % %                     anova_y = [anova_y ys{anSeason,iBin}];
+% % % %                     anova_group = [anova_group anSeason*ones(size(ys{anSeason,iBin}))];
+% % % %                 end
+% % % %                 p = anova1(anova_y',anova_group','off');
+% % % %                 fprintf("iBin = %i, p = %1.4f\n",iBin,p);
+% % % %                 pvals(iBin) = p;
+% % % %             end
+% % % %             yyaxis right;
+% % % %             plot(x,pvals,'k-','lineWidth',3);
+% % % % %             plot(x,pvals,'--','color',[colors(3,:),0.5],'lineWidth',3);
+% % % %             set(gca,'ycolor','k');
+% % % %             ylim([0 1]);
+% % % %             ylabel('p-value');
+% % % %             yyaxis left;
+% % % %         end
+        
+        onlyUseIds = find(x >= 30);
+        coeffs = polyfit(x(onlyUseIds),log(y(onlyUseIds)),1);
+%         fprintf("%s \tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
+        fittedX = linspace(x(min(onlyUseIds)), x(max(onlyUseIds)), 100);
+        fittedLogY = polyval(coeffs, fittedX);
+        b = exp(coeffs(2));
+        m = exp(coeffs(1));
+        % Get y fitted another way
+        fittedY2 = b * m .^ fittedX; % b * m .^ fittedX;
+        plot(fittedX,fittedY2,'-','color',colors(iSeason,:),'lineWidth',1);
     end
 end
 
@@ -195,24 +271,171 @@ end
 
 legend(lns,seasonLabels);
 xlim([0 showHours*60 + median(diff(binEdges))]);
-set(gca,'fontsize',16);
+xticks(x);
+set(gca,'fontsize',14);
 xlabel('Duration t (min)');
 ylabel('Probability Density P');
 grid off; grid on;
-title('Quiescent Periods');
+title('QB Periods');
 ylimVals = ylim;
 xlimVals = xlim;
 
-doSave = 1;
+% % doSave = 1;
+% % if doSave
+% %     print(gcf,'-painters','-depsc',fullfile(exportPath,'ProbabilityDensity.eps')); % required for vector lines
+% %     saveas(gcf,fullfile(exportPath,'ProbabilityDensity.jpg'),'jpg');
+% %     close(gcf);
+% % end
+
+%%
+recompute = 1;
+if recompute
+    windowSize = 7;
+    binWidth = 20; % minutes
+    bins = round(linspace(1,366,60));
+    yearDoys = 1:366;
+    nBins = 144;
+    allTransHist = NaN(numel(bins),nBins);
+    for iBin = 1:numel(bins)
+        theseDoys = circshift(1:366,windowSize-bins(iBin));
+        theseDoys = theseDoys(1:windowSize*2);
+%         uniqueSqs = unique(trans_is);
+        transStarts = [];
+%         for iSq = uniqueSqs
+        iDoyCount = 0;
+        histDoyArr = [];
+        for iDoy = 1:numel(theseDoys)
+%             theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,theseDoys));
+            theseSleepTrans = find(trans_to==0 & ismember(trans_on,theseDoys(iDoy))); %  & ~ismember(trans_yr,[2014,2019])
+            if numel(theseSleepTrans) > windowSize * 100
+                allEntries = find(trans_is==iSq);
+                % must end with awake transition to get time
+                if trans_to(allEntries(end)) == 0
+                    theseSleepTrans = theseSleepTrans(1:end-1);
+                end
+                theseTransEnd = trans_at(theseSleepTrans+1); % awake
+                % make minutes, that's the highest resolution from
+                % predict_awake anyways
+                theseTransStart = trans_at(theseSleepTrans); % asleep
+                theseDurations = (theseTransEnd - theseTransStart) / 60;
+
+                % fix transitions around next day (in seconds)
+                for ii = find(theseDurations < 0)
+                    theseDurations(ii) = theseDurations(ii) + 1440;
+                end
+                % !! only save long transitions for next figure
+                transStarts = [transStarts theseTransStart(theseDurations > binWidth)];
+%                 shiftedTrans = transStarts - round(secDay(Tss.sunrise(theseDoys(iDoy))));
+                [counts,binEdges] = histcounts(transStarts,linspace(0,86400,nBins+3),'normalization','probability'); %'BinMethod','sqrt'
+                counts = counts(2:end-1); % rm edges
+                binShift = round(((86400/2) - secDay(Tss.noon(theseDoys(iDoy)))) / (86400/nBins));
+                
+                iDoyCount = iDoyCount + 1;
+                histDoyArr(iDoyCount,:) = circshift(counts,binShift);
+            end
+        end
+        if ~isempty(mean(histDoyArr,1))
+            allTransHist(iBin,:) = mean(histDoyArr,1); %imgaussfilt(counts(2:end-1),1,'padding','circular');
+        end
+        disp(iBin);
+    end
+    recompute = false;
+end
+
+seasonMeanDoys = [];
+for iSeason = 1:4
+    seasonMeanDoys(iSeason) = useDoys{iSeason}(round(numel(useDoys{iSeason})/2));
+end
+
+subplot(1,3,2:3);
+xSolarNoon = linspace(-12,12,size(allTransHist,2));
+pcolor(xSolarNoon,bins,allTransHist);
+shading interp;
+xticks(-12:2:12);
+useyticks = round(linspace(1,366,16));
+yticks(useyticks);
+
+colormap(magma(6));
+set(gca,'ydir','normal');
+
+useyticklabels = compose("%i",useyticks);
+seasonTicks = {'Winter','Spring','Summer','Autumn'};
+for iSeason = 1:4
+    targetDoy = useDoys{iSeason}(round(numel(useDoys{iSeason})/2));
+    yidx = closest(yticks,targetDoy);
+    useyticklabels{yidx} = convertStringsToChars("\textbf{" + seasonTicks{iSeason} + "}");
+end
+yticklabels(useyticklabels);
+
+set(gca,'fontsize',14,'TickLabelInterpreter','latex','FontName','phv');
+title("Consolidated AB\rightarrowQB Transitions");
+xlabel("Hours to Solar Noon");
+ylabel('Julian Day of Year');
+c = colorbar;
+ylabel(c,'Probability','fontsize',14);
+caxis(caxis*0.75) % amplify colors
+
+hold on;
+allSunrise = [];
+allSunset = [];
+for iBin = 1:numel(bins)
+    allSunrise(iBin) = 0 - (secDay(Tss.noon(bins(iBin))) - secDay(Tss.sunrise(bins(iBin)))) ./ (3600); % if nBins=144
+    allSunset(iBin) = (secDay(Tss.sunset(bins(iBin))) - secDay(Tss.noon(bins(iBin)))) ./ (3600);
+end
+plot(allSunrise,bins,'color',[1 1 1 0.6],'linewidth',4);
+plot(allSunset,bins,'color',[1 1 1 0.6],'linewidth',4);
+hold off;
+
 if doSave
-    print(gcf,'-painters','-depsc',fullfile(exportPath,'ProbabilityDensity.eps')); % required for vector lines
-    saveas(gcf,fullfile(exportPath,'ProbabilityDensity.jpg'),'jpg');
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'QBTransitions.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'QBTransitions.jpg'),'jpg');
     close(gcf);
 end
 
-%% mast stats
-showHours = 5;
-h = ff(800,800);
+%% OLD LINE PLOTS
+% transition times +-12 from solar noon
+subplot(122);
+shiftBy = [];
+% circshift(imgaussfilt(counts,nS,'padding','circular'),-shiftBy)
+% shiftBy = closest(t,mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60/60) + round(numel(t)/2);
+% close all
+% ff(400,300);
+for iSeason = 1:4
+    if isempty(allTransStarts{iSeason})
+        continue;
+    end
+    shiftBy(iSeason) = round(mean(secDay(Tss.noon(useDoys{iSeason}))));
+    shiftedTrans = allTransStarts{iSeason}-shiftBy(iSeason);
+%     shiftedBins = linspace(min(shiftedTrans),max(shiftedTrans),nBins);
+    [counts,binEdges] = histcounts(shiftedTrans,'normalization','probability','BinMethod','sqrt');
+    counts = imgaussfilt(counts(2:end-1),1,'padding','circular');
+%     circCounts = circshift(counts,round((-shiftBy(iSeason)/1440)*100)); % imgaussfilt(counts,1,'padding','circular'), 
+%     circx = linspace(-pi,pi,numel(counts));
+%     polarplot(circx,counts,'linewidth',2,'color',colors(iSeason,:));
+    x = linspace(-12,12,numel(counts));
+    plot(x,counts,'-','color',colors(iSeason,:),'linewidth',3);
+    hold on;
+end
+set(gca,'fontsize',14);
+title("AB\rightarrowQB Transitions");
+xlabel("Hours to Solar Noon");
+xticks(-12:6:12);
+xlim([-12 12]);
+ylabel('Probability');
+grid on;
+
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'QBTransitions.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'QBTransitions.jpg'),'jpg');
+    close(gcf);
+end
+
+%% mast version IN PROGRESS
+colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
+
+% showHours = 3;
+% binWidth = 20;
+h = ff(500,500);
 all_x = {};
 all_y = {};
 lnmast = [];
@@ -222,7 +445,7 @@ for iSeason = 1:4
     sleepDurations_mast = {};
     for iMast = 1:2
         if iMast == 1
-            useYears = [2015:2020];
+            useYears = [2015:2018,2020];
             op = 1;
         else
             useYears = [2014,2019];
@@ -231,10 +454,23 @@ for iSeason = 1:4
         uniqueSqs = unique(trans_is);
         sleepDurations = [];
         for iSq = uniqueSqs
-%             theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
-%                 ismember(trans_on,useDoys{iSeason}) & ismember(trans_yr,useYears));
-             theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
+            theseSleepTrans = find(trans_is==iSq & trans_to==0 &...
                 ismember(trans_on,useDoys{iSeason}) & ismember(trans_yr,useYears));
+            
+            % test light/dark transitions
+            theseDoys = trans_on(theseSleepTrans);
+            meanSunrise = mean(secDay(Tss.sunrise(theseDoys)));
+            meanSunset = mean(secDay(Tss.sunset(theseDoys)));
+            temp = [];
+            for ii = theseSleepTrans
+                if trans_at(ii) > meanSunset || trans_at(ii) < meanSunrise
+                    temp = [temp ii];
+                end
+            end
+            if isempty(temp)
+                continue;
+            end
+            theseSleepTrans = temp;
             
             allEntries = find(trans_is==iSq);
             % must end with awake transition to get time
@@ -252,65 +488,49 @@ for iSeason = 1:4
             sleepDurations = [sleepDurations theseDurations];
         end
         useDurations = sleepDurations(sleepDurations < showHours * 60);
-        sleepDurations_mast{iMast} = useDurations;
         
-        binEdges = 0:10:showHours*60-10;
-        y = histcounts(useDurations,binEdges,'Normalization','pdf');
-        x = binEdges(1:end-1) + median(diff(binEdges));
-%         y = y(~isinf(log(y)));
-%         x = x(~isinf(log(y)));
+        binEdges = 0:binWidth:showHours*60;
+        [y,~,bin] = histcounts(useDurations,binEdges,'Normalization','pdf');
+        x = binEdges(1:end-1) + median(diff(binEdges))/2;
+        
+        sleepDurations_mast{iMast} = useDurations;
+        sleepBins_mast{iMast} = bin;
         
         all_x{iSeason,iMast} = x;
         all_y{iSeason,iMast} = y;
         
-% % % %         coeffs = polyfit(x,log(y),1);
-% % % %         fprintf("%s tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
-% % % %         fittedX = linspace(x(1), x(end), 100);
-% % % %         fittedLogY = polyval(coeffs, fittedX);
-% % % %         b = exp(coeffs(2));
-% % % %         m = exp(coeffs(1));
-% % % %         % Get y fitted another way
-% % % %         fittedY2 = b * m .^ fittedX; % b * m .^ fittedX;
-% % % %         % old use markers: seasonMarkers(iSeason)
-        
         if iMast == 1
-            lns(iSeason) = plot(x,y,'.','color',colors(iSeason,:),'markerSize',15);
+            lns(iSeason) = plot(x,y,'.','color',colors(iSeason,:),'markerSize',30);
         else
-            lns(iSeason) = plot(x,y,'x','color',colors(iSeason,:),'markerSize',5,'linewidth',2);
+            lns(iSeason) = plot(x,y,'x','color',colors(iSeason,:),'markerSize',12,'linewidth',3);
+            if iSeason == 1
+                continue;
+            end
+            for iBin = 1:numel(x)
+                nmastDurs = sleepDurations_mast{1};
+                nmastDurs = nmastDurs(sleepBins_mast{1}==iBin);
+                mastDurs = sleepDurations_mast{2};
+                mastDurs = mastDurs(sleepBins_mast{2}==iBin);
+                group = [zeros(numel(nmastDurs),1);ones(numel(mastDurs),1)];
+                p = anova1([nmastDurs,mastDurs]',group,'off');
+                fprintf("iSeason: %i, iBin: %i, p = %1.4f\n",iSeason,iBin,p);
+                if p < 0.05
+                    plot(x(iBin),max(ylim),'r*');
+                end
+                disp("");
+            end
         end
         hold on;
-%         if iSeason == 3 || iSeason == 4
-%             if iMast == 1
-%                 plot(fittedX,fittedY2,'color',[colors(iSeason,:),1],'lineWidth',4);
-%             else
-%                 plot(fittedX,fittedY2,':','color',[colors(iSeason,:),1],'lineWidth',4);
-%             end
-%         end
         lnmast(1) = plot(0,0,'k-','lineWidth',4);
         lnmast(2) = plot(0,0,'k:','lineWidth',4);
         hold on;
         grid on;
         set(gca,'yscale','log');
-%         xlim(xlimVals);
-%         ylim(ylimVals);
+        xlim([0,showHours*60]);
+        ylim([10^-5 1])
+        %         xlim(xlimVals);
+        %         ylim(ylimVals);
     end
-    
-% % % %     if ~isempty(sleepDurations_mast{1}) && ~isempty(sleepDurations_mast{2})
-% % % %         [h,p] = kstest2(sleepDurations_mast{1},sleepDurations_mast{2});
-% % % %         sigStr = '';
-% % % %         if p < 0.05 && p >= 0.01
-% % % %             sigStr = '*';
-% % % %         elseif p < 0.01 && p >= 0.001
-% % % %             sigStr = '**';
-% % % %         elseif p < 0.001
-% % % %             sigStr = '***';
-% % % %         end
-% % % %         statString = sprintf('%s %sp = %1.2e',seasonLabels{iSeason},sigStr,p);
-% % % %         disp(statString);
-% % % % %         text(2,mean(ylab),,'fontsize',fs,'color',statColor);
-% % % %     else
-% % % % %         text(2,mean(ylab),'no mast data','fontsize',fs,'color',statColor);
-% % % %     end
 end
 % legend(lnmast,{'Non-mast','Mast'},'location','southwest');
 % set(gca,'fontsize',14);
@@ -343,9 +563,9 @@ for iSeason = 2:4
     title(sprintf("%1.2f%% Mast",100*y(1)/sum(y)));
     set(gca,'fontsize',14);
     xlabel('Duration t (min)');
-%     pie(y);
+    %     pie(y);
     hold on;
-%     legend({'Mast','Non-mast'});
+    %     legend({'Mast','Non-mast'});
 end
 saveas(gcf,fullfile(exportPath,'BinaryQuiescence_mast.jpg'),'jpg');
 

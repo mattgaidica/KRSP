@@ -42,7 +42,7 @@ for iSex = 0:1
     xlim([1 366]);
 end
 
-%% sleep mean (and old) consistency plots
+%% sleep mean IN PAPER
 close all
 subplotMargins = [.1,0]; % [vert, horz]
 doSave = true;
@@ -128,7 +128,7 @@ for iSun = 1:2
     c.TickDirection = 'out';
     c.FontSize = 11;
     %     title(['Asleep Mean, ',titles{iSex+1}]);
-    title({'Asleep Mean',titleLabels{iSun}});
+    title(sprintf("QB Mean\n(%s)",titleLabels{iSun}));
 
     polarplot(polarTime,ones(size(polarTime)),':','color',repmat(0,[3,1]));
     fs = 14;
@@ -153,7 +153,7 @@ end
 % addFigureLabels(h,XY);
 % setFig('','',2); % not sure if this is needed?
 
-%% seasonal sleep w/ std
+%% seasonal sleep, in homeograph (linear day plot w/ std)
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
 close all
