@@ -7,4 +7,6 @@ if ~isempty(varargin)
     n = varargin{1};
 end
 % create colors (cmap)
-colors = double(squeeze(imresize(A,[1,n]))) ./ 255;
+useIdx = round(linspace(1,size(A,2),n)); % include end colors
+colors = double(squeeze(A(1,useIdx,:))) ./ 255;
+% colors = double(squeeze(imresize(A,[1,n]))) ./ 255; % interp end colors

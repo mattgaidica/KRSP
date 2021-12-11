@@ -1,7 +1,11 @@
 function [T,sleepThresh] = detect_sleepWake3(T)
 doPlot = false;
 doCalc = false;
+if doPlot
+    doCalc = true;
+end
 sleepThresh = NaN;
+
 if doCalc
     meanArr = [];
     minRef = linspace(0,86400,1440); % for each minute
@@ -27,7 +31,6 @@ else
     sleepThresh = 0.204; % found empirically using doPlot=1
 end
 
-
 % % % % tRange = 1:60*3;
 % % % % sleepThresh = mean(meanArr(tRange)) + std(meanArr(tRange))*2;
 
@@ -45,11 +48,11 @@ if doPlot && ~isnan(sleepThresh)
     asleepOdba = T.odba;
     asleepOdba(awakeIdx) = NaN;
 
-    rows = 2;
+    rows = 3;
     cols = 2;
     fs = 14;
     close all;
-    ff(800,500);
+    ff(800,800);
     
     subplot(rows,cols,1);
     plot(meanArr,'k','linewidth',1);
@@ -89,4 +92,18 @@ if doPlot && ~isnan(sleepThresh)
     ylabel('ODBA');
     legend({'QB','AB','AB-QB Threshold'});
     hold off;
+    
+    subplot(rows,cols,5:6);
+    plot(awakeOdba,'color',colors(5,:));
+    hold on;
+    plot(asleepOdba,'k-');
+    yline(sleepThresh,'r-');
+    xlim([1 min([numel(asleepOdba),720])]);
+    set(gca,'fontsize',fs);
+    title('Zoomed');
+    xlabel('Sample (i.e. minute)');
+    ylabel('ODBA');
+    legend({'QB','AB','AB-QB Threshold'});
+    hold off;
+    ylim([0 0.5]);
 end

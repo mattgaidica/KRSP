@@ -232,7 +232,7 @@ stdAsleep = nanstd([sqs_asleepDay{seasonDoys(1:366)}]);
 [m,s] = parseMeanStdString(sleepDaylight);
 sleepDaylight{iS} = sprintf('%1.2f ± %1.2f',m,s);
 [m,s] = parseMeanStdString(sleepDaylight_percent);
-sleepDaylight_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',s,m);
+sleepDaylight_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',m,s);
 
 % % meanAsleep = nanmean([sqs_asleepNight{seasonDoys(1:366)}]);
 % % stdAsleep = nanstd([sqs_asleepNight{seasonDoys(1:366)}]);
@@ -256,7 +256,7 @@ sleepTrans{iS} = sprintf('%1.0f ± %1.0f',m,s);
 % % sleepTransDaylight_perhour{iS} = sprintf('%1.0f ± %1.0f',meanTrans/(meanDayLength/3600),...
 % %         stdTrans/(meanDayLength/3600));
 [m,s] = parseMeanStdString(sleepTransDaylight);
-sleepTransDaylight{iS} = sprintf('%1.0f ± %1.0f',s,m);
+sleepTransDaylight{iS} = sprintf('%1.0f ± %1.0f',m,s);
 [m,s] = parseMeanStdString(sleepTransDaylight_perhour);
 sleepTransDaylight_perhour{iS} = sprintf('%1.0f ± %1.0f',m,s);
 

@@ -67,8 +67,6 @@ if do
         if isempty(T)
             continue;
         end
-%         saveas(gcf,sprintf("/Users/matt/Documents/MATLAB/KRSP/export/_QBDetect/%3d.jpg",iSq));
-%         close all;
         
         if strcmp(sqkey.sex_status{iSq},'lactating') | strcmp(sqkey.sex_status{iSq},'pregnant') |...
                 strcmp(sqkey.sex_status{iSq},'Pre-pregnancy')
@@ -76,6 +74,9 @@ if do
             continue;
         end
         Tawake = make_Tawake(T); % transition table
+        
+%         saveas(gcf,sprintf("/Users/matt/Documents/MATLAB/KRSP/export/_QBDetect/%3d.jpg",iSq));
+%         close all;
         
         % /Users/matt/Documents/MATLAB/KRSP/xcorrAsleep.m
 %         if numel(T.asleep) >= sq_xcorr_l

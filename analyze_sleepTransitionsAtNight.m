@@ -287,104 +287,115 @@ xlimVals = xlim;
 % %     close(gcf);
 % % end
 
-%%
-recompute = 1;
-if recompute
-    windowSize = 7;
-    binWidth = 20; % minutes
-    bins = round(linspace(1,366,60));
-    yearDoys = 1:366;
-    nBins = 144;
-    allTransHist = NaN(numel(bins),nBins);
-    for iBin = 1:numel(bins)
-        theseDoys = circshift(1:366,windowSize-bins(iBin));
-        theseDoys = theseDoys(1:windowSize*2);
-%         uniqueSqs = unique(trans_is);
-        transStarts = [];
-%         for iSq = uniqueSqs
-        iDoyCount = 0;
-        histDoyArr = [];
-        for iDoy = 1:numel(theseDoys)
-%             theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,theseDoys));
-            theseSleepTrans = find(trans_to==0 & ismember(trans_on,theseDoys(iDoy))); %  & ~ismember(trans_yr,[2014,2019])
-            if numel(theseSleepTrans) > windowSize * 100
-                allEntries = find(trans_is==iSq);
-                % must end with awake transition to get time
-                if trans_to(allEntries(end)) == 0
-                    theseSleepTrans = theseSleepTrans(1:end-1);
-                end
-                theseTransEnd = trans_at(theseSleepTrans+1); % awake
-                % make minutes, that's the highest resolution from
-                % predict_awake anyways
-                theseTransStart = trans_at(theseSleepTrans); % asleep
-                theseDurations = (theseTransEnd - theseTransStart) / 60;
+%% MEAN AND PROBABILITY QB HEATMAP
 
-                % fix transitions around next day (in seconds)
-                for ii = find(theseDurations < 0)
-                    theseDurations(ii) = theseDurations(ii) + 1440;
-                end
-                % !! only save long transitions for next figure
-                transStarts = [transStarts theseTransStart(theseDurations > binWidth)];
-%                 shiftedTrans = transStarts - round(secDay(Tss.sunrise(theseDoys(iDoy))));
-                [counts,binEdges] = histcounts(transStarts,linspace(0,86400,nBins+3),'normalization','probability'); %'BinMethod','sqrt'
-                counts = counts(2:end-1); % rm edges
-                binShift = round(((86400/2) - secDay(Tss.noon(theseDoys(iDoy)))) / (86400/nBins));
-                
-                iDoyCount = iDoyCount + 1;
-                histDoyArr(iDoyCount,:) = circshift(counts,binShift);
-            end
-        end
-        if ~isempty(mean(histDoyArr,1))
-            allTransHist(iBin,:) = mean(histDoyArr,1); %imgaussfilt(counts(2:end-1),1,'padding','circular');
-        end
-        disp(iBin);
-    end
-    recompute = false;
-end
+windowSize = 7;
+binWidth = 10; % minutes
+bins = round(linspace(1,366,60));
+yearDoys = 1:366;
+nBins = 144;
 
 seasonMeanDoys = [];
 for iSeason = 1:4
     seasonMeanDoys(iSeason) = useDoys{iSeason}(round(numel(useDoys{iSeason})/2));
 end
-
-subplot(1,3,2:3);
-xSolarNoon = linspace(-12,12,size(allTransHist,2));
-pcolor(xSolarNoon,bins,allTransHist);
-shading interp;
-xticks(-12:2:12);
-useyticks = round(linspace(1,366,16));
-yticks(useyticks);
-
-colormap(magma(6));
-set(gca,'ydir','normal');
-
-useyticklabels = compose("%i",useyticks);
-seasonTicks = {'Winter','Spring','Summer','Autumn'};
-for iSeason = 1:4
-    targetDoy = useDoys{iSeason}(round(numel(useDoys{iSeason})/2));
-    yidx = closest(yticks,targetDoy);
-    useyticklabels{yidx} = convertStringsToChars("\textbf{" + seasonTicks{iSeason} + "}");
-end
-yticklabels(useyticklabels);
-
-set(gca,'fontsize',14,'TickLabelInterpreter','latex','FontName','phv');
-title("Consolidated AB\rightarrowQB Transitions");
-xlabel("Hours to Solar Noon");
-ylabel('Julian Day of Year');
-c = colorbar;
-ylabel(c,'Probability','fontsize',14);
-caxis(caxis*0.75) % amplify colors
-
-hold on;
 allSunrise = [];
 allSunset = [];
 for iBin = 1:numel(bins)
     allSunrise(iBin) = 0 - (secDay(Tss.noon(bins(iBin))) - secDay(Tss.sunrise(bins(iBin)))) ./ (3600); % if nBins=144
     allSunset(iBin) = (secDay(Tss.sunset(bins(iBin))) - secDay(Tss.noon(bins(iBin)))) ./ (3600);
 end
-plot(allSunrise,bins,'color',[1 1 1 0.6],'linewidth',4);
-plot(allSunset,bins,'color',[1 1 1 0.6],'linewidth',4);
-hold off;
+seasonTicks = {'Winter','Spring','Summer','Autumn'};
+
+close all
+h = ff(800,600);
+for iPlot = 1:2
+    allTransHist = NaN(numel(bins),nBins);
+    for iBin = 1:numel(bins)
+        theseDoys = circshift(1:366,windowSize-bins(iBin));
+        theseDoys = theseDoys(1:windowSize*2);
+        transStarts = [];
+        iDoyCount = 0;
+        histDoyArr = [];
+
+        theseSleepTrans = find(trans_to==0 & ismember(trans_on,theseDoys)); %  & ~ismember(trans_yr,[2014,2019])
+        if numel(theseSleepTrans) > windowSize * 200
+            allEntries = find(trans_is==iSq);
+            % must end with awake transition to get time
+            if trans_to(allEntries(end)) == 0
+                theseSleepTrans = theseSleepTrans(1:end-1);
+            end
+            theseTransEnd = trans_at(theseSleepTrans+1); % awake
+            theseTransStart = trans_at(theseSleepTrans); % asleep
+            theseDurations = (theseTransEnd - theseTransStart) / 60; % make minutes
+
+            % fix transitions around next day (in seconds)
+            for ii = find(theseDurations < 0)
+                theseDurations(ii) = theseDurations(ii) + 1440;
+            end
+            if iPlot == 1
+                transStarts = theseTransStart(theseDurations > 0); 
+            else
+                transStarts = theseTransStart(theseDurations > binWidth);
+            end
+            [counts,binEdges,C] = histcounts(transStarts,linspace(0,86400,nBins+3),'normalization','probability'); %'BinMethod','sqrt'
+
+            % use bin indexes to get mean sleep duration, overwrite counts
+            if iPlot == 1
+%                 theseDurations = theseDurations(theseDurations > binWidth);
+                for ii = 1:numel(counts)
+                    counts(ii) = median(rmoutliers(theseDurations(C == ii)));
+                end
+            end
+
+            counts = counts(2:end-1); % rm edges
+            binShift = round(((86400/2) - mean(secDay(Tss.noon(theseDoys)))) / (86400/nBins));
+            allTransHist(iBin,:) = circshift(counts,binShift);
+        end
+        disp(iBin);
+    end
+
+    subplot(2,1,iPlot);
+    xSolarNoon = linspace(-12,12,size(allTransHist,2));
+    pcolor(xSolarNoon,bins,allTransHist);
+    shading interp;
+    xticks(-12:2:12);
+    useyticks = round(linspace(1,366,16));
+    yticks(useyticks);
+
+    colormap(magma(6));
+    set(gca,'ydir','normal');
+
+    useyticklabels = compose("%i",useyticks);
+    for iSeason = 1:4
+        targetDoy = useDoys{iSeason}(round(numel(useDoys{iSeason})/2));
+        yidx = closest(yticks,targetDoy);
+        useyticklabels{yidx} = convertStringsToChars("\textbf{" + seasonTicks{iSeason} + "}");
+    end
+    yticklabels(useyticklabels);
+    set(gca,'fontsize',14,'TickLabelInterpreter','latex','FontName','phv');
+    xlabel("Hours Relative to Solar Noon");
+    ylabel('Julian Day of Year');
+    c = colorbar;
+    
+    if iPlot == 1
+        title('Median QB Duration');
+        ylabel(c,'Minutes','fontsize',14);
+        caxis([0 25]);
+    else
+        title(sprintf('Probability of QB >%i min.',binWidth));
+        ylabel(c,'Probability','fontsize',14);
+        caxis([0.002 .014]);
+    end
+    
+%     caxis(caxis*0.8) % amplify colors
+    text(0,290,'No Data','verticalalignment','middle','horizontalalignment','center','fontsize',14);
+
+    hold on;
+    plot(allSunrise,bins,'color',[1 1 1 0.6],'linewidth',4);
+    plot(allSunset,bins,'color',[1 1 1 0.6],'linewidth',4);
+    hold off;
+end
 
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'QBTransitions.eps')); % required for vector lines
