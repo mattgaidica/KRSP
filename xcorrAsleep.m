@@ -1,14 +1,14 @@
-% two ways to do this: per squirrel or per season
+% per squirrel or per recording?
 % per season bad because it's weighted more for longer rec sessions
-% per squirrel should still shuffle days to remove season influence
 sq_xcorr_l = 1440*3; % 3 days to get rhythmicity index (peak 3)
-sq_xcorr_doys = [];
-sq_xcorr_yrs = [];
-unSqs = unique(sq_ids);
+unSqs = unique(sq_ids); % these are recording ids, not squirre_ids (see sq_ids_un)
 
 sq_xcorr = [];
+sq_xcorr_doys = [];
+sq_xcorr_yrs = [];
+sq_xcorr_squirrel_ids = [];
+sq_xcorr_sqrow = [];
 iCount = 0;
-nPerm = 10;
 for iSq = 1:numel(unSqs)
     useIds = find(sq_ids == unSqs(iSq));
     if numel(sq_asleep(useIds,:)) >= sq_xcorr_l
@@ -22,8 +22,62 @@ for iSq = 1:numel(unSqs)
         sq_xcorr(iCount,:) = c;
         sq_xcorr_doys(iCount) = sq_doys(useIds(round(numel(useIds)/2)));
         sq_xcorr_yrs(iCount) = sq_years(useIds(1));
+        sq_xcorr_squirrel_ids(iCount) = sq_ids_un(useIds(1));
+        sq_xcorr_sqrow(iCount) = sq_sqkeyrow(useIds(1));
     end
 end
+
+all_RI = [];
+for iSq = 1:size(sq_xcorr,1)
+    [ri_locs,ri_pks] = peakseek(sq_xcorr(iSq,:),720);
+    ri_idx = closest(sq_xcorr_lags(ri_locs),1440*2);
+    all_RI(iSq) = ri_pks(ri_idx);
+end
+
+%%
+% generate table: all_RI, mean season, squirrel_id, year, is_mast,
+% cache_size, cone_index, longevity
+all_RI_Seasons = NaN(size(all_RI));
+all_RI_GridConeIndex = NaN(size(all_RI));
+all_RI_Longevity = NaN(size(all_RI));
+all_RI_MiddenCones = NaN(size(all_RI));
+for iSq = 1:size(sq_xcorr,1)
+    for iSeason = 1:4
+        if ismember(sq_xcorr_doys(iSq),useDoys{iSeason})
+            break;
+        end
+    end
+    all_RI_Seasons(iSq) = iSeason;
+    gridDataId = find(strcmp(cone_counts.grid,sqkey.grid{sq_xcorr_sqrow(iSq)}) &...
+        cone_counts.year == sq_xcorr_yrs(iSq));
+    if ~isempty(gridDataId)
+        all_RI_GridConeIndex(iSq) = cone_counts.cone_index(gridDataId);
+    end
+    longevityId = find(longevity.squirrel_id == sq_xcorr_squirrel_ids(iSq));
+    if ~isempty(longevityId)
+        all_RI_Longevity(iSq) = longevity.longevity(longevityId);
+    end
+    middenId = find(midden_cones.squirrel_id == sq_xcorr_squirrel_ids(iSq) &...
+        midden_cones.year == sq_xcorr_yrs(iSq));
+    if ~isempty(middenId)
+        all_RI_MiddenCones(iSq) = midden_cones.cache_size_total(middenId);
+    end
+end
+mastTable = zeros(size(all_RI));
+mastTable(sq_xcorr_yrs == 2014 | sq_xcorr_yrs == 2019) = 1;
+
+RITable = table;
+RITable.squirrel_id = sq_xcorr_squirrel_ids';
+RITable.year = sq_xcorr_yrs';
+RITable.is_mast = mastTable';
+RITable.RI = all_RI';
+RITable.season = all_RI_Seasons';
+RITable.longevity = all_RI_Longevity';
+RITable.grid_cone_index = all_RI_GridConeIndex';
+RITable.midden_cones = all_RI_MiddenCones';
+
+writetable(RITable,fullfile('R','RITable.csv'));
+
 disp("done");
 
 %% all lines, colored by season, NOT USED
@@ -44,13 +98,6 @@ xlim([min(sq_xcorr_lags) max(sq_xcorr_lags)]);
 
 %% RI by squirrel, IN PAPER
 close all
-
-all_RI = [];
-for iSq = 1:size(sq_xcorr,1)
-    [ri_locs,ri_pks] = peakseek(sq_xcorr(iSq,:),720);
-    ri_idx = closest(sq_xcorr_lags(ri_locs),1440*2);
-    all_RI(iSq) = ri_pks(ri_idx);
-end
 
 months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',366);

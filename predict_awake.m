@@ -1,5 +1,9 @@
 loadPath = '/Users/matt/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
 sqkey = readtable('sqkey.txt');
+longevity = readtable('krsp_longevity.csv');
+cone_counts = readtable('krsp_cone_counts.csv');
+midden_cones = readtable('krsp_midden_cones.csv');
+
 exportPath = '/Users/matt/Documents/MATLAB/KRSP/export';
 seasonShiftDays = 56; %  center by light, *seasonDoys(1) = 311
 % seasonShiftDays = 56 - 21; %  center by temp
@@ -19,6 +23,7 @@ if do
     sq_odba_std = [];
     sq_odba_max = [];
     sq_awake = [];
+    sq_sqkeyrow = [];
     sq_ids = [];
     sq_ids_un = [];
     sq_doys = [];
@@ -103,6 +108,7 @@ if do
                 end
                 if min(theseDoys) > 1 && max(theseDoys) < numel(T.datetime)
                     iRow = iRow + 1;
+                    sq_sqkeyrow(iRow) = iSq;
                     sq_ids(iRow) = recordingId;
                     sq_ids_un(iRow) = sqkey.squirrel_id(iSq);
                     sq_sex(iRow) = strcmp(sqkey.sex{iSq},'M'); % 0 = Female, 1 = Male
@@ -199,7 +205,7 @@ if do
     do = false;
     chime;
 end
-writetable(overlapMeta,'nestAsleepOverlap_v3.csv'); % for Ben
+writetable(overlapMeta,fullfile('R','nestAsleepOverlap_v3.csv')); % for Ben
 
 %%
 doSave = true;
