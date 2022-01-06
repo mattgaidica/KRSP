@@ -17,7 +17,7 @@ flastall = tbl(con, "flastall") %>%
   collect() %>% 
   mutate(longevity = as.integer(difftime(datee, dates, units = "days")))
 
-write.csv(flastall,'/Users/matt/Downloads/longevity.csv')
+write.csv(flastall,'/Users/matt/Documents/MATLAB/KRSP/R/longevity.csv')
 
 #To calculate age add this line:
 # mutate(your_data_set, age = if_else(bcert == "Y", year - byear, NA_real_))

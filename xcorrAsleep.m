@@ -8,6 +8,7 @@ sq_xcorr_doys = [];
 sq_xcorr_yrs = [];
 sq_xcorr_squirrel_ids = [];
 sq_xcorr_sqrow = [];
+sq_xcorr_sex = [];
 iCount = 0;
 for iSq = 1:numel(unSqs)
     useIds = find(sq_ids == unSqs(iSq));
@@ -24,6 +25,7 @@ for iSq = 1:numel(unSqs)
         sq_xcorr_yrs(iCount) = sq_years(useIds(1));
         sq_xcorr_squirrel_ids(iCount) = sq_ids_un(useIds(1));
         sq_xcorr_sqrow(iCount) = sq_sqkeyrow(useIds(1));
+        sq_xcorr_sex(iCount) = sq_sex(useIds(1));
     end
 end
 
@@ -41,6 +43,7 @@ all_RI_Seasons = NaN(size(all_RI));
 all_RI_GridConeIndex = NaN(size(all_RI));
 all_RI_Longevity = NaN(size(all_RI));
 all_RI_MiddenCones = NaN(size(all_RI));
+all_RI_Age = NaN(size(all_RI));
 for iSq = 1:size(sq_xcorr,1)
     for iSeason = 1:4
         if ismember(sq_xcorr_doys(iSq),useDoys{iSeason})
@@ -56,6 +59,7 @@ for iSq = 1:size(sq_xcorr,1)
     longevityId = find(longevity.squirrel_id == sq_xcorr_squirrel_ids(iSq));
     if ~isempty(longevityId)
         all_RI_Longevity(iSq) = longevity.longevity(longevityId);
+        all_RI_Age(iSq) = sq_xcorr_yrs(iSq) - longevity.byear(longevityId);
     end
     middenId = find(midden_cones.squirrel_id == sq_xcorr_squirrel_ids(iSq) &...
         midden_cones.year == sq_xcorr_yrs(iSq));
@@ -68,11 +72,13 @@ mastTable(sq_xcorr_yrs == 2014 | sq_xcorr_yrs == 2019) = 1;
 
 RITable = table;
 RITable.squirrel_id = sq_xcorr_squirrel_ids';
+RITable.sex = sq_xcorr_sex';
 RITable.year = sq_xcorr_yrs';
 RITable.is_mast = mastTable';
 RITable.RI = all_RI';
 RITable.season = all_RI_Seasons';
 RITable.longevity = all_RI_Longevity';
+RITable.age = all_RI_Age';
 RITable.grid_cone_index = all_RI_GridConeIndex';
 RITable.midden_cones = all_RI_MiddenCones';
 
