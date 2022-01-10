@@ -36,3 +36,25 @@ end
 fprintf("%i valid\n",iValid);
 fprintf("%i longevity\n",iLon);
 fprintf("%i middens\n",iMidden);
+
+%%
+figure;
+useId = find(RITable.season == 4 & RITable.is_mast == 0);
+x = RITable.age(useId);
+y = RITable.RI(useId);
+[fitresult, gof] = poly2fit(x,y);
+yyaxis left;
+plot(fitresult,'k-',x,y,'ko');
+hold on;
+scatter(x,y,'k','filled');
+set(gca,'ycolor','k');
+
+yyaxis right;
+useId = find(RITable.season == 4 & RITable.is_mast == 1);
+x = RITable.age(useId);
+y = RITable.RI(useId);
+[fitresult, gof] = poly2fit(x,y);
+plot( fitresult,'r-',x,y,'ro');
+hold on;
+scatter(x,y,'r','filled');
+set(gca,'ycolor','r');

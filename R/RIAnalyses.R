@@ -16,14 +16,15 @@ n$mast<-as.factor(n$is_mast)
 
 n<-subset(n,n$season!=1)
 
-summary(test<-lmer(RI~season*mast+(1|squirrel_id),n))
-visreg(test,"mast",by="season")
+summary(test<-lmer(RI~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
+visreg(test,"sex",by="season")
 emmeans(test, list(pairwise ~ mast*season), adjust = "tukey")
 
-summary(test<-lmer(RI~longevity*season*mast+(1|squirrel_id),n))
+summary(test<-lmer(longevity~RI+(1|byear),n))
 
-summary(test<-lmer(RI~age+(1|squirrel_id),n))
+#summary(test<-lmer(RI~age+(1|squirrel_id),n))
 
-summary(test<-lmer(RI~grid_cone_index*season+(1|squirrel_id),n))
-
-summary(test<-lmer(RI~midden_cones*season+(1|squirrel_id),n))
+n2<-subset(n,n$season!=2)
+n2<-subset(n,n$season!=3)
+summary(test<-lmer(RI~midden_cones*mast+(1|squirrel_id),n2))
+summary(test<-lmer(RI~grid_cone_index*mast+(1|squirrel_id),n2))

@@ -4,6 +4,7 @@ sq_xcorr_l = 1440*3; % 3 days to get rhythmicity index (peak 3)
 unSqs = unique(sq_ids); % these are recording ids, not squirre_ids (see sq_ids_un)
 
 sq_xcorr = [];
+sq_xcorr_odba = [];
 sq_xcorr_doys = [];
 sq_xcorr_yrs = [];
 sq_xcorr_squirrel_ids = [];
@@ -15,12 +16,16 @@ for iSq = 1:numel(unSqs)
     if numel(sq_asleep(useIds,:)) >= sq_xcorr_l
         iCount = iCount + 1;
         theseAsleep = [];
+        theseODBA = [];
         for thisId = useIds
             % can use sq_odba_z here as comparison, rescale to +/-1
-            theseAsleep = [theseAsleep sq_asleep(thisId,:)];
+            theseAsleep = [theseAsleep sq_asleep(thisId,:)]; % sq_asleep
+            theseODBA = [theseODBA sq_odba(thisId,:)]; % sq_asleep
         end
         [c,sq_xcorr_lags] = xcorr(normalize(theseAsleep),sq_xcorr_l,'coeff');
         sq_xcorr(iCount,:) = c;
+        [c,sq_xcorr_lags] = xcorr(normalize(theseODBA),sq_xcorr_l,'coeff');
+        sq_xcorr_odba(iCount,:) = c;
         sq_xcorr_doys(iCount) = sq_doys(useIds(round(numel(useIds)/2)));
         sq_xcorr_yrs(iCount) = sq_years(useIds(1));
         sq_xcorr_squirrel_ids(iCount) = sq_ids_un(useIds(1));
@@ -30,10 +35,15 @@ for iSq = 1:numel(unSqs)
 end
 
 all_RI = [];
+all_RI_odba = [];
 for iSq = 1:size(sq_xcorr,1)
     [ri_locs,ri_pks] = peakseek(sq_xcorr(iSq,:),720);
     ri_idx = closest(sq_xcorr_lags(ri_locs),1440*2);
     all_RI(iSq) = ri_pks(ri_idx);
+    
+    [ri_locs,ri_pks] = peakseek(sq_xcorr_odba(iSq,:),720);
+    ri_idx = closest(sq_xcorr_lags(ri_locs),1440*2);
+    all_RI_odba(iSq) = ri_pks(ri_idx);
 end
 
 %%
@@ -44,6 +54,7 @@ all_RI_GridConeIndex = NaN(size(all_RI));
 all_RI_Longevity = NaN(size(all_RI));
 all_RI_MiddenCones = NaN(size(all_RI));
 all_RI_Age = NaN(size(all_RI));
+all_RI_Byear =  NaN(size(all_RI));
 for iSq = 1:size(sq_xcorr,1)
     for iSeason = 1:4
         if ismember(sq_xcorr_doys(iSq),useDoys{iSeason})
@@ -59,6 +70,7 @@ for iSq = 1:size(sq_xcorr,1)
     longevityId = find(longevity.squirrel_id == sq_xcorr_squirrel_ids(iSq));
     if ~isempty(longevityId)
         all_RI_Longevity(iSq) = longevity.longevity(longevityId);
+        all_RI_Byear(iSq) = longevity.byear(longevityId);
         all_RI_Age(iSq) = sq_xcorr_yrs(iSq) - longevity.byear(longevityId);
     end
     middenId = find(midden_cones.squirrel_id == sq_xcorr_squirrel_ids(iSq) &...
@@ -73,9 +85,12 @@ mastTable(sq_xcorr_yrs == 2014 | sq_xcorr_yrs == 2019) = 1;
 RITable = table;
 RITable.squirrel_id = sq_xcorr_squirrel_ids';
 RITable.sex = sq_xcorr_sex';
+RITable.doy = sq_xcorr_doys';
 RITable.year = sq_xcorr_yrs';
+RITable.byear = all_RI_Byear';
 RITable.is_mast = mastTable';
 RITable.RI = all_RI';
+RITable.RI_odba = all_RI_odba';
 RITable.season = all_RI_Seasons';
 RITable.longevity = all_RI_Longevity';
 RITable.age = all_RI_Age';
@@ -104,11 +119,14 @@ xlim([min(sq_xcorr_lags) max(sq_xcorr_lags)]);
 
 %% RI by squirrel, IN PAPER
 close all
+doSave = 1;
 
+ylims = [0 0.35];
 months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',366);
 h = ff(400,300);
-[sort_RI,I] = sort(all_RI);
+% [sort_RI,I] = sort(all_RI);
+[sort_RI,I] = sort(all_RI_odba);
 sort_doy = sq_xcorr_doys(I);
 sort_yr = sq_xcorr_yrs(I);
 
@@ -118,7 +136,7 @@ for iSq = 1:size(sq_xcorr,1)
     bar(iSq,sort_RI(iSq),'EdgeColor',colors(sort_doy(iSq),:),'FaceColor',colors(sort_doy(iSq),:));
     hold on;
     if ismember(sort_yr(iSq),[2014,2019])
-        ln = plot(iSq,0.975,'k|','linewidth',1,'markersize',10);
+        ln = plot(iSq,ylims(2)-0.01,'k|','linewidth',1,'markersize',10);
     else
 %         plot(iSq,0.85,'k|','linewidth',1,'markersize',10);
     end
@@ -127,8 +145,9 @@ end
 xlim([1 size(sq_xcorr,1)]);
 set(gca,'fontsize',14);
 ylabel('Rythmicity Index (RI)');
-yticks(0:0.2:1);
-text(mean(xlim),0.95,{'\uparrow','Mast Year'},...
+ylim(ylims);
+yticks(ylims(1):0.1:ylims(2));
+text(mean(xlim),ylims(2)-0.025,{'\uparrow','Mast Year'},...
     'horizontalalignment','center','verticalalignment','top','fontsize',12);
 xlabel('Recording Session (sorted by RI)');
 xticks([]);
@@ -143,7 +162,6 @@ c.FontSize = 11;
 title('Rythmicity Index by Recording Session');
 
 set(gcf,'PaperPositionMode','auto');
-doSave = 1;
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'rhythmicityBySession.eps')); % required for vector lines
     saveas(gcf,fullfile(exportPath,'rhythmicityBySession.jpg'),'jpg');
@@ -174,13 +192,14 @@ for iSeason = 1:4
         end
         if sum(theseIds) ~= 0 % winter mast
             mast_xs = [mast_xs;iSeason*ones(sum(theseIds),1)+useOffset];
-            mast_ys = [mast_ys;all_RI(theseIds)'];
+            mast_ys = [mast_ys;all_RI_odba(theseIds)'];
         end
     end
 end
 bs = beeswarm(mast_xs,mast_ys,'corral_style','omit','sort_style','square','colormap',...
     mast_cmap,'overlay_style','box','MarkerFaceAlpha',1);
-ylim([0 1]);
+ylim(ylims);
+yticks(ylims(1):0.1:ylims(2));
 uniq_xs = unique(mast_xs);
 xticks(uniq_xs);
 xticklabels({'Non-mast','Mast','Non-mast','Mast','Non-mast','Mast','Non-mast','Mast'});
@@ -188,30 +207,33 @@ xtickangle(-90);
 set(gca,'fontsize',14);
 ylabel('Rythmicity Index (RI)');
 
-hold on;
-for iSeason = 1:4
-    p = anova1(mast_ys(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),...
-        mast_xs(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),'off');
-    if p < 0.05
-        plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'k-','linewidth',3);
-        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('***p =\n%1.2e',p),...
-            'horizontalalignment','center','verticalalignment','bottom','fontsize',11);
-    elseif p > 0.99 % winter mast
-        plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'color',repmat(0.75,[1,3]),'linewidth',3);
-        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,'N/A',...
-            'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
-    else
-        plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[0.8 0.8],'color',repmat(0.75,[1,3]),'linewidth',3);
-        text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),0.83,sprintf('p =\n%1.2e',p),...
-            'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
-    end
-end
+% get pvals from R
+% % % % hold on;
+% % % % barY = ylims(2) - 0.06;
+% % % % pvalY = ylims(2) - 0.05;
+% % % % for iSeason = 1:4
+% % % %     p = anova1(mast_ys(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),...
+% % % %         mast_xs(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),'off');
+% % % %     if p < 0.05
+% % % %         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[barY barY],'k-','linewidth',3);
+% % % %         text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),pvalY,sprintf('*p =\n%1.2e',p),...
+% % % %             'horizontalalignment','center','verticalalignment','bottom','fontsize',11);
+% % % %     elseif p > 0.99 % winter mast
+% % % %         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[barY barY],'color',repmat(0.75,[1,3]),'linewidth',3);
+% % % %         text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),pvalY,'N/A',...
+% % % %             'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
+% % % %     else
+% % % %         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[barY barY],'color',repmat(0.75,[1,3]),'linewidth',3);
+% % % %         text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),pvalY,sprintf('p =\n%1.2e',p),...
+% % % %             'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
+% % % %     end
+% % % % end
+
 title('Rhythmicity Index Mast vs. Non-mast Years');
 
 % need to re-open in illustrator, had to reshapre artboard, select > same >
 % fill color, delete winter mast
 set(gcf,'PaperPositionMode','auto');
-doSave = 1;
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'rhythmicityMastYears.eps')); % required for vector lines
     saveas(gcf,fullfile(exportPath,'rhythmicityMastYears.jpg'),'jpg');
