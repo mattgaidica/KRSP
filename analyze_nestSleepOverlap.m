@@ -1,5 +1,5 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
-doSave = true;
+doSave = 1;
 subplotMargins = [.15,.07]; % [vert, horz]
 
 close all
@@ -84,7 +84,7 @@ for iSeason = 1:4
     ss = ismember(mean_doys,seasonDoys(sIds(iSeason):sIds(iSeason+1)));
     x = sq_inNestMin(ss)*24;
     y = sq_asleepMin(ss)*24;
-    season_residuals{iSeason} = f(x)'-y;
+    season_residuals{iSeason} = y-f(x)';
 %     plot(x,y,'.','color',colors(iSeason,:),'markersize',15);
 %     hold on;
 end
@@ -115,7 +115,7 @@ text(mean(xlim),min(ylim)+2,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalign
 text(mean(xlim),min(ylim)+1,sprintf('QB = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
 
 %% season_residuals
-resBins = linspace(-4,4,20);
+resBins = linspace(-4,4,16);
 subplot_tight(1,3,3,subplotMargins);
 for iSeason = 1:4
     counts = histcounts(season_residuals{iSeason},resBins) ./ numel(season_residuals{iSeason});

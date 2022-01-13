@@ -155,6 +155,7 @@ recordingSessions = {};
 squirrels = {};
 dayLength = {};
 sleepPerDay = {};
+sleepNest_percent = {};
 sleepDaylight = {};
 sleepDaylight_percent = {};
 sleepDarkness = {};
@@ -178,6 +179,11 @@ for iS = 1:4
     meanAsleep = nanmean([sqs_asleep{seasonDoys(sIds(iS):sIds(iS+1))}]);
     stdAsleep = nanstd([sqs_asleep{seasonDoys(sIds(iS):sIds(iS+1))}]);
     sleepPerDay{iS} = sprintf('%1.2f ± %1.2f',meanAsleep/60,stdAsleep/60);
+    
+% %     meanNest = nanmean([sqs_nest{seasonDoys(sIds(iS):sIds(iS+1))}]);
+% %     stdNest = nanstd([sqs_nest{seasonDoys(sIds(iS):sIds(iS+1))}]);
+% %     sleepNest_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',100*(meanAsleep/60)/(meanNest/60),...
+% %         100*(meanAsleep/60)/(stdNest/60));
     
     meanAsleep = nanmean([sqs_asleepDay{seasonDoys(sIds(iS):sIds(iS+1))}]);
     stdAsleep = nanstd([sqs_asleepDay{seasonDoys(sIds(iS):sIds(iS+1))}]);

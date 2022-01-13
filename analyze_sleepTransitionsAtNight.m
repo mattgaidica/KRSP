@@ -288,7 +288,7 @@ xlimVals = xlim;
 % % end
 
 %% MEAN AND PROBABILITY QB HEATMAP
-
+doSave = 0;
 windowSize = 7;
 binWidth = 10; % minutes
 bins = round(linspace(1,366,60));

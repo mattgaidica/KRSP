@@ -1,8 +1,8 @@
 loadPath = '/Users/matt/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
 sqkey = readtable('sqkey.txt');
-longevity = readtable('krsp_longevity.csv');
-cone_counts = readtable('krsp_cone_counts.csv');
-midden_cones = readtable('krsp_midden_cones.csv');
+longevity = readtable(fullfile(pwd,'R','krsp_longevity.csv'));
+cone_counts = readtable('R/krsp_cone_counts.csv');
+midden_cones = readtable('R/krsp_midden_cones.csv');
 
 exportPath = '/Users/matt/Documents/MATLAB/KRSP/export';
 seasonShiftDays = 56; %  center by light, *seasonDoys(1) = 311

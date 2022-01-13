@@ -12,12 +12,12 @@ litter = tbl(con, "litter") %>%
   select(squirrel_id, litter_id = id, part = fieldBDate)
 
 flastall = tbl(con, "flastall") %>% 
-  select(squirrel_id, byear, bcert, litter_id, dates, datee) %>% 
+  select(squirrel_id, f1, f2, byear, bcert, litter_id, dates, datee) %>% 
   left_join(., litter) %>% 
   collect() %>% 
   mutate(longevity = as.integer(difftime(datee, dates, units = "days")))
 
-write.csv(flastall,'/Users/matt/Documents/MATLAB/KRSP/R/longevity.csv')
+write.csv(flastall,'/Users/matt/Documents/MATLAB/KRSP/R/krsp_longevity.csv')
 
 #To calculate age add this line:
 # mutate(your_data_set, age = if_else(bcert == "Y", year - byear, NA_real_))

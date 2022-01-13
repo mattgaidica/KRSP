@@ -13,18 +13,20 @@ read.csv("/Users/matt/Documents/MATLAB/KRSP/R/RITable.csv")->n
 
 n$season<-as.factor(n$season)
 n$mast<-as.factor(n$is_mast)
+n$sex<-as.factor(n$sex)
 
-n<-subset(n,n$season!=1)
+#n<-subset(n,n$season!=1)
 
-summary(test<-lmer(RI~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
-visreg(test,"sex",by="season")
-emmeans(test, list(pairwise ~ mast*season), adjust = "tukey")
+summary(test<-lmer(RI_odba~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
+visreg(test,"season",by="mast")
+emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 
-summary(test<-lmer(longevity~RI+(1|byear),n))
+summary(test<-lmer(longevity~RI+(1|byear),n)) #use 1|byear?
 
 #summary(test<-lmer(RI~age+(1|squirrel_id),n))
-
+n2<-subset(n,n$season!=1)
 n2<-subset(n,n$season!=2)
 n2<-subset(n,n$season!=3)
-summary(test<-lmer(RI~midden_cones*mast+(1|squirrel_id),n2))
-summary(test<-lmer(RI~grid_cone_index*mast+(1|squirrel_id),n2))
+summary(test<-lmer(RI_odba~midden_cones*mast+(1|squirrel_id),n2))
+summary(test<-lmer(RI_odba~grid_cone_index*mast+(1|squirrel_id),n2))
+visreg(test,"grid_cone_index",by="mast")

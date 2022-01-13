@@ -1,5 +1,5 @@
 #Install packages to do linear mixed effects models. lme4 does the model, lmerTest provides p-values, visreg visualizes the results
-
+# get pakcage info > sessionInfo()
 install.packages("lme4")
 install.packages("lmerTest")
 install.packages("visreg")
@@ -10,7 +10,7 @@ require(lme4)
 require(lmerTest)
 require(visreg)
 require(emmeans)
-require(sjplot)
+require(sjPlot)
 
 #read in data
 read.csv("/Users/matt/Documents/MATLAB/KRSP/R/nestAsleepOverlap_v3.csv")->n
@@ -39,24 +39,28 @@ summary(n_mast$season)
 ################################
 n$total_sleep<-n$in_asleep+n$out_asleep
 summary(n$total_sleep)
+
 summary(test<-lmer(total_sleep ~sex+season+(1|squirrelId),n))
-visreg(test)
-emmeans(test, list(pairwise ~ season+sex), adjust = "tukey")
+emmeans(test, list(pairwise ~ season), adjust = "tukey")
+tab_model(test)
+
+summary(test<-lmer(total_sleep ~sex+season*mast+(1|squirrelId),n))
+emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 tab_model(test)
 
 #This model does just looks a sex differences and changes across season and includes random effect for squirrel ID
-summary(test<-lmer(in_asleep ~sex + season+(1|squirrelId),n))
+summary(test<-lmer(in_asleep ~sex+season*mast+(1|squirrelId),n))
 #females spend significantly less time in nest sleeping than males
 #time spent in nest sleeping sig lower in seasons 2, 3, and 4 compared to 1
-emmeans(test, list(pairwise ~ season*sex), adjust = "tukey")
-
+emmeans(test, list(pairwise ~ mast), adjust = "tukey")
+visreg(test,"season",by="mast")
 #visualize results
 visreg(test)
 #season 3 = 4 but lot more time sleeping in nest in winter/spring months
 # 
 
 summary(test<-lmer(out_asleep ~sex+season+(1|squirrelId),n))
-emmeans(test, list(pairwise ~ season), adjust = "tukey")
+emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 visreg(test)
 
 summary(test<-lmer(in_awake ~sex+season+(1|squirrelId),n))
@@ -73,6 +77,7 @@ summary(test<-lmer(out_awake ~sex+season+(1|squirrelId),n))
 n2<-subset(n,n$season!=1)
 
 summary(test<-lmer(in_asleep ~sex+season*mast+(1|squirrelId),n2))
+emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 #females spend significantly less time in nest sleeping than males
 #time spent in nest sleeping is lower in seasons3-4 vs. 2 but not-significantly
 #sig interactions between mast and season

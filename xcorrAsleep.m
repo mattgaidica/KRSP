@@ -69,9 +69,12 @@ for iSq = 1:size(sq_xcorr,1)
     end
     longevityId = find(longevity.squirrel_id == sq_xcorr_squirrel_ids(iSq));
     if ~isempty(longevityId)
-        all_RI_Longevity(iSq) = longevity.longevity(longevityId);
+        if ismember(longevity.f2(longevityId),[4,5,11,12,22])
+            all_RI_Longevity(iSq) = longevity.longevity(longevityId);
+        end
         all_RI_Byear(iSq) = longevity.byear(longevityId);
-        all_RI_Age(iSq) = sq_xcorr_yrs(iSq) - longevity.byear(longevityId);
+        all_RI_Age(iSq) = days(datetime(sq_xcorr_yrs(iSq),1,1) + days(sq_xcorr_doys(iSq))...
+            - longevity.dates(longevityId));
     end
     middenId = find(midden_cones.squirrel_id == sq_xcorr_squirrel_ids(iSq) &...
         midden_cones.year == sq_xcorr_yrs(iSq));
@@ -93,9 +96,9 @@ RITable.RI = all_RI';
 RITable.RI_odba = all_RI_odba';
 RITable.season = all_RI_Seasons';
 RITable.longevity = all_RI_Longevity';
-RITable.age = all_RI_Age';
-RITable.grid_cone_index = all_RI_GridConeIndex';
-RITable.midden_cones = all_RI_MiddenCones';
+RITable.age = normalize(all_RI_Age');
+RITable.grid_cone_index = normalize(all_RI_GridConeIndex');
+RITable.midden_cones = normalize(all_RI_MiddenCones');
 
 writetable(RITable,fullfile('R','RITable.csv'));
 
