@@ -122,7 +122,7 @@ xlim([min(sq_xcorr_lags) max(sq_xcorr_lags)]);
 
 %% RI by squirrel, IN PAPER
 close all
-doSave = 1;
+doSave = 0;
 
 ylims = [0 0.35];
 months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
@@ -170,7 +170,7 @@ if doSave
     saveas(gcf,fullfile(exportPath,'rhythmicityBySession.jpg'),'jpg');
     close(gcf);
 end
-
+%%
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 h = ff(400,300);
 mast_xs = [];
