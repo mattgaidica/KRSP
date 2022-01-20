@@ -19,6 +19,7 @@ if do
     Tss = makeTss(2014:2020);
     sq_sex = [];
     sq_odba = [];
+    sq_nest = [];
     sq_odba_z = [];
     sq_odba_std = [];
     sq_odba_max = [];
@@ -67,6 +68,12 @@ if do
     sqs_asleepNight = cell(1,366);
     sqs_transDay = cell(1,366);
     sqs_transNight = cell(1,366);
+    
+    trans_dayRatio_isq = [];
+    trans_night_isq = [];
+    trans_day_isq = [];
+    qb_day_sq = [];
+    qb_night_sq = [];
     for iSq = 1:size(sqkey,1)
         T = loadTStruct(iSq,sqkey,Tss);
         if isempty(T)
@@ -112,10 +119,10 @@ if do
                     sq_ids(iRow) = recordingId;
                     sq_ids_un(iRow) = sqkey.squirrel_id(iSq);
                     sq_sex(iRow) = strcmp(sqkey.sex{iSq},'M'); % 0 = Female, 1 = Male
+                    sq_nest(iRow,:) = strcmp(T.nest(theseDoys),'Nest'); % 0 = out, 1 = in
                     sq_doys(iRow) = undoys(iDoy);
                     sq_odba(iRow,:) = T.odba(theseDoys);
                     sq_odba_z(iRow,:) = T.odba_z(theseDoys);
-                    %                             sq_odba_std(iRow,:) = T.odba_std(theseDoys);
                     sq_odba_max(iRow,:) = T.odba_max(theseDoys);
                     sq_years(iRow) = year(T.datetime(theseDoys(1)));
                     sq_dayLength(iRow) = Tss.day_length(Tss.year == unyears(iDoy) & Tss.doy == undoys(iDoy));
@@ -137,7 +144,8 @@ if do
             overlapStats(iNestCount,2) = sum(T.nest_bin & ~T.awake) / size(T,1); % in-asleep
             overlapStats(iNestCount,3) = sum(~T.nest_bin & T.awake) / size(T,1); % out-awake
             overlapStats(iNestCount,4) = sum(~T.nest_bin & ~T.awake) / size(T,1); % out-asleep
-            mean_doys(iNestCount) = round(mean(unique(day(T.datetime,'dayofyear'))));
+            recSessUnDoys = unique(day(T.datetime,'dayofyear'));
+            mean_doys(iNestCount) = recSessUnDoys(round(numel(recSessUnDoys)/2));
             
             % new, for Ben
             overlapMeta.isq{iNestCount} = iSq;
@@ -146,7 +154,7 @@ if do
             overlapMeta.in_asleep{iNestCount} = overlapStats(iNestCount,2);
             overlapMeta.out_awake{iNestCount} = overlapStats(iNestCount,3);
             overlapMeta.out_asleep{iNestCount} = overlapStats(iNestCount,4);
-            overlapMeta.is_female{iNestCount} = strcmp(sqkey.sex{iSq},'F');
+            overlapMeta.sex{iNestCount} = strcmp(sqkey.sex{iSq},'M'); % male = 1
             overlapMeta.is_mast{iNestCount} = ismember(sqkey.year(iSq),[2014,2019]);
             overlapMeta.year{iNestCount} = sqkey.year(iSq);
             overlapMeta.start_dt{iNestCount} = T.datetime(1);
@@ -170,6 +178,11 @@ if do
         trans_yr = [trans_yr year(Tawake.datetime)'];
         
         % /Users/matt/Documents/MATLAB/KRSP/results_stats.m
+        trans_ratio = [];
+        trans_night = [];
+        trans_day = [];
+        qb_day = [];
+        qb_night = [];
         for iDoy = 1:numel(undoys)
             sunrise = mean(secDay(Tss.sunrise(Tss.doy == undoys(iDoy))),1);
             sunset = mean(secDay(Tss.sunset(Tss.doy == undoys(iDoy))),1);
@@ -200,7 +213,17 @@ if do
                     sqs_transNight{undoys(iDoy)} = [sqs_transNight{undoys(iDoy)} sum(abs(diff(T.asleep(nightDoys))))];
                 end
             end
+            qb_day = [qb_day sum(T.asleep(dayDoys)) / numel(theseDoys)];
+            qb_night = [qb_night sum(T.asleep(nightDoys)) / numel(theseDoys)];
+            trans_ratio = [trans_ratio sum(abs(diff(T.asleep(dayDoys)))) ./ sum(abs(diff(T.asleep(theseDoys))))];
+            trans_night = [trans_night sum(abs(diff(T.asleep(nightDoys))))];
+            trans_day = [trans_day sum(abs(diff(T.asleep(dayDoys))))];
         end
+        qb_day_sq(iSq) = mean(qb_day);
+        qb_night_sq(iSq) = mean(qb_night);
+        trans_dayRatio_isq(iSq) = mean(trans_ratio);
+        trans_night_isq(iSq) = mean(trans_night);
+        trans_day_isq(iSq) = mean(trans_day);
     end
     do = false;
     chime;

@@ -1,7 +1,7 @@
 % per squirrel or per recording?
 % per season bad because it's weighted more for longer rec sessions
 sq_xcorr_l = 1440*3; % 3 days to get rhythmicity index (peak 3)
-unSqs = unique(sq_ids); % these are recording ids, not squirre_ids (see sq_ids_un)
+unRecs = unique(sq_ids); % these are recording ids, not squirre_ids (see sq_ids_un)
 
 sq_xcorr = [];
 sq_xcorr_odba = [];
@@ -10,9 +10,14 @@ sq_xcorr_yrs = [];
 sq_xcorr_squirrel_ids = [];
 sq_xcorr_sqrow = [];
 sq_xcorr_sex = [];
+sq_xcorr_ndays = [];
+sq_xcorr_qb = [];
+sq_xcorr_dur_days = [];
+sq_xcorr_trans = [];
+sq_xcorr_trans_per = [];
 iCount = 0;
-for iSq = 1:numel(unSqs)
-    useIds = find(sq_ids == unSqs(iSq));
+for iSq = 1:numel(unRecs)
+    useIds = find(sq_ids == unRecs(iSq));
     if numel(sq_asleep(useIds,:)) >= sq_xcorr_l
         iCount = iCount + 1;
         theseAsleep = [];
@@ -27,10 +32,15 @@ for iSq = 1:numel(unSqs)
         [c,sq_xcorr_lags] = xcorr(normalize(theseODBA),sq_xcorr_l,'coeff');
         sq_xcorr_odba(iCount,:) = c;
         sq_xcorr_doys(iCount) = sq_doys(useIds(round(numel(useIds)/2)));
+        sq_xcorr_ndays(iCount) = numel(useIds);
         sq_xcorr_yrs(iCount) = sq_years(useIds(1));
         sq_xcorr_squirrel_ids(iCount) = sq_ids_un(useIds(1));
         sq_xcorr_sqrow(iCount) = sq_sqkeyrow(useIds(1));
         sq_xcorr_sex(iCount) = sq_sex(useIds(1));
+        sq_xcorr_qb(iCount) = sum(theseAsleep==1)/numel(theseAsleep);
+        sq_xcorr_dur_days(iCount) = numel(sq_asleep(useIds,:)) / 1440;
+        sq_xcorr_trans(iCount) = sum(abs(diff(theseAsleep))==1);
+        sq_xcorr_trans_per(iCount) = sq_xcorr_trans(iCount) / numel(useIds);
     end
 end
 
@@ -49,12 +59,25 @@ end
 %%
 % generate table: all_RI, mean season, squirrel_id, year, is_mast,
 % cache_size, cone_index, longevity
+if ~exist('trapping','var')
+    trapping = readtable('trapping.csv');
+end
 all_RI_Seasons = NaN(size(all_RI));
 all_RI_GridConeIndex = NaN(size(all_RI));
 all_RI_Longevity = NaN(size(all_RI));
 all_RI_MiddenCones = NaN(size(all_RI));
+all_RI_MiddenConesDiff = NaN(size(all_RI));
 all_RI_Age = NaN(size(all_RI));
 all_RI_Byear =  NaN(size(all_RI));
+all_RI_TrapsLife = NaN(size(all_RI));
+all_RI_TrapsRec = NaN(size(all_RI));
+all_RI_RecWeight = NaN(size(all_RI));
+all_RI_transDayRatio = NaN(size(all_RI));
+all_RI_transNight = NaN(size(all_RI));
+all_RI_transDay = NaN(size(all_RI));
+all_RI_day_qb = NaN(size(all_RI));
+all_RI_night_qb = NaN(size(all_RI));
+
 for iSq = 1:size(sq_xcorr,1)
     for iSeason = 1:4
         if ismember(sq_xcorr_doys(iSq),useDoys{iSeason})
@@ -68,27 +91,61 @@ for iSq = 1:size(sq_xcorr,1)
         all_RI_GridConeIndex(iSq) = cone_counts.cone_index(gridDataId);
     end
     longevityId = find(longevity.squirrel_id == sq_xcorr_squirrel_ids(iSq));
+    recMidDt = datetime(sq_xcorr_yrs(iSq),1,1) + days(sq_xcorr_doys(iSq));
     if ~isempty(longevityId)
         if ismember(longevity.f2(longevityId),[4,5,11,12,22])
             all_RI_Longevity(iSq) = longevity.longevity(longevityId);
         end
         all_RI_Byear(iSq) = longevity.byear(longevityId);
-        all_RI_Age(iSq) = days(datetime(sq_xcorr_yrs(iSq),1,1) + days(sq_xcorr_doys(iSq))...
-            - longevity.dates(longevityId));
+        all_RI_Age(iSq) = days(recMidDt - longevity.dates(longevityId));
     end
     middenId = find(midden_cones.squirrel_id == sq_xcorr_squirrel_ids(iSq) &...
         midden_cones.year == sq_xcorr_yrs(iSq));
     if ~isempty(middenId)
         all_RI_MiddenCones(iSq) = midden_cones.cache_size_total(middenId);
+        all_RI_MiddenConesDiff(iSq) = midden_cones.cache_size_new(middenId) - midden_cones.cache_size_old(middenId);
     end
+    trappingIds = find(trapping.squirrel_id == sq_xcorr_squirrel_ids(iSq) & trapping.wgt > 0);
+    all_RI_TrapsLife(iSq) = numel(trappingIds);
+    if ~isempty(trappingIds)
+        daysAway = abs(days(recMidDt - trapping.date(trappingIds)));
+        daysAway(daysAway == 0) = [];
+        daysAway(daysAway > floor(sq_xcorr_dur_days(iSq))) = [];
+        [v,k] = sort(daysAway);
+        if ~isempty(k)
+            recIds = find(v <= sq_xcorr_ndays(iSq)/2);
+            if ~isempty(recIds)
+                all_RI_TrapsRec(iSq) = numel(recIds) / sq_xcorr_ndays(iSq);
+                all_RI_RecWeight(iSq) = trapping.wgt(trappingIds(k(1)));
+            end
+        end
+    end
+    all_RI_transDayRatio(iSq) = trans_dayRatio_isq(sq_xcorr_sqrow(iSq));
+    all_RI_transNight(iSq) = trans_night_isq(sq_xcorr_sqrow(iSq));
+    all_RI_transDay(iSq) = trans_day_isq(sq_xcorr_sqrow(iSq));
+    all_RI_day_qb(iSq) = qb_day_sq(sq_xcorr_sqrow(iSq));
+    all_RI_night_qb(iSq) = qb_night_sq(sq_xcorr_sqrow(iSq));
 end
+
 mastTable = zeros(size(all_RI));
 mastTable(sq_xcorr_yrs == 2014 | sq_xcorr_yrs == 2019) = 1;
 
+% !! not sure about rmoutliers, seems that extreme values might be where
+% the true relationship lies
+% Outliers from midden cone counts were removed (17/335),
+% defined as elements more than three scaled median absolute deviations from the median
+% [a,C] = rmoutliers(all_RI_MiddenCones);
+% all_RI_MiddenCones(C) = NaN;
+xids = ismember(all_RI_Seasons,[1,2]);
+all_RI_MiddenConesDiff(xids) = NaN;
+all_RI_MiddenCones(xids) = NaN;
+
 RITable = table;
 RITable.squirrel_id = sq_xcorr_squirrel_ids';
+RITable.isq = sq_xcorr_sqrow';
 RITable.sex = sq_xcorr_sex';
 RITable.doy = sq_xcorr_doys';
+RITable.days = sq_xcorr_dur_days';
 RITable.year = sq_xcorr_yrs';
 RITable.byear = all_RI_Byear';
 RITable.is_mast = mastTable';
@@ -99,9 +156,30 @@ RITable.longevity = all_RI_Longevity';
 RITable.age = normalize(all_RI_Age');
 RITable.grid_cone_index = normalize(all_RI_GridConeIndex');
 RITable.midden_cones = normalize(all_RI_MiddenCones');
+RITable.midden_cones_diff = normalize(all_RI_MiddenConesDiff');
+RITable.traps_life = normalize(all_RI_TrapsLife');
+RITable.traps_rec = normalize(all_RI_TrapsRec');
+RITable.trap_wgt = normalize(all_RI_RecWeight');
+RITable.qb = normalize(sq_xcorr_qb');
+RITable.qb_day = normalize(all_RI_day_qb');
+RITable.qb_night = normalize(all_RI_night_qb');
+RITable.trans = normalize(sq_xcorr_trans');
+RITable.trans_per = normalize(sq_xcorr_trans_per');
+RITable.trans_day_ratio = all_RI_transDayRatio';
+RITable.trans_night = normalize(all_RI_transNight');
+RITable.trans_day = normalize(all_RI_transDay');
+
+all_RI_QBNest = NaN(size(all_RI));
+% add in-nest qb
+for ii = 1:numel(all_RI_QBNest)
+    metaId = find(RITable.isq(ii) == [overlapMeta.isq{:}]);
+    if ~isempty(metaId)
+        all_RI_QBNest(ii) = overlapMeta.in_asleep{metaId};
+    end
+end
+RITable.qb_nest = all_RI_QBNest';
 
 writetable(RITable,fullfile('R','RITable.csv'));
-
 disp("done");
 
 %% all lines, colored by season, NOT USED
@@ -170,7 +248,7 @@ if doSave
     saveas(gcf,fullfile(exportPath,'rhythmicityBySession.jpg'),'jpg');
     close(gcf);
 end
-%%
+
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 h = ff(400,300);
 mast_xs = [];

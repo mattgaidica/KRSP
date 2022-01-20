@@ -89,3 +89,90 @@ xlim([1 366]);
 set(gca,'fontsize',14);
 ylim([0 0.75]);
 grid on
+
+%%
+close all
+ff(600,600);
+for iSeason = 1:4
+    subplot(2,2,iSeason)
+    ids = find(RITable.season == iSeason & RITable.is_mast == 0 & ~isnan(RITable.traps_rec));
+    plot(RITable.traps_rec(ids),RITable.qb(ids),'kx');
+    if ~isempty(ids)
+        [r,p] = corr(RITable.traps_rec(ids),RITable.qb(ids));
+        fprintf('%i-nm: r=%1.4f, p=%1.4f\n',iSeason,r,p);
+    end
+    hold on;
+    ids = find(RITable.season == iSeason & RITable.is_mast == 1 & ~isnan(RITable.traps_rec));
+    plot(RITable.traps_rec(ids),RITable.qb(ids),'ro');
+    if ~isempty(ids)
+        [r,p] = corr(RITable.traps_rec(ids),RITable.qb(ids));
+        fprintf('%i-ma: r=%1.4f, p=%1.4f\n',iSeason,r,p);
+    end
+    title(sprintf('Season %i',iSeason));
+    xlim([-2.5 2.5]);
+    ylim(xlim);
+end
+%%
+all_ids = find(ismember(RITable.season,4) & ~isnan(RITable.traps_rec));
+% nmast_ids = find(ismember(RITable.season,3) & RITable.is_mast == 0 & ~isnan(RITable.traps_rec));
+useLims = [-2.5 2.5];
+
+close all
+ff(900,300);
+subplot(131);
+x = RITable.traps_rec(all_ids);
+y = normalize(RITable.qb(all_ids));
+plot(x,y,'k.','markersize',40);
+[r,p] = corr(x,y);
+
+f = fit(x,y,'poly1');
+hold on;
+plot(useLims,f(useLims),'r-');
+
+xticks([useLims(1),0,useLims(2)]);
+yticks([useLims(1),0,useLims(2)]);
+xlim(useLims);
+ylim(useLims);
+set(gca,'fontsize',14);
+xlabel('Trapping Incidence (Z, TI)');
+ylabel('Quiescent Behavior (Z, QB)');
+title(sprintf("Summer QB vs. TI\nr = %1.2f, p = %1.2e",r,p));
+grid on;
+
+subplot(132);
+y = normalize(RITable.qb_day(all_ids));
+plot(x,y,'k.','markersize',40);
+[r,p] = corr(x,y);
+
+f = fit(x,y,'poly1');
+hold on;
+plot(useLims,f(useLims),'r-');
+
+xticks([useLims(1),0,useLims(2)]);
+yticks([useLims(1),0,useLims(2)]);
+xlim(useLims);
+ylim(useLims);
+set(gca,'fontsize',14);
+xlabel('Trapping Incidence (Z, TI)');
+ylabel('Quiescent Behavior (Z, QB)');
+title(sprintf("Summer Day-QB vs. TI\nr = %1.2f, p = %1.2e",r,p));
+grid on;
+
+subplot(133);
+y = normalize(RITable.qb_night(all_ids));
+plot(x,y,'k.','markersize',40);
+[r,p] = corr(x,y);
+
+f = fit(x,y,'poly1');
+hold on;
+plot(useLims,f(useLims),'r-');
+
+xticks([useLims(1),0,useLims(2)]);
+yticks([useLims(1),0,useLims(2)]);
+xlim(useLims);
+ylim(useLims);
+set(gca,'fontsize',14);
+xlabel('Trapping Incidence (Z, TI)');
+ylabel('Quiescent Behavior (Z, QB)');
+title(sprintf("Summer Night-QB vs. TI\nr = %1.2f, p = %1.2e",r,p));
+grid on;

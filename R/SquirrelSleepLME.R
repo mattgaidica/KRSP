@@ -5,12 +5,14 @@ install.packages("lmerTest")
 install.packages("visreg")
 install.packages("emmeans")
 install.packages("sjPlot")
+install.packages('BBmisc')
 
 require(lme4)
 require(lmerTest)
 require(visreg)
 require(emmeans)
 require(sjPlot)
+require(BBmisc)
 
 #read in data
 read.csv("/Users/matt/Documents/MATLAB/KRSP/R/nestAsleepOverlap_v3.csv")->n
@@ -33,33 +35,28 @@ summary(n_mast$season)
 
 #no season 1 (winter?) data from mast years so can't compare season1 in mast vs. season1 in non-mast
 
-
 #################################
 # 1. Are there sex differences and seasonal differences in time spent sleeping in nest? 
 ################################
-n$total_sleep<-n$in_asleep+n$out_asleep
-summary(n$total_sleep)
-
-summary(test<-lmer(total_sleep ~sex+season+(1|squirrelId),n))
-emmeans(test, list(pairwise ~ season), adjust = "tukey")
+n$qb<-n$in_asleep+n$out_asleep
+summary(test<-lmer(qb~sex+season*mast+(1|squirrelId),n))
+visreg(test,"sex")
+visreg(test,"season",by="mast")
+visreg(test,"season",by="sex")
+visreg(test,"sex",by="season")
 tab_model(test)
+emmeans(test, list(pairwise ~ mast*sex), adjust = "tukey")
 
-summary(test<-lmer(total_sleep ~sex+season*mast+(1|squirrelId),n))
-emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-tab_model(test)
 
 #This model does just looks a sex differences and changes across season and includes random effect for squirrel ID
-summary(test<-lmer(in_asleep ~sex+season*mast+(1|squirrelId),n))
-#females spend significantly less time in nest sleeping than males
-#time spent in nest sleeping sig lower in seasons 2, 3, and 4 compared to 1
-emmeans(test, list(pairwise ~ mast), adjust = "tukey")
+summary(test<-lmer(in_asleep~sex+season*mast+(1|squirrelId),n))
 visreg(test,"season",by="mast")
 #visualize results
 visreg(test)
 #season 3 = 4 but lot more time sleeping in nest in winter/spring months
 # 
 
-summary(test<-lmer(out_asleep ~sex+season+(1|squirrelId),n))
+summary(test<-lmer(out_asleep ~sex+season*mast+(1|squirrelId),n))
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 visreg(test)
 
