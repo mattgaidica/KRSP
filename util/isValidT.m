@@ -19,13 +19,15 @@ if doTemp % all Nest depends on temp
             disp('Failed: Out of nest ODBA low');
         end
     end
+    % deprecated this because it fails for preg females, which may have
+    % lots of nest movement?
     % out ODBA is not significantly greater than in ODBA
-    if mean(T.odba(strcmp(T.nest,'Out')))/2 < mean(T.odba(strcmp(T.nest,'Nest')))
-        isValid = false;
-        if doDebug
-            disp('Failed: Nest ODBA suspicious');
-        end
-    end
+% % % %     if mean(T.odba(strcmp(T.nest,'Out')))/2 < mean(T.odba(strcmp(T.nest,'Nest')))
+% % % %         isValid = false;
+% % % %         if doDebug
+% % % %             disp('Failed: Nest ODBA suspicious');
+% % % %         end
+% % % %     end
     % not mostly or hardly Nest categories
     if sum(strcmp(T.nest,'Nest'))/numel(T.nest) > 0.9 || sum(strcmp(T.nest,'Nest'))/numel(T.nest) < 0.1
         isValid = false;

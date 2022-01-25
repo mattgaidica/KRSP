@@ -10,6 +10,7 @@ sq_xcorr_yrs = [];
 sq_xcorr_squirrel_ids = [];
 sq_xcorr_sqrow = [];
 sq_xcorr_sex = [];
+sq_xcorr_is_preg = [];
 sq_xcorr_ndays = [];
 sq_xcorr_qb = [];
 sq_xcorr_dur_days = [];
@@ -37,6 +38,7 @@ for iSq = 1:numel(unRecs)
         sq_xcorr_squirrel_ids(iCount) = sq_ids_un(useIds(1));
         sq_xcorr_sqrow(iCount) = sq_sqkeyrow(useIds(1));
         sq_xcorr_sex(iCount) = sq_sex(useIds(1));
+        sq_xcorr_is_preg(iCount) = sq_is_preg(useIds(1));
         sq_xcorr_qb(iCount) = sum(theseAsleep==1)/numel(theseAsleep);
         sq_xcorr_dur_days(iCount) = numel(sq_asleep(useIds,:)) / 1440;
         sq_xcorr_trans(iCount) = sum(abs(diff(theseAsleep))==1);
@@ -93,9 +95,12 @@ for iSq = 1:size(sq_xcorr,1)
     longevityId = find(longevity.squirrel_id == sq_xcorr_squirrel_ids(iSq));
     recMidDt = datetime(sq_xcorr_yrs(iSq),1,1) + days(sq_xcorr_doys(iSq));
     if ~isempty(longevityId)
-        if ismember(longevity.f2(longevityId),[4,5,11,12,22])
-            all_RI_Longevity(iSq) = longevity.longevity(longevityId);
+        if year(longevity.datee(longevityId)) ~= 2021
+            all_RI_Longevity(iSq) = days(longevity.datee(longevityId) - longevity.dates(longevityId));
         end
+% % % %         if ismember(longevity.f2(longevityId),[4,5,11,12,22])
+% % % %             all_RI_Longevity(iSq) = longevity.longevity(longevityId);
+% % % %         end
         all_RI_Byear(iSq) = longevity.byear(longevityId);
         all_RI_Age(iSq) = days(recMidDt - longevity.dates(longevityId));
     end
@@ -144,6 +149,7 @@ RITable = table;
 RITable.squirrel_id = sq_xcorr_squirrel_ids';
 RITable.isq = sq_xcorr_sqrow';
 RITable.sex = sq_xcorr_sex';
+RITable.is_preg = sq_xcorr_is_preg';
 RITable.doy = sq_xcorr_doys';
 RITable.days = sq_xcorr_dur_days';
 RITable.year = sq_xcorr_yrs';
@@ -152,7 +158,7 @@ RITable.is_mast = mastTable';
 RITable.RI = all_RI';
 RITable.RI_odba = all_RI_odba';
 RITable.season = all_RI_Seasons';
-RITable.longevity = all_RI_Longevity';
+RITable.longevity = normalize(all_RI_Longevity');
 RITable.age = normalize(all_RI_Age');
 RITable.grid_cone_index = normalize(all_RI_GridConeIndex');
 RITable.midden_cones = normalize(all_RI_MiddenCones');
@@ -263,7 +269,7 @@ for iSeason = 1:4
         else %mast
             theseIds = ismember(sq_xcorr_doys,useDoys{iSeason}) & ismember(sq_xcorr_yrs,[2014,2019]);
             useOffset = 0.2;
-            if sum(theseIds) == 0 % winter mast is missing, super hacky but works
+            if sum(theseIds) == 0 % winter mast is missing
                 mast_xs = [mast_xs;mast_xs+useOffset*2];
                 mast_ys = [mast_ys;mast_ys];
                 mast_cmap = [mast_cmap;[NaN NaN NaN]];

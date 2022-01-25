@@ -8,35 +8,127 @@ end
 fprintf("%i no file\n",iFile);
 
 %%
-longevity = readtable('krsp_longevity.csv');
-cone_counts = readtable('krsp_cone_counts.csv');
-midden_cones = readtable('krsp_midden_cones.csv');
 iValid = 0;
-iLon = 0;
-iMidden = 0;
-iCones = 0;
+iFemalePreg = 0;
+femaleRecDays = [];
+femaleSqs = [];
 for iSq = 1:size(sqkey,1)
-    if isempty(sqkey.filename{iSq})
+    if isempty(sqkey.filename{iSq}) || sqkey.isValid(iSq) == 0
         continue;
     end
-%     T = loadTStruct(iSq,sqkey,Tss);
-    if sqkey.isValid(iSq)
-        iValid = iValid + 1;
-        lonId = find(longevity.squirrel_id == sqkey.squirrel_id(iSq));
-        if ~isempty(lonId)
-            iLon = iLon + 1;
-        end
-        midId = find(midden_cones.squirrel_id == sqkey.squirrel_id(iSq) &...
-            midden_cones.year == sqkey.year(iSq));
-        if ~isempty(midId)
-            iMidden = iMidden + 1;
+    T = loadTStruct(iSq,sqkey,Tss);
+    if isempty(T)
+        continue;
+    end
+    iValid = iValid + 1;
+
+    if strcmp(sqkey.sex_status{iSq},'lactating') || strcmp(sqkey.sex_status{iSq},'pregnant') ||...
+            strcmp(sqkey.sex_status{iSq},'Pre-pregnancy')
+        iFemalePreg = iFemalePreg + 1;
+        femaleRecDays(iFemalePreg) = size(T,1)/1440;
+        femaleSqs(iFemalePreg) = iSq;
+    end
+end
+
+%% ^goes with, for females
+uniqFids = unique(sqkey.squirrel_id(femaleSqs));
+fyears = sqkey.year(femaleSqs);
+
+fprintf("%i valid\n",iValid);
+fprintf("%i rec (%i uniq) female preg\n",iFemalePreg,numel(uniqFids));
+
+allConds = lower(sqkey.treatment(femaleSqs));
+unConds = unique(allConds);
+histArr = [];
+for ii = 1:numel(unConds)
+    histArr(ii) = sum(strcmp(allConds,unConds{ii}));
+end
+
+colors = lines(1);
+close all;
+ff(800,300);
+subplot(131);
+histogram(femaleRecDays,10,'facecolor',colors(1,:),'facealpha',1);
+xlabel('rec. days in session');
+ylabel('rec. sessions');
+ylim([0 30]);
+title(sprintf('%i rec. sessions\n(%i unique squirrels)',iFemalePreg,numel(uniqFids)));
+
+subplot(132);
+histogram(fyears,'facecolor',colors(1,:),'facealpha',1);
+ylabel('rec. sessions');
+xtickangle(45);
+xticks(2014:2020);
+ylim([0 30]);
+
+subplot(133);
+bar(histArr);
+xticklabels(unConds);
+xtickangle(45);
+ylabel('rec. sessions');
+ylim([0 30]);
+
+saveas(gcf,fullfile(exportPath,'female_recStats.png'));
+%% preg outline after RITable is made in xcorrAsleep.m
+seasonStr = {'Winter','Spring','Summer','Autumn'};
+mastStr = {'nMast','Mast'};
+pregStr = {'nPreg','Preg'};
+colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
+labelStr = {};
+iCount = 0;
+barMeanRI = [];
+barMeanQB = [];
+barStdRI = [];
+barStdQB = [];
+barColors = [];
+isPreg = [];
+for iSeason = 1:4
+    for iMast = 0:1
+        for iPreg = 0:1
+            ids = find(RITable.season == iSeason & RITable.is_mast == iMast & RITable.is_preg == iPreg);
+            if ~isempty(ids)
+                iCount = iCount + 1;
+                labelStr{iCount} = sprintf('%s-%s-%s',seasonStr{iSeason},mastStr{iMast+1},pregStr{iPreg+1});
+                barMeanRI(iCount) = mean(RITable.RI(ids));
+                barStdRI(iCount) = std(RITable.RI(ids));
+                barMeanQB(iCount) = mean(RITable.qb(ids));
+                barStdQB(iCount) = std(RITable.qb(ids));
+                if iMast == 0
+                    barColors(iCount,:) = colors(iSeason,:);
+                else
+                    barColors(iCount,:) = colors(iSeason,:).^2;
+                end
+                isPreg(iCount) = iPreg;
+            end
         end
     end
 end
-fprintf("%i valid\n",iValid);
-fprintf("%i longevity\n",iLon);
-fprintf("%i middens\n",iMidden);
 
+close all;
+ff(900,800);
+useMean = {barMeanRI,barMeanQB};
+useStd = {barStdRI,barStdQB};
+axLabels = {'RI (raw value)','QB (Z-score)'};
+useOffset = [0.05,0.25];
+for iPlot = 1:2
+    subplot(2,1,iPlot);
+    for ii = 1:size(barColors,1)
+        errorbar(ii,useMean{iPlot}(ii),useStd{iPlot}(ii),'linewidth',4,'color',barColors(ii,:));
+        hold on;
+        plot(ii,useMean{iPlot}(ii),'.','color',barColors(ii,:),'markersize',30);
+        if isPreg(ii) == 1
+            text(ii,useMean{iPlot}(ii)+useStd{iPlot}(ii)+useOffset(iPlot),'P',...
+                'fontsize',16,'color','k','horizontalalignment','center');
+        end
+    end
+    xticklabels(labelStr)
+    xticks(1:size(barColors,1));
+    ylabel(axLabels{iPlot});
+    xtickangle(30);
+    xlim([0,size(barColors,1)+1]);
+    colororder(barColors);
+    title('Mast years are darker, pregnant data marked P');
+end
 %%
 % litter = readtable('litter.csv');
 % RITable = readtable(fullfile('R','RITable.csv'));

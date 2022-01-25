@@ -18,20 +18,23 @@ n$sex<-as.factor(n$sex)
 # remove Winter and add mast interaction
 # n_noWinter<-subset(n,n$season!=1)
 n_noMast<-subset(n,n$mast!=1)
-summary(test<-lmer(qb~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
+summary(test<-lmer(qb~season*mast+sex+age+I(age^2)+longevity+(1|squirrel_id),n))
 visreg(test,"sex",by="mast")
 visreg(test,"sex",by="season")
 visreg(test,"age",'season')
 visreg(test,"mast",by="season")
 visreg(test,"traps_rec",by="season")
+visreg(test,"longevity",by="season")
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 
 n_noMast<-subset(n,n$mast!=1)
-summary(test<-lmer(qb~season+age+I(age^2)+(1|squirrel_id),n_noMast))
+summary(test<-lmer(qb~season+age+I(age^2)+longevity+(1|squirrel_id),n_noMast))
 visreg(test,"age",'season')
+visreg(test,"longevity",by="season")
 
-summary(test<-lmer(RI_odba~season+age+I(age^2)+(1|squirrel_id),n_noMast))
+summary(test<-lmer(RI_odba~season+age+I(age^2)+longevity+(1|squirrel_id),n_noMast))
 visreg(test,"age",'season')
+visreg(test,"longevity",by="season")
 
 # does QB depend on trapping incidence?
 n_noMast<-subset(n,n$mast!=0)
@@ -83,6 +86,16 @@ summary(test<-lmer(midden_cones~qb+(1|squirrel_id),n))
 visreg(test,"qb")
 summary(test<-lmer(midden_cones~RI_odba+(1|squirrel_id),n))
 visreg(test,"RI_odba")
+
+summary(test<-lmer(midden_cones_diff~qb+(1|squirrel_id),n))
+visreg(test,"qb")
+summary(test<-lmer(midden_cones_diff~RI_odba+(1|squirrel_id),n))
+visreg(test,"RI_odba")
+
+summary(test<-lmer(midden_cones_diff~RI_odba+qb+(1|squirrel_id),n))
+visreg(test,"RI_odba")
+
+
 
 ## NOTES
 # this doesn't appear to have enough granularity to trust
