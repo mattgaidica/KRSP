@@ -3,11 +3,14 @@
 #install.packages("visreg")
 #install.packages("emmeans")
 #install.packages("sjPlot")
+#install.packages("MuMIn")
 
 require(lme4)
 require(lmerTest)
 require(visreg)
 require(emmeans)
+require(MuMIn)
+require(sjPlot)
 
 read.csv("/Users/matt/Documents/MATLAB/KRSP/R/RITable.csv")->n
 n$season<-as.factor(n$season)
@@ -89,13 +92,22 @@ visreg(test,"RI_odba")
 
 summary(test<-lmer(midden_cones_diff~qb+(1|squirrel_id),n))
 visreg(test,"qb")
+tab_model(test)
 summary(test<-lmer(midden_cones_diff~RI_odba+(1|squirrel_id),n))
 visreg(test,"RI_odba")
+tab_model(test)
 
 summary(test<-lmer(midden_cones_diff~RI_odba+qb+(1|squirrel_id),n))
 visreg(test,"RI_odba")
 
-
+## GROWTH
+read.csv("/Users/matt/Documents/MATLAB/KRSP/R/GrowthTable.csv")->m
+m$season<-as.factor(m$season)
+m$mast<-as.factor(m$is_mast)
+summary(test<-lmer(growth~season*mast+RI+qb+(1|squirrel_id),m))
+visreg(test,"season")
+visreg(test,"RI",'season')
+visreg(test,"qb",'season')
 
 ## NOTES
 # this doesn't appear to have enough granularity to trust

@@ -27,7 +27,7 @@ end
 
 % litter = readtable('/Users/matt/Documents/MATLAB/KRSP/R/krsp_litter.csv');
 % juvenile = readtable('/Users/matt/Documents/MATLAB/KRSP/R/krsp_juvenile.csv');
-
+% growth = readtable('/Users/matt/Documents/MATLAB/KRSP/R/krsp_growth.csv');
 for iSq = 1:size(sqkey,1)
     if isempty(sqkey.filename{iSq}) || sqkey.isValid(iSq) == 0
         continue;
@@ -67,31 +67,63 @@ for iSq = 1:size(sqkey,1)
         end
     end
 end
-%%
+% do this at end: writetable(sqkey,'sqkey');
+
+%% write growthTable for R
 pregLitters = find(sqkey.rec_litterSize > 0);
 litterArr = [];
 RIArr = [];
 QBArr = [];
+growthTable = table;
 iArr = 0;
+iGr = 0;
 for iPreg = 1:numel(pregLitters)
     RIrow = find(RITable.isq == pregLitters(iPreg));
     if ~isempty(RIrow) % could be empty for short recordings (no RI)
         iArr = iArr + 1;
+        
+        litterId = sqkey.rec_litterId(pregLitters(iPreg));
+        juvs = find(juvenile.litter_id == litterId);
+        for iJuv = 1:numel(juvs)
+            growthId = find(growth.squirrel_id == juvenile.squirrel_id(juvs(iJuv)));
+            if ~isempty(growthId) && ~isnan(growth.growth(growthId))
+                iGr = iGr + 1;
+                growthTable.squirrel_id(iGr) = RITable.squirrel_id(RIrow);
+                growthTable.growth(iGr) = growth.growth(growthId);
+                growthTable.qb(iGr) = RITable.qb(RIrow);
+                growthTable.RI(iGr) = RITable.RI(RIrow);
+                growthTable.qb(iGr) = RITable.qb(RIrow);
+                growthTable.is_mast(iGr) = RITable.is_mast(RIrow);
+                growthTable.doy(iGr) = RITable.doy(RIrow);
+                growthTable.season(iGr) = RITable.season(RIrow);
+            end
+        end
+        
         litterArr(iArr) = sqkey.rec_litterSize(pregLitters(iPreg));
         RIArr(iArr) = RITable.RI(RIrow);
         QBArr(iArr) = RITable.qb(RIrow);
     end
 end
 close all
-ff(600,300);
-subplot(121);
+ff(600,600);
+subplot(221);
 scatter(litterArr,RIArr,'filled');
 xlabel('litter size');
 ylabel('RI (raw value)');
 
-subplot(122);
+subplot(222);
 scatter(litterArr,QBArr,'filled');
 xlabel('litter size');
 ylabel('QB (Z-score)');
 
-% do this at end: writetable(sqkey,'sqkey');
+subplot(223);
+scatter(growthTable.growth,growthTable.RI,'filled');
+xlabel('mean growth rate');
+ylabel('RI (raw value)');
+
+subplot(224);
+scatter(growthTable.growth,growthTable.qb,'filled');
+xlabel('mean growth rate');
+ylabel('QB (Z-score)');
+
+writetable(growthTable,'R/GrowthTable.csv');
