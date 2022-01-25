@@ -188,23 +188,66 @@ RITable.qb_nest = all_RI_QBNest';
 writetable(RITable,fullfile('R','RITable.csv'));
 disp("done");
 
-%% all lines, colored by season, NOT USED
-close all
-
-% ff(1200,600);
-% plot(sq_xcorr_lags,mean(sq_xcorr),'k');
-% xlabel('lag (min)');
-% title('all mean');
-
-colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',366);
-ff(1200,800);
-for iSq = 1:size(sq_xcorr,1)
-    plot(sq_xcorr_lags,sq_xcorr(iSq,:),'color',[colors(sq_doys(iSq),:),0.2],'linewidth',1);
-    hold on;
+%% write growthTable for R
+pregLitters = find(sqkey.rec_litterSize > 0);
+litterArr = [];
+RIArr = [];
+QBArr = [];
+growthTable = table;
+iArr = 0;
+iGr = 0;
+for iPreg = 1:numel(pregLitters)
+    RIrow = find(RITable.isq == pregLitters(iPreg));
+    if ~isempty(RIrow) % could be empty for short recordings (no RI)
+        iArr = iArr + 1;
+        
+        litterId = sqkey.rec_litterId(pregLitters(iPreg));
+        juvs = find(juvenile.litter_id == litterId);
+        for iJuv = 1:numel(juvs)
+            growthId = find(growth.squirrel_id == juvenile.squirrel_id(juvs(iJuv)));
+            if ~isempty(growthId) && ~isnan(growth.growth(growthId))
+                iGr = iGr + 1;
+                growthTable.squirrel_id(iGr) = RITable.squirrel_id(RIrow);
+                growthTable.growth(iGr) = growth.growth(growthId);
+                growthTable.qb(iGr) = RITable.qb(RIrow);
+                growthTable.RI(iGr) = RITable.RI(RIrow);
+                growthTable.qb(iGr) = RITable.qb(RIrow);
+                growthTable.is_mast(iGr) = RITable.is_mast(RIrow);
+                growthTable.doy(iGr) = RITable.doy(RIrow);
+                growthTable.season(iGr) = RITable.season(RIrow);
+            end
+        end
+        
+        litterArr(iArr) = sqkey.rec_litterSize(pregLitters(iPreg));
+        RIArr(iArr) = RITable.RI(RIrow);
+        QBArr(iArr) = RITable.qb(RIrow);
+    end
 end
-xlim([min(sq_xcorr_lags) max(sq_xcorr_lags)]);
+% close all
+% ff(600,600);
+% subplot(221);
+% scatter(litterArr,RIArr,'filled');
+% xlabel('litter size');
+% ylabel('RI (raw value)');
+% 
+% subplot(222);
+% scatter(litterArr,QBArr,'filled');
+% xlabel('litter size');
+% ylabel('QB (Z-score)');
+% 
+% subplot(223);
+% scatter(growthTable.growth,growthTable.RI,'filled');
+% xlabel('mean growth rate');
+% ylabel('RI (raw value)');
+% 
+% subplot(224);
+% scatter(growthTable.growth,growthTable.qb,'filled');
+% xlabel('mean growth rate');
+% ylabel('QB (Z-score)');
 
-%% RI by squirrel, IN PAPER
+writetable(growthTable,'R/GrowthTable.csv');
+
+%% (2x) RI plots, IN PAPER
 close all
 doSave = 0;
 
