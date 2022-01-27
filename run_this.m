@@ -268,3 +268,33 @@ xlabel('Trapping Incidence (Z, TI)');
 ylabel('Quiescent Behavior (Z, QB)');
 title(sprintf("Summer Night-QB vs. TI\nr = %1.2f, p = %1.2e",r,p));
 grid on;
+
+%%
+clc
+useIds = find(RITable.is_preg==1 & RITable.season==2 & RITable.days==5);
+RITable.year(useIds);
+% RITable.isq(useIds(1))
+useIds = find(RITable.is_preg==0 & RITable.sex==1 & RITable.season==2 & RITable.days==5);
+RITable.year(useIds);
+% RITable.isq(useIds(1))
+T = loadTStruct(1,sqkey,Tss);
+writetable(T,'~/Downloads/Axy_Deb_sqid12678_iSq001_Spring2015_Male.csv');
+
+close all
+ff(1200,800);
+plot(T.odba);
+ylabel('ODBA');
+xlabel('Time (min)');
+
+T = loadTStruct(3,sqkey,Tss);
+writetable(T,'~/Downloads/Axy_Deb_sqid13288_iSq003_Spring2015_FemaleLac.csv');
+hold on
+plot(T.odba);
+
+legend({'Male','FemaleLac'});
+set(gca,'fontsize',14);
+xlim([1,size(T,1)])
+%%
+close all
+h=figure; plot(rand(10));
+snap(h,'SnapTest');

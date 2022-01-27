@@ -82,24 +82,7 @@ if do
             continue;
         end
         
-        is_pregLac = 0;
-        if strcmp(sqkey.sex_status{iSq},'lactating') || strcmp(sqkey.sex_status{iSq},'pregnant') ||...
-                strcmp(sqkey.sex_status{iSq},'Pre-pregnancy')
-%             disp('skipping female');
-%             continue;
-            is_pregLac = 1;
-        end
         Tawake = make_Tawake(T); % transition table
-        
-%         saveas(gcf,sprintf("/Users/matt/Documents/MATLAB/KRSP/export/_QBDetect/%3d.jpg",iSq));
-%         close all;
-        
-        % /Users/matt/Documents/MATLAB/KRSP/xcorrAsleep.m
-%         if numel(T.asleep) >= sq_xcorr_l
-%             [c,sq_xcorr_lags] = xcorr(T.asleep,sq_xcorr_l,'coeff');
-%             sq_xcorr(size(sq_xcorr,1)+1,:) = c';
-%             sq_xcorr_doys = [sq_xcorr_doys;day(T.datetime(round(size(T,1)/2)),'dayofyear')];
-%         end
 
         % /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
         dtdoys = day(T.datetime,'dayofyear');
@@ -120,7 +103,7 @@ if do
                 if min(theseDoys) > 1 && max(theseDoys) < numel(T.datetime)
                     iRow = iRow + 1;
                     sq_sqkeyrow(iRow) = iSq;
-                    sq_is_preg(iRow) = is_pregLac;
+                    sq_is_preg(iRow) = sqkey.is_preg(iSq);
                     sq_ids(iRow) = recordingId;
                     sq_ids_un(iRow) = sqkey.squirrel_id(iSq);
                     sq_sex(iRow) = strcmp(sqkey.sex{iSq},'M'); % 0 = Female, 1 = Male
@@ -154,7 +137,7 @@ if do
             
             % new, for Ben
             overlapMeta.isq{iNestCount} = iSq;
-            overlapMeta.is_preg{iNestCount} = is_pregLac;
+            overlapMeta.is_preg{iNestCount} = sqkey.is_preg(iSq);
             overlapMeta.squirrelId{iNestCount} = sqkey.squirrel_id(iSq);
             overlapMeta.in_awake{iNestCount} = overlapStats(iNestCount,1);
             overlapMeta.in_asleep{iNestCount} = overlapStats(iNestCount,2);
@@ -184,66 +167,59 @@ if do
         trans_yr = [trans_yr year(Tawake.datetime)'];
         trans_pg = [trans_pg repmat(is_pregLac,size(Tawake.awake'))];
         
-        if is_pregLac == 0
-            % /Users/matt/Documents/MATLAB/KRSP/results_stats.m
-            trans_ratio = [];
-            trans_night = [];
-            trans_day = [];
-            qb_day = [];
-            qb_night = [];
-            for iDoy = 1:numel(undoys)
-                sunrise = mean(secDay(Tss.sunrise(Tss.doy == undoys(iDoy))),1);
-                sunset = mean(secDay(Tss.sunset(Tss.doy == undoys(iDoy))),1);
-                theseDoys = find(dtdoys == undoys(iDoy));
-                dayDoys = theseDoys(secDay(T.datetime(theseDoys)) > sunrise & secDay(T.datetime(theseDoys)) < sunset);
-                nightDoys = theseDoys(secDay(T.datetime(theseDoys)) < sunrise | secDay(T.datetime(theseDoys)) > sunset);
-                [Y,M,D] = datevec(T.datetime(theseDoys(1)));
-                useId = find(weather.Date == datetime(Y,M,D));
 
-                 % FOR MAST NMAST TABLES
-                [Y,M,D] = datevec(T.datetime(theseDoys(1))); %% ??
-                if ismember(Y,2014:2020) % all: 2014:2020, mast: [2014,2019], nmast: [2015:2018,2020]
-                    if numel(theseDoys) == 1440 && ~isempty(useId) && ~isnan(weather.Mean_Temp(useId))
-                        y_weather = [y_weather weather.Mean_Temp(useId)];
-                        y_dayLength = [y_dayLength mean(Tss.day_length(Tss.doy == undoys(iDoy)),1)];
-                        y_asleep = [y_asleep mean(T.asleep(theseDoys))];
-                        y_nest = [y_nest sum(strcmp(T.nest(theseDoys),'Nest'))];
-                        x_odba = [x_odba mean(T.odba_z(theseDoys))];
-                        sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba(theseDoys))];
-                        sqs_asleep{undoys(iDoy)} = [sqs_asleep{undoys(iDoy)} sum(T.asleep(theseDoys))];
-                        sqs_asleepDay{undoys(iDoy)} = [sqs_asleepDay{undoys(iDoy)} sum(T.asleep(dayDoys))];
-                        sqs_asleepNight{undoys(iDoy)} = [sqs_asleepNight{undoys(iDoy)} sum(T.asleep(nightDoys))];
+        % /Users/matt/Documents/MATLAB/KRSP/results_stats.m
+        trans_ratio = [];
+        trans_night = [];
+        trans_day = [];
+        qb_day = [];
+        qb_night = [];
+        for iDoy = 1:numel(undoys)
+            sunrise = mean(secDay(Tss.sunrise(Tss.doy == undoys(iDoy))),1);
+            sunset = mean(secDay(Tss.sunset(Tss.doy == undoys(iDoy))),1);
+            theseDoys = find(dtdoys == undoys(iDoy));
+            dayDoys = theseDoys(secDay(T.datetime(theseDoys)) > sunrise & secDay(T.datetime(theseDoys)) < sunset);
+            nightDoys = theseDoys(secDay(T.datetime(theseDoys)) < sunrise | secDay(T.datetime(theseDoys)) > sunset);
+            [Y,M,D] = datevec(T.datetime(theseDoys(1)));
+            useId = find(weather.Date == datetime(Y,M,D));
 
-                        sqs_nest{undoys(iDoy)} = [sqs_nest{undoys(iDoy)} sum(strcmp(T.nest(theseDoys),'Nest'))];
+             % FOR MAST NMAST TABLES
+            [Y,M,D] = datevec(T.datetime(theseDoys(1))); %% ??
+            if ismember(Y,2014:2020) % all: 2014:2020, mast: [2014,2019], nmast: [2015:2018,2020]
+                if numel(theseDoys) == 1440 && ~isempty(useId) && ~isnan(weather.Mean_Temp(useId))
+                    y_weather = [y_weather weather.Mean_Temp(useId)];
+                    y_dayLength = [y_dayLength mean(Tss.day_length(Tss.doy == undoys(iDoy)),1)];
+                    y_asleep = [y_asleep mean(T.asleep(theseDoys))];
+                    y_nest = [y_nest sum(strcmp(T.nest(theseDoys),'Nest'))];
+                    x_odba = [x_odba mean(T.odba_z(theseDoys))];
+                    sqs_odba{undoys(iDoy)} = [sqs_odba{undoys(iDoy)} mean(T.odba(theseDoys))];
+                    sqs_asleep{undoys(iDoy)} = [sqs_asleep{undoys(iDoy)} sum(T.asleep(theseDoys))];
+                    sqs_asleepDay{undoys(iDoy)} = [sqs_asleepDay{undoys(iDoy)} sum(T.asleep(dayDoys))];
+                    sqs_asleepNight{undoys(iDoy)} = [sqs_asleepNight{undoys(iDoy)} sum(T.asleep(nightDoys))];
 
-                        sqs_trans{undoys(iDoy)} = [sqs_trans{undoys(iDoy)} sum(abs(diff(T.asleep(theseDoys))))];
-                        sqs_transDay{undoys(iDoy)} = [sqs_transDay{undoys(iDoy)} sum(abs(diff(T.asleep(dayDoys))))];
-                        sqs_transNight{undoys(iDoy)} = [sqs_transNight{undoys(iDoy)} sum(abs(diff(T.asleep(nightDoys))))];
-                    end
+                    sqs_nest{undoys(iDoy)} = [sqs_nest{undoys(iDoy)} sum(strcmp(T.nest(theseDoys),'Nest'))];
+
+                    sqs_trans{undoys(iDoy)} = [sqs_trans{undoys(iDoy)} sum(abs(diff(T.asleep(theseDoys))))];
+                    sqs_transDay{undoys(iDoy)} = [sqs_transDay{undoys(iDoy)} sum(abs(diff(T.asleep(dayDoys))))];
+                    sqs_transNight{undoys(iDoy)} = [sqs_transNight{undoys(iDoy)} sum(abs(diff(T.asleep(nightDoys))))];
                 end
-                qb_day = [qb_day sum(T.asleep(dayDoys)) / numel(theseDoys)];
-                qb_night = [qb_night sum(T.asleep(nightDoys)) / numel(theseDoys)];
-                trans_ratio = [trans_ratio sum(abs(diff(T.asleep(dayDoys)))) ./ sum(abs(diff(T.asleep(theseDoys))))];
-                trans_night = [trans_night sum(abs(diff(T.asleep(nightDoys))))];
-                trans_day = [trans_day sum(abs(diff(T.asleep(dayDoys))))];
             end
-            qb_day_sq(iSq) = mean(qb_day);
-            qb_night_sq(iSq) = mean(qb_night);
-            trans_dayRatio_isq(iSq) = mean(trans_ratio);
-            trans_night_isq(iSq) = mean(trans_night);
-            trans_day_isq(iSq) = mean(trans_day);
-        else
-            qb_day_sq(iSq) = NaN;
-            qb_night_sq(iSq) = NaN;
-            trans_dayRatio_isq(iSq) = NaN;
-            trans_night_isq(iSq) = NaN;
-            trans_day_isq(iSq) = NaN;
-        end %is_preg
+            qb_day = [qb_day sum(T.asleep(dayDoys)) / numel(theseDoys)];
+            qb_night = [qb_night sum(T.asleep(nightDoys)) / numel(theseDoys)];
+            trans_ratio = [trans_ratio sum(abs(diff(T.asleep(dayDoys)))) ./ sum(abs(diff(T.asleep(theseDoys))))];
+            trans_night = [trans_night sum(abs(diff(T.asleep(nightDoys))))];
+            trans_day = [trans_day sum(abs(diff(T.asleep(dayDoys))))];
+        end
+        qb_day_sq(iSq) = mean(qb_day);
+        qb_night_sq(iSq) = mean(qb_night);
+        trans_dayRatio_isq(iSq) = mean(trans_ratio);
+        trans_night_isq(iSq) = mean(trans_night);
+        trans_day_isq(iSq) = mean(trans_day);
     end
     do = false;
     chime;
 end
-writetable(overlapMeta,fullfile('R','nestAsleepOverlap_v3.csv')); % for Ben
+writetable(overlapMeta,fullfile('R','nestAsleepOverlap_v3.csv'));
 
 %%
 doSave = true;

@@ -57,7 +57,7 @@ for iSq = 1:size(sq_xcorr,1)
     ri_idx = closest(sq_xcorr_lags(ri_locs),1440*2);
     all_RI_odba(iSq) = ri_pks(ri_idx);
 end
-
+chime;
 %%
 % generate table: all_RI, mean season, squirrel_id, year, is_mast,
 % cache_size, cone_index, longevity
@@ -185,16 +185,16 @@ for ii = 1:numel(all_RI_QBNest)
 end
 RITable.qb_nest = all_RI_QBNest';
 
+RITable.litter_size(1) = NaN; % cast type
+for ii = 1:size(RITable,1)
+    RITable.litter_size(ii) = sqkey.rec_litterSize(RITable.isq(ii));
+end
 writetable(RITable,fullfile('R','RITable.csv'));
-disp("done");
+chime;
 
-%% write growthTable for R
+%% write growthTable for R, add litter size
 pregLitters = find(sqkey.rec_litterSize > 0);
-litterArr = [];
-RIArr = [];
-QBArr = [];
 growthTable = table;
-iArr = 0;
 iGr = 0;
 for iPreg = 1:numel(pregLitters)
     RIrow = find(RITable.isq == pregLitters(iPreg));
@@ -217,35 +217,10 @@ for iPreg = 1:numel(pregLitters)
                 growthTable.season(iGr) = RITable.season(RIrow);
             end
         end
-        
-        litterArr(iArr) = sqkey.rec_litterSize(pregLitters(iPreg));
-        RIArr(iArr) = RITable.RI(RIrow);
-        QBArr(iArr) = RITable.qb(RIrow);
     end
 end
-% close all
-% ff(600,600);
-% subplot(221);
-% scatter(litterArr,RIArr,'filled');
-% xlabel('litter size');
-% ylabel('RI (raw value)');
-% 
-% subplot(222);
-% scatter(litterArr,QBArr,'filled');
-% xlabel('litter size');
-% ylabel('QB (Z-score)');
-% 
-% subplot(223);
-% scatter(growthTable.growth,growthTable.RI,'filled');
-% xlabel('mean growth rate');
-% ylabel('RI (raw value)');
-% 
-% subplot(224);
-% scatter(growthTable.growth,growthTable.qb,'filled');
-% xlabel('mean growth rate');
-% ylabel('QB (Z-score)');
-
 writetable(growthTable,'R/GrowthTable.csv');
+chime;
 
 %% (2x) RI plots, IN PAPER
 close all

@@ -4,6 +4,7 @@
 #install.packages("emmeans")
 #install.packages("sjPlot")
 #install.packages("MuMIn")
+#install.packages("pbkrtest")
 
 require(lme4)
 require(lmerTest)
@@ -11,17 +12,17 @@ require(visreg)
 require(emmeans)
 require(MuMIn)
 require(sjPlot)
+require(pbkrtest)
 
 read.csv("/Users/matt/Documents/MATLAB/KRSP/R/RITable.csv")->n
 n$season<-as.factor(n$season)
 n$mast<-as.factor(n$is_mast)
 n$sex<-as.factor(n$sex)
-
+n$preg<-as.factor(n$is_preg)
 
 # remove Winter and add mast interaction
 # n_noWinter<-subset(n,n$season!=1)
-n_noMast<-subset(n,n$mast!=1)
-summary(test<-lmer(qb~season*mast+sex+age+I(age^2)+longevity+(1|squirrel_id),n))
+summary(test<-lmer(qb~season*mast*+sex+age+I(age^2)+longevity+(1|squirrel_id),n))
 visreg(test,"sex",by="mast")
 visreg(test,"sex",by="season")
 visreg(test,"age",'season')
@@ -100,6 +101,19 @@ tab_model(test)
 summary(test<-lmer(midden_cones_diff~RI_odba+qb+(1|squirrel_id),n))
 visreg(test,"RI_odba")
 
+## PREGNANT
+n_noMast<-subset(n,n$mast!=0)
+summary(test<-lmer(qb~season*preg+(1|squirrel_id),n_noMast))
+visreg(test,"preg",by='season')
+summary(test<-lmer(RI_odba~season*preg+(1|squirrel_id),n))
+emmeans(test, list(pairwise ~ preg*season), adjust = "tukey")
+visreg(test,"preg",by='season')
+
+n_preg<-subset(n,n$is_preg==1)
+n_preg<-subset(n,!is.nan(n$litter_size))
+summary(test<-lmer(qb~mast*season+litter_size+(1|squirrel_id),n_preg))
+summary(test<-lmer(RI_odba~mast*season+litter_size+(1|squirrel_id),n_preg))
+
 ## GROWTH
 read.csv("/Users/matt/Documents/MATLAB/KRSP/R/GrowthTable.csv")->m
 m$season<-as.factor(m$season)
@@ -108,6 +122,16 @@ summary(test<-lmer(growth~season*mast+RI+qb+(1|squirrel_id),m))
 visreg(test,"season")
 visreg(test,"RI",'season')
 visreg(test,"qb",'season')
+
+
+
+
+
+
+
+
+
+
 
 ## NOTES
 # this doesn't appear to have enough granularity to trust

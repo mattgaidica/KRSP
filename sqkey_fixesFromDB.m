@@ -43,16 +43,22 @@ for iSq = 1:size(sqkey,1)
     sqkey.rec_midDate(iSq) = T.datetime(1) + hours(T.datetime(end)-T.datetime(1)) / 2;
     sqkey.rec_midDoy(iSq) = day(sqkey.rec_midDate(iSq),'dayofyear');
     sqkey.rec_mins(iSq) = size(T,1);
+end
 
-    if strcmp(sqkey.sex_status{iSq},'lactating') || strcmp(sqkey.sex_status{iSq},'pregnant') ||...
-            strcmp(sqkey.sex_status{iSq},'Pre-pregnancy')
+%% preg status
+for iSq = 1:size(sqkey,1)
+    if any(strcmp(sqkey.sex_status{iSq},{'lactating'})) % 'Pre-pregnancy','pregnant'
         sqkey.is_preg(iSq) = 1;
+    else
+        sqkey.is_preg(iSq) = 0;
     end
 end
 
 %%
 litter.fieldBDate.TimeZone = 'America/Whitehorse';
 for iSq = 1:size(sqkey,1)
+    sqkey.rec_litterId(iSq) = NaN;
+    sqkey.rec_litterSize(iSq) = NaN;
     if sqkey.is_preg(iSq) == 1
         rowIds = find(litter.squirrel_id == sqkey.squirrel_id(iSq));
         if ~isempty(rowIds)
@@ -67,4 +73,4 @@ for iSq = 1:size(sqkey,1)
         end
     end
 end
-% do this at end: writetable(sqkey,'sqkey');
+% >> writetable(sqkey,'sqkey');
