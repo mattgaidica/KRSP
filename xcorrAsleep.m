@@ -26,7 +26,7 @@ for iSq = 1:numel(unRecs)
         for thisId = useIds
             % can use sq_odba_z here as comparison, rescale to +/-1
             theseAsleep = [theseAsleep sq_asleep(thisId,:)]; % sq_asleep
-            theseODBA = [theseODBA sq_odba(thisId,:)]; % sq_asleep
+            theseODBA = [theseODBA sq_odba(thisId,:)]; % sq_odba
         end
         [c,sq_xcorr_lags] = xcorr(normalize(theseAsleep),sq_xcorr_l,'coeff');
         sq_xcorr(iCount,:) = c;

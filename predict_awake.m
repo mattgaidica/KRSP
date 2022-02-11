@@ -78,7 +78,7 @@ if do
     qb_night_sq = [];
     for iSq = 1:size(sqkey,1)
         T = loadTStruct(iSq,sqkey,Tss);
-        if isempty(T)
+        if isempty(T) || sqkey.is_preg(iSq)
             continue;
         end
         
@@ -165,7 +165,7 @@ if do
         trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
         trans_is = [trans_is repmat(iSq,size(Tawake.awake'))];
         trans_yr = [trans_yr year(Tawake.datetime)'];
-        trans_pg = [trans_pg repmat(is_pregLac,size(Tawake.awake'))];
+        trans_pg = [trans_pg repmat(sqkey.is_preg(iSq),size(Tawake.awake'))];
         
 
         % /Users/matt/Documents/MATLAB/KRSP/results_stats.m
