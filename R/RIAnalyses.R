@@ -86,7 +86,7 @@ emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 #n_noMast<-subset(n,n$season!=1)
 #n_noMast<-subset(n_noMast,n$season!=2)
 #n_noMast<-subset(n_noMast,n$season!=3)
-summary(test<-lmer(midden_cones~qb+(1|squirrel_id),n))
+summary(test<-lmer(midden_cones~qb+(1|squirrel_id),n)) # age has no effect
 visreg(test,"qb")
 summary(test<-lmer(midden_cones~RI_odba+(1|squirrel_id),n))
 visreg(test,"RI_odba")
