@@ -114,16 +114,66 @@ legend box off;
 text(mean(xlim),min(ylim)+2,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center','fontsize',14);
 text(mean(xlim),min(ylim)+1,sprintf('QB = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
 
+
+% try separating by mast
+h2 = ff(330,300);
+lns = [];
+for iMast = 0:1
+    useMarkerSize = 7;
+    if iMast == 1
+        useMarker = '.';
+        useMarkerSize = 15;
+    else
+        useMarker = 'o';
+    end
+    for ii = 1:numel(sq_inNestMin)
+        if overlapMeta.is_mast{ii} == iMast
+            x = sq_inNestMin(ii)*24;
+            y = sq_asleepMin(ii)*24;
+            lns(iMast+1) = plot(x,y,useMarker,'color','k','markersize',useMarkerSize,'linewidth',1);
+            hold on;
+        end
+    end
+end
+xlim([8 22]);
+xticks([]);
+ylim([8 22]);
+yticks([]);
+plot(NaN,NaN,'k.','markersize',15);
+plot(xlim,[f.p1*min(xlim)+f.p2,f.p1*max(xlim)+f.p2],'k-');
+ci = confint(f);
+plot(xlim,[ci(1,1)*min(xlim)+ci(1,2),ci(1,1)*max(xlim)+ci(1,2)],'k:');
+plot(xlim,[ci(2,1)*min(xlim)+ci(2,2),ci(2,1)*max(xlim)+ci(2,2)],'k:');
+box off;
+legend(lns,{'Non-mast','Mast'},'location','southeast','fontsize',12);
+if doSave
+%     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
+    saveas(h2,fullfile(exportPath,'nestSleepOverlap_inset.eps'),'epsc');
+    saveas(h2,fullfile(exportPath,'nestSleepOverlap_inset.jpg'),'jpg');
+    close(h2);
+end
+
+figure(h);
+
 %% season_residuals
 resBins = linspace(-4,4,16);
 subplot_tight(1,3,3,subplotMargins);
+y = [];
+group = [];
 for iSeason = 1:4
+    y = [y season_residuals{iSeason}];
+    group = [group repmat(iSeason,[1,numel(season_residuals{iSeason})])];
     counts = histcounts(season_residuals{iSeason},resBins) ./ numel(season_residuals{iSeason});
     x = linspace(min(resBins),max(resBins),numel(counts));
     hold on;
     xline(sum(x.*counts),'color',colors(iSeason,:),'linewidth',2);
-    plot(x,counts,'-','linewidth',4,'color',colors(iSeason,:));
+    plot(equalVectors(x,100),smoothdata(equalVectors(counts,100),'gaussian',10),'-','linewidth',4,'color',colors(iSeason,:));
 end
+% stats on pairwise residuals
+[p,tbl,stats] = anova1(y,group,'off');
+% col1-2 are seasons, last col is p-value (season 4 is <0.05 for all)
+c = multcompare(stats,'Display','off');
+
 hold off;
 xlim([min(resBins),max(resBins)]);
 ylabel('Fraction of Squirrels');
@@ -136,6 +186,19 @@ text(min(xlim)+0.05,0.335,'\leftarrow more QB in nest','horizontalalignment','le
     'verticalalignment','middle','fontsize',14);
 text(max(xlim)-0.05,0.315,'less QB in nest \rightarrow ','horizontalalignment','right',...
     'verticalalignment','middle','fontsize',14);
+
+mutlCmpY = .3;
+mutlCmpX = -3.6;
+yStep = .02;
+fs = 12;
+text(mutlCmpX,mutlCmpY,sprintf('Au-Wi p = %1.1e***',c(3,6)),'horizontalalignment','left',...
+    'verticalalignment','middle','fontsize',fs);
+text(mutlCmpX,mutlCmpY-yStep,sprintf('Au-Sp p = %1.1e*',c(5,6)),'horizontalalignment','left',...
+    'verticalalignment','middle','fontsize',fs);
+text(mutlCmpX,mutlCmpY-yStep*2,sprintf('Au-Su p = %1.1e**',c(6,6)),'horizontalalignment','left',...
+    'verticalalignment','middle','fontsize',fs);
+text(mutlCmpX,mutlCmpY-yStep*3,'Others N.S.','horizontalalignment','left',...
+    'verticalalignment','middle','fontsize',fs);
 
 % addFigureLabels(h);
 % setFig('','',2); % not sure if this is needed?
