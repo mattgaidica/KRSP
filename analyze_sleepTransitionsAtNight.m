@@ -6,17 +6,19 @@
 %% Probability Density plots TRYING AGAIN
 doSave = 0;
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
-binInterval = 10; % mins
+nBins = 9; % mins
 showMinutes = 60;
 sleepThresh = 5; % binWidth below
+ssBeforeAfterPad = 60; % minutes
 maxY = 0.25;
 % main plot
 close all
-h = ff(350,300);
+h = ff(550,300);
 lns = [];
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
 sleepDurations_season = {};
-ys = {};
+countsMat = [];
+
 for iSeason = 1:4
     uniqueSqs = unique(trans_is);
     sleepDurations = [];
@@ -31,8 +33,8 @@ for iSeason = 1:4
         % START light/dark transitions
         if ~isempty(theseSleepTrans)
             theseDoys = trans_on(theseSleepTrans);
-            meanSunrise = mean(secDay(Tss.sunrise(theseDoys))) - 60*60;
-            meanSunset = mean(secDay(Tss.sunset(theseDoys))) + 60*60;
+            meanSunrise = mean(secDay(Tss.sunrise(theseDoys))) - ssBeforeAfterPad*60;
+            meanSunset = mean(secDay(Tss.sunset(theseDoys))) + ssBeforeAfterPad*60;
             temp = [];
             for ii = theseSleepTrans
                 if trans_at(ii) > meanSunset || trans_at(ii) < meanSunrise
@@ -70,41 +72,94 @@ for iSeason = 1:4
     
     if ~isempty(sleepDurations)
         sleepDurations_season{iSeason} = sleepDurations;
-        binEdges = logspace(0,2,10);
+        binEdges = logspace(0,2,nBins+1);
         if iSeason == 1
             patch([sleepThresh,max(binEdges),max(binEdges),sleepThresh],[0,0,1,1],'black','FaceAlpha',.1,'EdgeColor','none');
             hold on;
             xline(sleepThresh,'k:');
             text(sleepThresh,maxY-0.02,strcat(sprintf('%i minutes',sleepThresh),'\rightarrow'),'horizontalalignment','right','fontsize',14);
         end
-        lns(iSeason) = histogram(sleepDurations,binEdges,'Normalization','probability','EdgeColor',colors(iSeason,:),'DisplayStyle','Stairs','lineWidth',4,'EdgeAlpha',0.75);
+        histogram(sleepDurations,binEdges,'Normalization','probability','EdgeColor',colors(iSeason,:),'DisplayStyle','Stairs','lineWidth',4,'EdgeAlpha',0.75);
+        lns(iSeason) = plot(-1,-1,'-','lineWidth',3,'color',colors(iSeason,:));
         
         % find center of 'sleep' peak
         counts = histcounts(sleepDurations,binEdges,'Normalization','probability');
-        overSample = 1000;
+        overSample = 10000;
         countsSmooth = smoothdata(equalVectors(counts,overSample),'gaussian',overSample/10);
         binsSmooth = equalVectors(binEdges,overSample);
         locs = peakseek(countsSmooth);
         maxBin = binsSmooth(locs(end));
+        text(17,maxY-iSeason*0.015,strcat(sprintf('%s: %1.2f',seasonLabels{iSeason}(1:2),maxBin),'\rightarrow'),'horizontalalignment','right','fontsize',12,'color',colors(iSeason,:));
+        
+        countsMat(iSeason,:) = counts;
         
 %         xline(median(sleepDurations),':','lineWidth',4,'color',colors(iSeason,:));
-%         xline(maxBin,':','lineWidth',4,'color',colors(iSeason,:));
+        xline(maxBin,':','lineWidth',2,'color',colors(iSeason,:));
         set(gca,'xscale','log');
         drawnow;
     end
 end
 
 set(gca,'fontsize',14);
-xlabel('Sleep Duration (minutes)');
+xlabel('QB Duration (minutes)');
 ylabel('Probability');
 ylim([0 maxY]);
-% title('Dark QB Duration');
+title('Dark QB Duration');
 grid on;
 legend(lns,seasonLabels);
+legend box off
 
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'DarkQBDuration.eps')); % required for vector lines
     saveas(gcf,fullfile(exportPath,'DarkQBDuration.jpg'),'jpg');
+    close(h);
+end
+
+%%
+nSurr = 1000;
+pMat = NaN(4,4,size(countsMat,2));
+surrDiff = [];
+for iSeason = 1:4
+    for kSeason = iSeason:4
+        actualDiff = diff(countsMat([iSeason,kSeason],:));
+        y = [sleepDurations_season{iSeason} sleepDurations_season{kSeason}];
+        group = [zeros(size(sleepDurations_season{iSeason})) ones(size(sleepDurations_season{kSeason}))];
+        for iSurr = 1:nSurr
+            group = group(randperm(length(group)));
+            counts_i = histcounts(y(group==0),binEdges,'Normalization','probability');
+            counts_k = histcounts(y(group==1),binEdges,'Normalization','probability');
+            surrDiff(iSurr,:) = counts_i - counts_k;
+        end
+        for iBin = 1:size(pMat,3)
+            % control for direction
+            if actualDiff(iBin) > 0
+                pMat(iSeason,kSeason,iBin) = sum(surrDiff(:,iBin) > actualDiff(iBin)) / nSurr;
+            else
+                pMat(iSeason,kSeason,iBin) = sum(surrDiff(:,iBin) < actualDiff(iBin)) / nSurr;
+            end
+        end
+    end
+end
+%%
+close all;
+ff(1400,100);
+seasonAbbr = {'Wi','Sp','Su','Au'};
+for iBin = 1:size(pMat,3)
+    subplot(1,size(pMat,3),iBin);
+    ps = squeeze(pMat(:,:,iBin));
+    imagesc(ps,'AlphaData',~isnan(ps));
+    caxis([0,0.05]);
+    colormap(flip(magma));
+    title(sprintf('%1.0f-%1.0f min.',binEdges(iBin),binEdges(iBin+1)));
+    xticks(1:4);
+    yticks(1:4);
+    xticklabels(seasonAbbr);
+    yticklabels(seasonAbbr);
+end
+cbAside(gca,'p-value','k');
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'DarkQBDuration_pMat.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'DarkQBDuration_pMat.jpg'),'jpg');
     close(h);
 end
 
