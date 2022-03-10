@@ -3,13 +3,13 @@
 % trans_to = [trans_to Tawake.awake'];
 % trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
 
-%% Probability Density plots TRYING AGAIN
+%% (1/3) Probability Density histograms
 doSave = 0;
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 nBins = 9; % mins
 showMinutes = 60;
 sleepThresh = 5; % binWidth below
-ssBeforeAfterPad = 60; % minutes
+ssBeforeAfterPad = 30; % minutes
 maxY = 0.25;
 % main plot
 close all
@@ -115,12 +115,13 @@ if doSave
     close(h);
 end
 
-%%
+%% (2/3) setup pMat
 nSurr = 1000;
 pMat = NaN(4,4,size(countsMat,2));
 surrDiff = [];
 for iSeason = 1:4
     for kSeason = iSeason:4
+        fprintf('Seasons %i-%i\n',iSeason,kSeason);
         actualDiff = diff(countsMat([iSeason,kSeason],:));
         y = [sleepDurations_season{iSeason} sleepDurations_season{kSeason}];
         group = [zeros(size(sleepDurations_season{iSeason})) ones(size(sleepDurations_season{kSeason}))];
@@ -140,71 +141,34 @@ for iSeason = 1:4
         end
     end
 end
-%%
+%% (3/3) plot pMat
+doSave = 1;
+fs = 12;
 close all;
-ff(1400,100);
+h = ff(1400,100);
 seasonAbbr = {'Wi','Sp','Su','Au'};
 for iBin = 1:size(pMat,3)
     subplot(1,size(pMat,3),iBin);
-    ps = squeeze(pMat(:,:,iBin));
+    ps = squeeze(pMat(:,:,iBin)); 
     imagesc(ps,'AlphaData',~isnan(ps));
-    caxis([0,0.05]);
+    caxis([0,0.001]);
     colormap(flip(magma));
     title(sprintf('%1.0f-%1.0f min.',binEdges(iBin),binEdges(iBin+1)));
     xticks(1:4);
     yticks(1:4);
     xticklabels(seasonAbbr);
     yticklabels(seasonAbbr);
+    set(gca,'fontsize',fs);
 end
-cbAside(gca,'p-value','k');
+cb = cbAside(gca,'p-value','k');
+cb.TickLabels = caxis;
+cb.FontSize = fs;
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'DarkQBDuration_pMat.eps')); % required for vector lines
     saveas(gcf,fullfile(exportPath,'DarkQBDuration_pMat.jpg'),'jpg');
     close(h);
 end
 
-%%
-pMat = NaN((numel(binEdges)-1),4,4);
-xCount = 0;
-for iBin = 1:numel(binEdges)-1
-    for iSeason = 1:4
-        for kSeason = 1:4
-            if iSeason == kSeason
-                pMat(iBin,iSeason,kSeason) = 1;
-            else
-                iIdx = find(sleepDurations_season{iSeason} >= binEdges(iBin) & sleepDurations_season{iSeason} < binEdges(iBin+1));
-                kIdx = find(sleepDurations_season{kSeason} >= binEdges(iBin) & sleepDurations_season{kSeason} < binEdges(iBin+1));
-                y = [sleepDurations_season{iSeason}(iIdx) sleepDurations_season{kSeason}(kIdx)];
-                group = [zeros(size(iIdx)) ones(size(kIdx))];
-                pMat(iBin,iSeason,kSeason) = anova1(y,group,'off');
-            end
-        end
-    end
-end
-close all
-ff(1400,125);
-rows = 1;
-cols = numel(binEdges)-1;
-for iBin = 1:numel(binEdges)-1
-    subplot(rows,cols,iBin);
-    theseData = squeeze(pMat(iBin,:,:));
-    imAlpha = ones(size(theseData));
-    imAlpha(isnan(theseData)) = 0;
-    imAlpha(theseData >= 0.05) = 0;
-    imagesc(1:4,1:4,theseData,'AlphaData',imAlpha);
-    caxis([0 0.05]);
-    grid on;
-    xticks(0.5:4.5);
-    yticks(0.5:4.5)
-    colormap(gray);
-end
-cbAside(gca);
-
-% imagesc(1:36,1:4,pMat,'AlphaData',imAlpha);
-% xticks(1:36);
-% xticklabels(repmat(1:4,[1,numel(binEdges)-1]));
-% yticks(1:4);
-% grid on;
 %% MEAN AND PROBABILITY QB HEATMAP
 doSave = 1;
 windowSize = 7;
