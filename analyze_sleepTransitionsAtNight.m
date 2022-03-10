@@ -3,6 +3,141 @@
 % trans_to = [trans_to Tawake.awake'];
 % trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
 
+%% SOL (1/2), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
+close all
+h = ff(1200,600);
+rows = 2;
+cols = 4;
+SOL_mat = [];
+for iSun = 1:2
+    theseAsleep_mean = [];
+    theseAsleep_std = [];
+    
+    theseOdba_mean = [];
+    theseOdba_std = [];
+    for iDoy = 1:366
+        useIds = find(ismember(sq_doys,iDoy));% & ismember(sq_sex,iSex));
+        if numel(useIds) > 1
+            if iSun == 1
+%                 monthData_mean = mean(sq_asleep(useIds,:));
+%                 monthData_std = std(sq_asleep(useIds,:));
+                asleepDay_mean = circshift(mean(sq_asleep(useIds,:),1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
+                asleepDay_std = circshift(std(sq_asleep(useIds,:),[],1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
+                
+                odbaDay_mean = circshift(mean(sq_odba(useIds,:),1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
+                odbaDay_std = circshift(std(sq_odba(useIds,:),[],1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
+            else
+                asleepDay_mean = circshift(mean(sq_asleep(useIds,:),1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
+                asleepDay_std = circshift(std(sq_asleep(useIds,:),[],1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
+                
+                odbaDay_mean = circshift(mean(sq_odba(useIds,:),1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
+                odbaDay_std = circshift(std(sq_odba(useIds,:),[],1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
+            end
+            theseAsleep_mean(iDoy,:) = asleepDay_mean;
+            theseAsleep_std(iDoy,:) = asleepDay_std;
+            
+            theseOdba_mean(iDoy,:) = odbaDay_mean;
+            theseOdba_std(iDoy,:) = odbaDay_std;
+        else
+            theseAsleep_mean(iDoy,:) = NaN(1,1440);
+            theseAsleep_std(iDoy,:) = NaN(1,1440);
+            
+            theseOdba_mean(iDoy,:) = NaN(1,1440);
+            theseOdba_std(iDoy,:) = NaN(1,1440);
+        end
+    end
+    
+     for iSeason = 1:4
+        subplot(rows,cols,prc(cols,[iSun,iSeason]));
+        x = nanmean(theseAsleep_mean(useDoys{iSeason},:));
+        x_norm = normalize(x,'range');
+        % finder
+        midIdx = round(numel(x)/2);
+        alpha = 0.2;
+        minIdx = midIdx;
+        maxIdx = midIdx;
+        if iSun == 1 % rel to sunrise
+            while x_norm(minIdx) > alpha
+                minIdx = minIdx + 1;
+            end
+            while x_norm(maxIdx) < 1-alpha
+                maxIdx = maxIdx - 1;
+            end
+        else % sunset
+            while x_norm(minIdx) < 1-alpha
+                minIdx = minIdx + 1;
+            end
+            while x_norm(maxIdx) > alpha
+                maxIdx = maxIdx - 1;
+            end
+        end
+        SOL = abs(minIdx - maxIdx);
+        SOL_mat(iSun,iSeason) = SOL;
+        plot(t,x_norm,'color',colors(iSeason,:),'linewidth',3);
+        hold on;
+        plot([t(minIdx) t(maxIdx)],[x_norm(minIdx),x_norm(maxIdx)],'color',[repmat(0.15,[1,3]),0.8],'linewidth',10);
+        xlim([0 24]);
+        xticks(0:24);
+        xticklabels({'±12','','','','','','-6','','','','','','0','','','','','','+6','','','','','±12'});
+        xline(12,'k:');
+        ylim([-0.1 1.1]);
+        yticks([0 0.2 0.5 0.8 1]);
+        ylabel('QB Mean (norm.)')
+        if iSun == 1
+            xlabel('Hrs. Relative to Sunrise');
+        else
+            xlabel('Hrs. Relative to Sunset');
+        end
+        set(gca,'fontsize',14);
+        title(seasonLabels{iSeason});
+        grid on;
+        drawnow;
+     end
+end
+doSave = 1;
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'SOL_setup.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'SOL_setup.jpg'),'jpg');
+    close(gcf);
+end
+
+%%
+h = ff(400,300);
+barOffset = 0.2;
+xtickVals = [];
+xtickLabelVals = {};
+cellCount = 0;
+for iSeason = 1:4
+    for iSun = 1:2
+        cellCount = cellCount + 1;
+        if iSun == 1
+            x = iSeason - barOffset;
+            xtickLabelVals{cellCount} = strcat(seasonLabels{iSeason},' Onset');
+            useColor = colors(iSeason,:);
+        else
+            x = iSeason + barOffset;
+            xtickLabelVals{cellCount} = strcat(seasonLabels{iSeason},' Offset');
+            useColor = colors(iSeason,:).^2;
+        end
+        xtickVals(cellCount) = x;
+        bar(x,SOL_mat(iSun,iSeason),'FaceColor',useColor,'BarWidth',0.3);
+        hold on;
+    end
+end
+xticks(xtickVals);
+xtickangle(30);
+xticklabels(xtickLabelVals);
+ylabel('Minutes');
+title('QB Latency');
+set(gca,'fontsize',14);
+grid on;
+
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'SOL_bars.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'SOL_bars.jpg'),'jpg');
+    close(gcf);
+end
+
 %% (1/3) Probability Density histograms
 doSave = 0;
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
@@ -382,7 +517,7 @@ end
 
 % alpha has to be set to 1 then changed in the eps, select > same > stroke
 % weight, opacity = 15%
-doSave = 1;
+doSave = 0;
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'SleepTransitions.eps')); % required for vector lines
     saveas(gcf,fullfile(exportPath,'SleepTransitions.jpg'),'jpg');
@@ -609,7 +744,7 @@ if doSave
     close(gcf);
 end
 
-%% mast version IN PROGRESS
+%% mast version
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
 % showHours = 3;
