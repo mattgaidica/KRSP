@@ -3,7 +3,7 @@
 % trans_to = [trans_to Tawake.awake'];
 % trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
 
-%% SOL (1/?), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
+%% SOL_T table setup (1/?), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
 close all
 nSmooth = 10; % minutes
 alpha = 0.2;
@@ -13,14 +13,34 @@ mypdf = normalize(normpdf(x,0,1),'range');
 T_SOL = table;
 warning ('off','all');
 iRow = 0;
-% % ff(900,800);
-for iSun = 1:2
-    for iRec = 1:size(sq_asleep,1)
+
+doSave = 1;
+doDebug = 0;
+if doDebug
+    debugPath = '/Users/matt/Downloads/debug';
+    ms = 35;
+    rows = 2;
+    cols = 1;
+    close all
+    psSec = 0.00; % sec
+    mnLabels = {'Sunrise','Sunset'};
+end
+ 
+for iRec = 1:size(sq_asleep,1)
+    fprintf('iRec%i\n',iRec);
+    if doDebug
+        ff(1200,800);
+    end
+    for iSun = 1:2
+        if doDebug
+            subplot(rows,cols,iSun);
+        end
         if iSun == 1
             shiftedAsleep = circshift(sq_asleep(iRec,:),720-round(mean(secDay(Tss.sunrise(Tss.doy == sq_doys(iRec))),1)/60));
         else
             shiftedAsleep = circshift(mean(sq_asleep(iRec,:),1),720-round(mean(secDay(Tss.sunset(Tss.doy == sq_doys(iRec))),1)/60));
         end
+        
         if std(shiftedAsleep) == 0
             fprintf('skipping std rec%i\n',iRec);
             continue;
@@ -35,46 +55,94 @@ for iSun = 1:2
         adjAlpha = 1-alpha;
         while isempty(locs)
             [locs,pks] = peakseek(awakeNorm.*mypdf,nSmooth,adjAlpha);
-            adjAlpha = adjAlpha - 0.1;
+            adjAlpha = adjAlpha - 0.01;
         end
+        
+        if doDebug
+            ln1 = plot(asleepNorm,'k','linewidth',3);
+            hold on;
+            xline(720);
+            yline(alpha,'r--'); yline(1-alpha,'r--');
+            xlim([1 1440]);
+            xticks([1,720,1440]);
+            xticklabels({'-720','0','+720'});
+            ylabel('QB (norm.)');
+            ylim([0 1]);
+            yticks([0,alpha,1-alpha,1]);
+            xlabel('Time (min)');
+            set(gca,'fontsize',14);
+            title(sprintf('Rel. to %s, iRec = %04d',mnLabels{iSun},iRec));
+            m1 = [];
+            m2 = [];
+        end
+        
         if iSun == 1
-            [~,awakeIdx] = closest(locs,720);
+            [~,awakeIdx] = closest(locs,720); % break a tie
             while asleepNorm(awakeIdx) < alpha
-                awakeIdx = awakeIdx - 1;
+                if doDebug
+                    delete(m1);
+                    m1 = plot(awakeIdx,asleepNorm(awakeIdx),'g.','markersize',ms);
+                    drawnow;
+                    pause(psSec);
+                end
+                awakeIdx = awakeIdx - 1; % backtrack index until alpha
             end
             asleepIdx = awakeIdx;
             while asleepIdx > 1
+                if doDebug
+                    delete(m2);
+                    m2 = plot(asleepIdx,asleepNorm(asleepIdx),'r.','markersize',ms);
+                    drawnow;
+                    pause(psSec);
+                end
                 asleepIdx = asleepIdx - 1;
                 asleepAlpha = asleepNorm(asleepIdx);
                 if asleepAlpha > 1-alpha
                     break;
                 end
             end
+            if doDebug
+                plot([asleepIdx,awakeIdx],[asleepNorm(asleepIdx),asleepNorm(awakeIdx)],'color',repmat(0.5,[1,4]),'linewidth',10);
+                drawnow;
+            end
         else
             [~,asleepIdx] = closest(locs,720);
-            while asleepNorm(asleepIdx) < alpha
-                asleepIdx = asleepIdx + 1;
+            while asleepNorm(asleepIdx) > 1 - alpha
+                if doDebug
+                    delete(m1);
+                    m1 = plot(asleepIdx,asleepNorm(asleepIdx),'r.','markersize',ms);
+                    drawnow;
+                    pause(psSec);
+                end
+                asleepIdx = asleepIdx - 1;
             end
             awakeIdx = asleepIdx;
             while awakeIdx > 1
+                if doDebug
+                    delete(m2);
+                    m2 = plot(awakeIdx,asleepNorm(awakeIdx),'g.','markersize',ms);
+                    drawnow;
+                    pause(psSec);
+                end
                 awakeIdx = awakeIdx - 1;
                 asleepAlpha = asleepNorm(awakeIdx);
                 if asleepAlpha < alpha
                     break;
                 end
             end
+            if doDebug
+                plot([asleepIdx,awakeIdx],[asleepNorm(asleepIdx),asleepNorm(awakeIdx)],'color',repmat(0.5,[1,4]),'linewidth',10);
+                drawnow;
+            end
         end
-        
-% %         subplot(2,1,iSun);
-% %         plot(asleepNorm,'k-');
-% %         hold on;
-% %         plot([asleepIdx awakeIdx],asleepNorm([asleepIdx awakeIdx]),'r-','linewidth',3);
-% %         xline(720);
-% %         xlim([1 1440]);
-% %         drawnow;
-        
+        if doDebug
+%             plot([asleepIdx,awakeIdx],[0.5,0.5],'k-','linewidth',10);
+            arrow([asleepIdx,0.5],[awakeIdx,0.5],'Length',5,'Ends',iSun);
+            text(max([asleepIdx,awakeIdx])+10,0.5,sprintf('SOL = %i mins',abs(asleepIdx - awakeIdx)),'HorizontalAlignment','left','fontsize',14);
+        end
+
         iRow = iRow + 1;
-        T_SOL.recId(iRow) = iRec;
+        T_SOL.iRec(iRow) = iRec;
         if iSun == 1
             T_SOL.isSunrise(iRow) = 1;
         else
@@ -88,13 +156,167 @@ for iSun = 1:2
                  T_SOL.season(iRow) = iSeason;
             end
         end
-        T_SOL.asleepData(iRow) = {awakeNorm};
+% % % %         T_SOL.asleepData(iRow) = {asleepNorm};
     end
+    if doSave && doDebug
+        saveas(gcf,fullfile(debugPath,sprintf('iRec%04d.jpg',iRec)));
+        close gcf;
+    end   
 end
 warning ('on','all');
+writetable(T_SOL,'T_SOL');
+%%
+T_SOL = readtable('T_SOL');
+alpha = [0 95];
+
+useIds = find(T_SOL.isSunrise==1);
+SOLs = T_SOL.SOL(useIds);
+[~,TF] = rmoutliers(SOLs,'percentiles',alpha);
+T_SOL(useIds(TF),:) = [];
+fprintf('rm %i sunrise\n',sum(TF));
+
+useIds = find(T_SOL.isSunrise==0);
+SOLs = T_SOL.SOL(useIds);
+[~,TF] = rmoutliers(SOLs,'percentiles',alpha);
+T_SOL(useIds(TF),:) = [];
+fprintf('rm %i sunset\n',sum(TF));
+
+awakeIds = T_SOL.awakeIdx;
+[~,TF] = rmoutliers(awakeIds);
+T_SOL(TF,:) = [];
+fprintf('rm %i awake\n',sum(TF));
+
+asleepIds = T_SOL.awakeIdx;
+[~,TF] = rmoutliers(asleepIds);
+T_SOL(TF,:) = [];
+fprintf('rm %i asleep\n',sum(TF));
+
+close all;
+ff(1200,400);
+
+subplot(121);
+binEdges = linspace(0,200,100);
+useIds = find(T_SOL.isSunrise==1);
+SOLs = T_SOL.SOL(useIds);
+histogram(SOLs,binEdges);
+hold on;
+useIds = find(T_SOL.isSunrise==0);
+SOLs = T_SOL.SOL(useIds);
+histogram(SOLs,binEdges);
+legend({'Sunrise','Sunset'});
+set(gca,'fontsize',14);
+title('Latency (How long does it take?)');
+xlabel('Time (min.)');
+ylabel('Frequency');
+grid on;
+
+subplot(122);
+binEdges = linspace(1,1440,100);
+histogram(T_SOL.awakeIdx);
+hold on;
+histogram(T_SOL.asleepIdx);
+legend({'QB-AB','AB-QB'});
+set(gca,'fontsize',14);
+xlabel('Relative time to Sunrise/Sunset (min.)');
+ylabel('Frequency');
+title('Time of Onset/Offset (When does it happen?)');
+xticks([720-200,720,720+200]);
+xticklabels({'-200','0','+200'});
+grid on;
+
+doSave = 1;
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'T_SOL_cleanHistograms.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'T_SOL_cleanHistograms.jpg'),'jpg');
+    close(gcf);
+end
+
 % !! need to clean table before using
-figure;histogram(T_SOL.SOL(1:6334),1:10:500);
-figure;histogram(T_SOL.SOL(6334:end),1:10:500);
+% figure;histogram(T_SOL.SOL(T_SOL.isSunrise==1));
+% figure;histogram(T_SOL.SOL(T_SOL.isSunrise==0));
+
+%%
+rowNames = {'Latency to AB','AB Rel. to Sunrise','Latency to QB','QB Rel. to Sunset'};
+varTypes = {'string','string','string','string','string','string'};
+T_SOL_summary = table('Size',[4,6],'VariableNames',{'Description',seasonLabels{:},'All'},'VariableType',varTypes);
+isSunriseArr = [1,0];
+iRow = 0;
+for ii = 1:numel(rowNames)
+    T_SOL_summary.Description(ii) = rowNames{ii}; 
+end
+for iSeason = 1:5
+    for iSun = 1:2
+        if iSeason == 5
+            useRows = find(T_SOL.isSunrise == isSunriseArr(iSun));
+        else
+            useRows = find(T_SOL.season == iSeason & T_SOL.isSunrise == isSunriseArr(iSun));
+        end
+        asleepAwakeMean = mean([T_SOL.awakeIdx(useRows),T_SOL.asleepIdx(useRows)],2);
+        SOLs = T_SOL.SOL(useRows);
+        
+        if iSun == 1
+            T_SOL_summary(1,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(SOLs),std(SOLs))};
+            T_SOL_summary(2,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(asleepAwakeMean)-720,std(asleepAwakeMean))};
+        else
+            T_SOL_summary(3,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(SOLs),std(SOLs))};
+            T_SOL_summary(4,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(asleepAwakeMean)-720,std(asleepAwakeMean))};
+        end
+    end
+end
+writetable(T_SOL_summary,'T_SOL_summary.xlsx');
+
+seasonAbbr = {'Wi','Sp','Su','Au'};
+close all;
+ff(800,150);
+for iSubplot = 1:4
+    pMat = NaN(4,4);
+    for iSeason = 1:4
+        for kSeason = iSeason:4
+            if iSubplot == 1
+                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 1);
+                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 1);
+                y = [T_SOL.SOL(s1Ids);T_SOL.SOL(s2Ids)];
+            elseif iSubplot == 2
+                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 1);
+                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 1);
+                y = [mean([T_SOL.awakeIdx(s1Ids),T_SOL.asleepIdx(s1Ids)],2);mean([T_SOL.awakeIdx(s2Ids),T_SOL.asleepIdx(s2Ids)],2)];
+            elseif iSubplot == 3
+                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 0);
+                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 0);
+                y = [T_SOL.SOL(s1Ids);T_SOL.SOL(s2Ids)];
+            else
+                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 0);
+                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 0);
+                y = [mean([T_SOL.awakeIdx(s1Ids),T_SOL.asleepIdx(s1Ids)],2);mean([T_SOL.awakeIdx(s2Ids),T_SOL.asleepIdx(s2Ids)],2)];
+            end
+            group = [zeros(size(s1Ids));ones(size(s2Ids))];
+            pMat(iSeason,kSeason) = anova1(y,group,'off');
+        end
+    end
+    subplot(1,4,iSubplot);
+    alphaData = ~isnan(pMat);
+    imagesc(pMat,'AlphaData',alphaData);
+    xticks(1:4);
+    yticks(xticks);
+    xticklabels(seasonAbbr);
+    yticklabels(seasonAbbr);
+    title(rowNames{iSubplot});
+    colormap(flip(magma));
+    caxis([0 0.01]);
+    set(gca,'fontsize',12);
+    set(gca,'ydir','normal');
+    drawnow;
+end
+cb = cbAside(gca,'p-value','k');
+cb.FontSize = 12;
+cb.TickLabels = caxis;
+
+doSave = 1;
+if doSave
+    print(gcf,'-painters','-depsc',fullfile(exportPath,'T_SOL_summary_pMatrix.eps')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'T_SOL_summary_pMatrix.jpg'),'jpg');
+    close(gcf);
+end
 
 %         plot([t(minIdx) t(maxIdx)],[x_norm(minIdx),x_norm(maxIdx)],'color',[repmat(0.15,[1,3]),0.8],'linewidth',10);
 %         xlim([0 24]);
@@ -113,108 +335,6 @@ figure;histogram(T_SOL.SOL(6334:end),1:10:500);
 %         title(seasonLabels{iSeason});
 %         grid on;
 %         drawnow;
-
-doSave = 0;
-if doSave
-    print(gcf,'-painters','-depsc',fullfile(exportPath,'SOL_setup.eps')); % required for vector lines
-    saveas(gcf,fullfile(exportPath,'SOL_setup.jpg'),'jpg');
-    close(gcf);
-end
-
-%%
-% yRise_SOL = [];
-% yRise_SOL_idx = [];
-% ySet_SOL = [];
-% ySet_SOL_idx = [];
-% group = [];
-h = ff(700,250);
-
-for iSun = 1:2
-    subplot(1,2,iSun);
-    for iSeason = 1:4
-        useIds = find(group == iSeason);
-        if iSun == 1
-            useIdx = yRise_SOL_idx;
-        else
-            useIdx = ySet_SOL_idx;
-        end
-        x = [mean(useIdx(useIds))-std(useIdx(useIds)),mean(useIdx(useIds))+std(useIdx(useIds))];
-        plot(x,[iSeason,iSeason],'-','color',colors(iSeason,:),'linewidth',5);
-        hold on;
-        plot(mean(useIdx(useIds)),iSeason,'.','markersize',35,'color',colors(iSeason,:));
-    end
-    ylim([0 5]);
-    yticks(1:4);
-    yticklabels(seasonLabels);
-    xlim([720-60,720+60]);
-    xticks(sort([xlim,720]));
-    if iSun == 1
-        xticklabels({'-60','Sunrise','+60'});
-    else
-        xticklabels({'-60','Sunset','+60'});
-    end
-    xline(720,'k:');
-    xlabel('Time (min.)');
-    set(gca,'fontsize',14);
-    grid on;
-end
-
-%%
-h = ff(400,300);
-ii = 0;
-for iSeason = 1:4
-    useIds = find(group == iSeason);
-    for iSun = 1:2
-        if iSun == 1
-            useSOL = yRise_SOL;
-        else
-            useSOL = ySet_SOL;
-        end
-        ii = ii + 1;
-        plot([ii,ii],[mean(useSOL(useIds))-std(useSOL(useIds)),mean(useSOL(useIds))+std(useSOL(useIds))],'color',colors(iSeason,:),'linewidth',5);
-        hold on;
-        plot(ii,mean(useSOL(useIds)),'.','markersize',35,'color',colors(iSeason,:));
-        ylim([70,125]);
-    end
-end
-grid on;
-
-%%
-h = ff(400,300);
-barOffset = 0.2;
-xtickVals = [];
-xtickLabelVals = {};
-cellCount = 0;
-for iSeason = 1:4
-    for iSun = 1:2
-        cellCount = cellCount + 1;
-        if iSun == 1
-            x = iSeason - barOffset;
-            xtickLabelVals{cellCount} = strcat(seasonLabels{iSeason},' Onset');
-            useColor = colors(iSeason,:);
-        else
-            x = iSeason + barOffset;
-            xtickLabelVals{cellCount} = strcat(seasonLabels{iSeason},' Offset');
-            useColor = colors(iSeason,:).^2;
-        end
-        xtickVals(cellCount) = x;
-        bar(x,SOL_mat(iSun,iSeason),'FaceColor',useColor,'BarWidth',0.3);
-        hold on;
-    end
-end
-xticks(xtickVals);
-xtickangle(30);
-xticklabels(xtickLabelVals);
-ylabel('Minutes');
-title('QB Latency');
-set(gca,'fontsize',14);
-grid on;
-
-if doSave
-    print(gcf,'-painters','-depsc',fullfile(exportPath,'SOL_bars.eps')); % required for vector lines
-    saveas(gcf,fullfile(exportPath,'SOL_bars.jpg'),'jpg');
-    close(gcf);
-end
 
 %% (1/3) Probability Density histograms
 doSave = 0;
@@ -364,7 +484,7 @@ for iBin = 1:size(pMat,3)
     subplot(1,size(pMat,3),iBin);
     ps = squeeze(pMat(:,:,iBin));
     imagesc(ps,'AlphaData',~isnan(ps));
-    caxis([0,0.001]);
+    caxis([0,0.01]);
     colormap(flip(magma));
     title(sprintf('%1.0f-%1.0f min.',binEdges(iBin),binEdges(iBin+1)));
     xticks(1:4);
@@ -372,6 +492,7 @@ for iBin = 1:size(pMat,3)
     xticklabels(seasonAbbr);
     yticklabels(seasonAbbr);
     set(gca,'fontsize',fs);
+    set(gca,'ydir','normal')
 end
 cb = cbAside(gca,'p-value','k');
 cb.TickLabels = caxis;
