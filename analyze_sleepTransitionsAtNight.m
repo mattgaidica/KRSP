@@ -3,103 +3,181 @@
 % trans_to = [trans_to Tawake.awake'];
 % trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
 
-%% SOL (1/2), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
+%% SOL (1/?), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
 close all
-h = ff(1200,600);
-rows = 2;
-cols = 4;
-SOL_mat = [];
+nSmooth = 10; % minutes
+alpha = 0.2;
+x = linspace(-3,3,1440);
+mypdf = normalize(normpdf(x,0,1),'range');
+
+T_SOL = table;
+warning ('off','all');
+iRow = 0;
+% % ff(900,800);
 for iSun = 1:2
-    theseAsleep_mean = [];
-    theseAsleep_std = [];
-    
-    theseOdba_mean = [];
-    theseOdba_std = [];
-    for iDoy = 1:366
-        useIds = find(ismember(sq_doys,iDoy));% & ismember(sq_sex,iSex));
-        if numel(useIds) > 1
-            if iSun == 1
-%                 monthData_mean = mean(sq_asleep(useIds,:));
-%                 monthData_std = std(sq_asleep(useIds,:));
-                asleepDay_mean = circshift(mean(sq_asleep(useIds,:),1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
-                asleepDay_std = circshift(std(sq_asleep(useIds,:),[],1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
-                
-                odbaDay_mean = circshift(mean(sq_odba(useIds,:),1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
-                odbaDay_std = circshift(std(sq_odba(useIds,:),[],1),720-round(mean(secDay(Tss.sunrise(Tss.doy == iDoy)),1)/60));
-            else
-                asleepDay_mean = circshift(mean(sq_asleep(useIds,:),1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
-                asleepDay_std = circshift(std(sq_asleep(useIds,:),[],1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
-                
-                odbaDay_mean = circshift(mean(sq_odba(useIds,:),1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
-                odbaDay_std = circshift(std(sq_odba(useIds,:),[],1),720-round(mean(secDay(Tss.sunset(Tss.doy == iDoy)),1)/60));
-            end
-            theseAsleep_mean(iDoy,:) = asleepDay_mean;
-            theseAsleep_std(iDoy,:) = asleepDay_std;
-            
-            theseOdba_mean(iDoy,:) = odbaDay_mean;
-            theseOdba_std(iDoy,:) = odbaDay_std;
-        else
-            theseAsleep_mean(iDoy,:) = NaN(1,1440);
-            theseAsleep_std(iDoy,:) = NaN(1,1440);
-            
-            theseOdba_mean(iDoy,:) = NaN(1,1440);
-            theseOdba_std(iDoy,:) = NaN(1,1440);
-        end
-    end
-    
-     for iSeason = 1:4
-        subplot(rows,cols,prc(cols,[iSun,iSeason]));
-        x = nanmean(theseAsleep_mean(useDoys{iSeason},:));
-        x_norm = normalize(x,'range');
-        % finder
-        midIdx = round(numel(x)/2);
-        alpha = 0.2;
-        minIdx = midIdx;
-        maxIdx = midIdx;
-        if iSun == 1 % rel to sunrise
-            while x_norm(minIdx) > alpha
-                minIdx = minIdx + 1;
-            end
-            while x_norm(maxIdx) < 1-alpha
-                maxIdx = maxIdx - 1;
-            end
-        else % sunset
-            while x_norm(minIdx) < 1-alpha
-                minIdx = minIdx + 1;
-            end
-            while x_norm(maxIdx) > alpha
-                maxIdx = maxIdx - 1;
-            end
-        end
-        SOL = abs(minIdx - maxIdx);
-        SOL_mat(iSun,iSeason) = SOL;
-        plot(t,x_norm,'color',colors(iSeason,:),'linewidth',3);
-        hold on;
-        plot([t(minIdx) t(maxIdx)],[x_norm(minIdx),x_norm(maxIdx)],'color',[repmat(0.15,[1,3]),0.8],'linewidth',10);
-        xlim([0 24]);
-        xticks(0:24);
-        xticklabels({'±12','','','','','','-6','','','','','','0','','','','','','+6','','','','','±12'});
-        xline(12,'k:');
-        ylim([-0.1 1.1]);
-        yticks([0 0.2 0.5 0.8 1]);
-        ylabel('QB Mean (norm.)')
+    for iRec = 1:size(sq_asleep,1)
         if iSun == 1
-            xlabel('Hrs. Relative to Sunrise');
+            shiftedAsleep = circshift(sq_asleep(iRec,:),720-round(mean(secDay(Tss.sunrise(Tss.doy == sq_doys(iRec))),1)/60));
         else
-            xlabel('Hrs. Relative to Sunset');
+            shiftedAsleep = circshift(mean(sq_asleep(iRec,:),1),720-round(mean(secDay(Tss.sunset(Tss.doy == sq_doys(iRec))),1)/60));
         end
-        set(gca,'fontsize',14);
-        title(seasonLabels{iSeason});
-        grid on;
-        drawnow;
-     end
+        if std(shiftedAsleep) == 0
+            fprintf('skipping std rec%i\n',iRec);
+            continue;
+        end
+        asleepNorm = normalize(imgaussfilt(shiftedAsleep,nSmooth,'Padding','circular'),'range');
+        if iSun == 1
+            awakeNorm = -asleepNorm + 1;
+        else
+            awakeNorm = asleepNorm;
+        end
+        locs = [];
+        adjAlpha = 1-alpha;
+        while isempty(locs)
+            [locs,pks] = peakseek(awakeNorm.*mypdf,nSmooth,adjAlpha);
+            adjAlpha = adjAlpha - 0.1;
+        end
+        if iSun == 1
+            [~,awakeIdx] = closest(locs,720);
+            while asleepNorm(awakeIdx) < alpha
+                awakeIdx = awakeIdx - 1;
+            end
+            asleepIdx = awakeIdx;
+            while asleepIdx > 1
+                asleepIdx = asleepIdx - 1;
+                asleepAlpha = asleepNorm(asleepIdx);
+                if asleepAlpha > 1-alpha
+                    break;
+                end
+            end
+        else
+            [~,asleepIdx] = closest(locs,720);
+            while asleepNorm(asleepIdx) < alpha
+                asleepIdx = asleepIdx + 1;
+            end
+            awakeIdx = asleepIdx;
+            while awakeIdx > 1
+                awakeIdx = awakeIdx - 1;
+                asleepAlpha = asleepNorm(awakeIdx);
+                if asleepAlpha < alpha
+                    break;
+                end
+            end
+        end
+        
+% %         subplot(2,1,iSun);
+% %         plot(asleepNorm,'k-');
+% %         hold on;
+% %         plot([asleepIdx awakeIdx],asleepNorm([asleepIdx awakeIdx]),'r-','linewidth',3);
+% %         xline(720);
+% %         xlim([1 1440]);
+% %         drawnow;
+        
+        iRow = iRow + 1;
+        T_SOL.recId(iRow) = iRec;
+        if iSun == 1
+            T_SOL.isSunrise(iRow) = 1;
+        else
+            T_SOL.isSunrise(iRow) = 0;
+        end
+        T_SOL.SOL(iRow) = abs(asleepIdx - awakeIdx);
+        T_SOL.asleepIdx(iRow) = asleepIdx;
+        T_SOL.awakeIdx(iRow) = awakeIdx;
+        for iSeason = 1:4
+            if ismember(sq_doys(iRec),useDoys{iSeason})
+                 T_SOL.season(iRow) = iSeason;
+            end
+        end
+        T_SOL.asleepData(iRow) = {awakeNorm};
+    end
 end
-doSave = 1;
+warning ('on','all');
+% !! need to clean table before using
+figure;histogram(T_SOL.SOL(1:6334),1:10:500);
+figure;histogram(T_SOL.SOL(6334:end),1:10:500);
+
+%         plot([t(minIdx) t(maxIdx)],[x_norm(minIdx),x_norm(maxIdx)],'color',[repmat(0.15,[1,3]),0.8],'linewidth',10);
+%         xlim([0 24]);
+%         xticks(0:24);
+%         xticklabels({'±12','','','','','','-6','','','','','','0','','','','','','+6','','','','','±12'});
+%         xline(12,'k:');
+%         ylim([-0.1 1.1]);
+%         yticks([0 0.2 0.5 0.8 1]);
+%         ylabel('QB Mean (norm.)')
+%         if iSun == 1
+%             xlabel('Hrs. Relative to Sunrise');
+%         else
+%             xlabel('Hrs. Relative to Sunset');
+%         end
+%         set(gca,'fontsize',14);
+%         title(seasonLabels{iSeason});
+%         grid on;
+%         drawnow;
+
+doSave = 0;
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'SOL_setup.eps')); % required for vector lines
     saveas(gcf,fullfile(exportPath,'SOL_setup.jpg'),'jpg');
     close(gcf);
 end
+
+%%
+% yRise_SOL = [];
+% yRise_SOL_idx = [];
+% ySet_SOL = [];
+% ySet_SOL_idx = [];
+% group = [];
+h = ff(700,250);
+
+for iSun = 1:2
+    subplot(1,2,iSun);
+    for iSeason = 1:4
+        useIds = find(group == iSeason);
+        if iSun == 1
+            useIdx = yRise_SOL_idx;
+        else
+            useIdx = ySet_SOL_idx;
+        end
+        x = [mean(useIdx(useIds))-std(useIdx(useIds)),mean(useIdx(useIds))+std(useIdx(useIds))];
+        plot(x,[iSeason,iSeason],'-','color',colors(iSeason,:),'linewidth',5);
+        hold on;
+        plot(mean(useIdx(useIds)),iSeason,'.','markersize',35,'color',colors(iSeason,:));
+    end
+    ylim([0 5]);
+    yticks(1:4);
+    yticklabels(seasonLabels);
+    xlim([720-60,720+60]);
+    xticks(sort([xlim,720]));
+    if iSun == 1
+        xticklabels({'-60','Sunrise','+60'});
+    else
+        xticklabels({'-60','Sunset','+60'});
+    end
+    xline(720,'k:');
+    xlabel('Time (min.)');
+    set(gca,'fontsize',14);
+    grid on;
+end
+
+%%
+h = ff(400,300);
+ii = 0;
+for iSeason = 1:4
+    useIds = find(group == iSeason);
+    for iSun = 1:2
+        if iSun == 1
+            useSOL = yRise_SOL;
+        else
+            useSOL = ySet_SOL;
+        end
+        ii = ii + 1;
+        plot([ii,ii],[mean(useSOL(useIds))-std(useSOL(useIds)),mean(useSOL(useIds))+std(useSOL(useIds))],'color',colors(iSeason,:),'linewidth',5);
+        hold on;
+        plot(ii,mean(useSOL(useIds)),'.','markersize',35,'color',colors(iSeason,:));
+        ylim([70,125]);
+    end
+end
+grid on;
 
 %%
 h = ff(400,300);
@@ -162,9 +240,9 @@ for iSeason = 1:4
         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason}));
         
         % mast: [2014,2019], nmast: [2015:2018,2020]
-%         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason})...
-%             & ismember(trans_yr,[2014,2019]));
-
+        %         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason})...
+        %             & ismember(trans_yr,[2014,2019]));
+        
         % START light/dark transitions
         if ~isempty(theseSleepTrans)
             theseDoys = trans_on(theseSleepTrans);
@@ -228,7 +306,7 @@ for iSeason = 1:4
         
         countsMat(iSeason,:) = counts;
         
-%         xline(median(sleepDurations),':','lineWidth',4,'color',colors(iSeason,:));
+        %         xline(median(sleepDurations),':','lineWidth',4,'color',colors(iSeason,:));
         xline(maxBin,':','lineWidth',2,'color',colors(iSeason,:));
         set(gca,'xscale','log');
         drawnow;
@@ -284,7 +362,7 @@ h = ff(1400,100);
 seasonAbbr = {'Wi','Sp','Su','Au'};
 for iBin = 1:size(pMat,3)
     subplot(1,size(pMat,3),iBin);
-    ps = squeeze(pMat(:,:,iBin)); 
+    ps = squeeze(pMat(:,:,iBin));
     imagesc(ps,'AlphaData',~isnan(ps));
     caxis([0,0.001]);
     colormap(flip(magma));
@@ -334,7 +412,7 @@ for iPlot = 1:2
         transStarts = [];
         iDoyCount = 0;
         histDoyArr = [];
-
+        
         theseSleepTrans = find(trans_to==0 & ismember(trans_on,theseDoys)); %  & ~ismember(trans_yr,[2014,2019])
         if numel(theseSleepTrans) > windowSize * 200
             allEntries = find(trans_is==iSq);
@@ -345,33 +423,33 @@ for iPlot = 1:2
             theseTransEnd = trans_at(theseSleepTrans+1); % awake
             theseTransStart = trans_at(theseSleepTrans); % asleep
             theseDurations = (theseTransEnd - theseTransStart) / 60; % make minutes
-
+            
             % fix transitions around next day (in seconds)
             for ii = find(theseDurations < 0)
                 theseDurations(ii) = theseDurations(ii) + 1440;
             end
             if iPlot == 1
-                transStarts = theseTransStart(theseDurations > 0); 
+                transStarts = theseTransStart(theseDurations > 0);
             else
                 transStarts = theseTransStart(theseDurations > binWidth);
             end
             [counts,binEdges,C] = histcounts(transStarts,linspace(0,86400,nBins+3),'normalization','probability'); %'BinMethod','sqrt'
-
+            
             % use bin indexes to get mean sleep duration, overwrite counts
             if iPlot == 1
-%                 theseDurations = theseDurations(theseDurations > binWidth);
+                %                 theseDurations = theseDurations(theseDurations > binWidth);
                 for ii = 1:numel(counts)
                     counts(ii) = median(rmoutliers(theseDurations(C == ii)));
                 end
             end
-
+            
             counts = counts(2:end-1); % rm edges
             binShift = round(((86400/2) - mean(secDay(Tss.noon(theseDoys)))) / (86400/nBins));
             allTransHist(iBin,:) = circshift(counts,binShift);
         end
         disp(iBin);
     end
-
+    
     subplot(2,1,iPlot);
     xSolarNoon = linspace(-12,12,size(allTransHist,2));
     pcolor(xSolarNoon,bins,allTransHist);
@@ -379,10 +457,10 @@ for iPlot = 1:2
     xticks(-12:2:12);
     useyticks = round(linspace(1,366,16));
     yticks(useyticks);
-
+    
     colormap(magma(6));
     set(gca,'ydir','normal');
-
+    
     useyticklabels = compose("%i",useyticks);
     for iSeason = 1:4
         targetDoy = useDoys{iSeason}(round(numel(useDoys{iSeason})/2));
@@ -398,18 +476,18 @@ for iPlot = 1:2
     if iPlot == 1
         title('Median QB Duration');
         ylabel(c,'Minutes','fontsize',14);
-%         caxis([0 25]);
+        %         caxis([0 25]);
         caxisauto(allTransHist,1)
     else
         title(sprintf('Probability of QB >%i min.',binWidth));
         ylabel(c,'Probability','fontsize',14);
-%         caxis([0.002 .014]);
+        %         caxis([0.002 .014]);
         caxisauto(allTransHist,1)
     end
     
-%     caxis(caxis*0.8) % amplify colors
+    %     caxis(caxis*0.8) % amplify colors
     text(0,290,'No Data','verticalalignment','middle','horizontalalignment','center','fontsize',14);
-
+    
     hold on;
     plot(allSunrise,bins,'color',[1 1 1 0.6],'linewidth',4);
     plot(allSunset,bins,'color',[1 1 1 0.6],'linewidth',4);
@@ -552,23 +630,23 @@ for iSeason = 1:4
         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason}));
         
         % mast: [2014,2019], nmast: [2015:2018,2020]
-%         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason})...
-%             & ismember(trans_yr,[2014,2019]));
-
+        %         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason})...
+        %             & ismember(trans_yr,[2014,2019]));
+        
         % START light/dark transitions
-% % % %         theseDoys = trans_on(theseSleepTrans);
-% % % %         meanSunrise = mean(secDay(Tss.sunrise(theseDoys)));
-% % % %         meanSunset = mean(secDay(Tss.sunset(theseDoys)));
-% % % %         temp = [];
-% % % %         for ii = theseSleepTrans
-% % % %             if trans_at(ii) > meanSunset || trans_at(ii) < meanSunrise
-% % % %                 temp = [temp ii];
-% % % %             end
-% % % %         end
-% % % %         if isempty(temp)
-% % % %             continue;
-% % % %         end
-% % % %         theseSleepTrans = temp;
+        % % % %         theseDoys = trans_on(theseSleepTrans);
+        % % % %         meanSunrise = mean(secDay(Tss.sunrise(theseDoys)));
+        % % % %         meanSunset = mean(secDay(Tss.sunset(theseDoys)));
+        % % % %         temp = [];
+        % % % %         for ii = theseSleepTrans
+        % % % %             if trans_at(ii) > meanSunset || trans_at(ii) < meanSunrise
+        % % % %                 temp = [temp ii];
+        % % % %             end
+        % % % %         end
+        % % % %         if isempty(temp)
+        % % % %             continue;
+        % % % %         end
+        % % % %         theseSleepTrans = temp;
         % END light/dark code
         
         if ~isempty(theseSleepTrans)
@@ -607,53 +685,53 @@ for iSeason = 1:4
         lns(iSeason) = plot(x,y,seasonMarkers(iSeason),'color',colors(iSeason,:),'markerSize',10,'lineWidth',3);
         hold on;
         set(gca,'yscale','log');
-
+        
         for iBin = 1:numel(x)
             ys{iSeason,iBin} = useDurations(bin==iBin);
         end
-% % % %         if iSeason == 4
-% % % %             pvals = [];
-% % % %             clc
-% % % %             for iBin = 1:numel(x)
-% % % %                 anova_y = [];
-% % % %                 anova_group = [];
-% % % %                 for anSeason = [2,4]
-% % % %                     anova_y = [anova_y ys{anSeason,iBin}];
-% % % %                     anova_group = [anova_group anSeason*ones(size(ys{anSeason,iBin}))];
-% % % %                 end
-% % % %                 p = anova1(anova_y',anova_group','off');
-% % % %                 fprintf("iBin = %i, p = %1.4f\n",iBin,p);
-% % % %                 pvals(iBin) = p;
-% % % %             end
-% % % %             yyaxis right;
-% % % %             plot(x,pvals,'-','color',repmat(0.7,[3,1]),'lineWidth',3);
-% % % %             hold on;
-% % % %             
-% % % %             pvals = [];
-% % % %             clc
-% % % %             for iBin = 1:numel(x)
-% % % %                 anova_y = [];
-% % % %                 anova_group = [];
-% % % %                 for anSeason = [1,3]
-% % % %                     anova_y = [anova_y ys{anSeason,iBin}];
-% % % %                     anova_group = [anova_group anSeason*ones(size(ys{anSeason,iBin}))];
-% % % %                 end
-% % % %                 p = anova1(anova_y',anova_group','off');
-% % % %                 fprintf("iBin = %i, p = %1.4f\n",iBin,p);
-% % % %                 pvals(iBin) = p;
-% % % %             end
-% % % %             yyaxis right;
-% % % %             plot(x,pvals,'k-','lineWidth',3);
-% % % % %             plot(x,pvals,'--','color',[colors(3,:),0.5],'lineWidth',3);
-% % % %             set(gca,'ycolor','k');
-% % % %             ylim([0 1]);
-% % % %             ylabel('p-value');
-% % % %             yyaxis left;
-% % % %         end
+        % % % %         if iSeason == 4
+        % % % %             pvals = [];
+        % % % %             clc
+        % % % %             for iBin = 1:numel(x)
+        % % % %                 anova_y = [];
+        % % % %                 anova_group = [];
+        % % % %                 for anSeason = [2,4]
+        % % % %                     anova_y = [anova_y ys{anSeason,iBin}];
+        % % % %                     anova_group = [anova_group anSeason*ones(size(ys{anSeason,iBin}))];
+        % % % %                 end
+        % % % %                 p = anova1(anova_y',anova_group','off');
+        % % % %                 fprintf("iBin = %i, p = %1.4f\n",iBin,p);
+        % % % %                 pvals(iBin) = p;
+        % % % %             end
+        % % % %             yyaxis right;
+        % % % %             plot(x,pvals,'-','color',repmat(0.7,[3,1]),'lineWidth',3);
+        % % % %             hold on;
+        % % % %
+        % % % %             pvals = [];
+        % % % %             clc
+        % % % %             for iBin = 1:numel(x)
+        % % % %                 anova_y = [];
+        % % % %                 anova_group = [];
+        % % % %                 for anSeason = [1,3]
+        % % % %                     anova_y = [anova_y ys{anSeason,iBin}];
+        % % % %                     anova_group = [anova_group anSeason*ones(size(ys{anSeason,iBin}))];
+        % % % %                 end
+        % % % %                 p = anova1(anova_y',anova_group','off');
+        % % % %                 fprintf("iBin = %i, p = %1.4f\n",iBin,p);
+        % % % %                 pvals(iBin) = p;
+        % % % %             end
+        % % % %             yyaxis right;
+        % % % %             plot(x,pvals,'k-','lineWidth',3);
+        % % % % %             plot(x,pvals,'--','color',[colors(3,:),0.5],'lineWidth',3);
+        % % % %             set(gca,'ycolor','k');
+        % % % %             ylim([0 1]);
+        % % % %             ylabel('p-value');
+        % % % %             yyaxis left;
+        % % % %         end
         
         onlyUseIds = find(x >= 30);
         coeffs = polyfit(x(onlyUseIds),log(y(onlyUseIds)),1);
-%         fprintf("%s \tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
+        %         fprintf("%s \tau = %1.2f\n",seasonLabels{iSeason},abs(1/coeffs(1)));
         fittedX = linspace(x(min(onlyUseIds)), x(max(onlyUseIds)), 100);
         fittedLogY = polyval(coeffs, fittedX);
         b = exp(coeffs(2));
@@ -720,12 +798,12 @@ for iSeason = 1:4
     end
     shiftBy(iSeason) = round(mean(secDay(Tss.noon(useDoys{iSeason}))));
     shiftedTrans = allTransStarts{iSeason}-shiftBy(iSeason);
-%     shiftedBins = linspace(min(shiftedTrans),max(shiftedTrans),nBins);
+    %     shiftedBins = linspace(min(shiftedTrans),max(shiftedTrans),nBins);
     [counts,binEdges] = histcounts(shiftedTrans,'normalization','probability','BinMethod','sqrt');
     counts = imgaussfilt(counts(2:end-1),1,'padding','circular');
-%     circCounts = circshift(counts,round((-shiftBy(iSeason)/1440)*100)); % imgaussfilt(counts,1,'padding','circular'), 
-%     circx = linspace(-pi,pi,numel(counts));
-%     polarplot(circx,counts,'linewidth',2,'color',colors(iSeason,:));
+    %     circCounts = circshift(counts,round((-shiftBy(iSeason)/1440)*100)); % imgaussfilt(counts,1,'padding','circular'),
+    %     circx = linspace(-pi,pi,numel(counts));
+    %     polarplot(circx,counts,'linewidth',2,'color',colors(iSeason,:));
     x = linspace(-12,12,numel(counts));
     plot(x,counts,'-','color',colors(iSeason,:),'linewidth',3);
     hold on;
