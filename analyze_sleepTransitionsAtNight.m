@@ -15,7 +15,7 @@ warning ('off','all');
 iRow = 0;
 
 doSave = 1;
-doDebug = 0;
+doDebug = 1;
 if doDebug
     debugPath = '/Users/matt/Downloads/debug';
     ms = 35;
@@ -61,6 +61,8 @@ for iRec = 1:size(sq_asleep,1)
         if doDebug
             ln1 = plot(asleepNorm,'k','linewidth',3);
             hold on;
+            ln2 = plot(mypdf,':','color',repmat(0.15,[1,3]));
+            ln3 = plot(asleepNorm.*mypdf,'color',repmat(0.15,[1,3]));
             xline(720);
             yline(alpha,'r--'); yline(1-alpha,'r--');
             xlim([1 1440]);
@@ -72,6 +74,7 @@ for iRec = 1:size(sq_asleep,1)
             xlabel('Time (min)');
             set(gca,'fontsize',14);
             title(sprintf('Rel. to %s, iRec = %04d',mnLabels{iSun},iRec));
+            legend([ln1,ln2,ln3],{'QB','normpdf','QB × normpdf'},'Autoupdate','off');
             m1 = [];
             m2 = [];
         end
@@ -167,42 +170,51 @@ warning ('on','all');
 writetable(T_SOL,'T_SOL');
 %%
 T_SOL = readtable('T_SOL');
-alpha = [0 95];
+origSz = size(T_SOL,1);
 
-useIds = find(T_SOL.isSunrise==1);
-SOLs = T_SOL.SOL(useIds);
-[~,TF] = rmoutliers(SOLs,'percentiles',alpha);
-T_SOL(useIds(TF),:) = [];
-fprintf('rm %i sunrise\n',sum(TF));
+% % % % alpha = [0 99];
+% % % % useIds = find(T_SOL.isSunrise==1);
+% % % % SOLs = T_SOL.SOL(useIds);
+% % % % [~,TF] = rmoutliers(SOLs,'percentiles',alpha);
+% % % % T_SOL(useIds(TF),:) = [];
+% % % % fprintf('rm %i sunrise\n',sum(TF));
+% % % % 
+% % % % useIds = find(T_SOL.isSunrise==0);
+% % % % SOLs = T_SOL.SOL(useIds);
+% % % % [~,TF] = rmoutliers(SOLs,'percentiles',alpha);
+% % % % T_SOL(useIds(TF),:) = [];
+% % % % fprintf('rm %i sunset\n',sum(TF));
+% % % % 
+% % % % alpha = [1 99];
+% % % % awakeIds = T_SOL.awakeIdx;
+% % % % [~,TF] = rmoutliers(awakeIds,'percentiles',alpha);
+% % % % T_SOL(TF,:) = [];
+% % % % fprintf('rm %i awake\n',sum(TF));
+% % % % 
+% % % % asleepIds = T_SOL.awakeIdx;
+% % % % [~,TF] = rmoutliers(asleepIds,'percentiles',alpha);
+% % % % T_SOL(TF,:) = [];
+% % % % fprintf('rm %i asleep\n',sum(TF));
 
-useIds = find(T_SOL.isSunrise==0);
-SOLs = T_SOL.SOL(useIds);
-[~,TF] = rmoutliers(SOLs,'percentiles',alpha);
-T_SOL(useIds(TF),:) = [];
-fprintf('rm %i sunset\n',sum(TF));
+T_SOL(T_SOL.awakeIdx == 1,:) = [];
+T_SOL(T_SOL.asleepIdx == 1,:) = [];
 
-awakeIds = T_SOL.awakeIdx;
-[~,TF] = rmoutliers(awakeIds);
-T_SOL(TF,:) = [];
-fprintf('rm %i awake\n',sum(TF));
+fnSize = size(T_SOL,1);
+fprintf('%i outliers removed (%1.1f%%), %i remain\n',origSz-fnSize,100*((origSz-fnSize)/origSz),fnSize);
 
-asleepIds = T_SOL.awakeIdx;
-[~,TF] = rmoutliers(asleepIds);
-T_SOL(TF,:) = [];
-fprintf('rm %i asleep\n',sum(TF));
-
+lineColors = lines(5);
 close all;
 ff(1200,400);
 
 subplot(121);
-binEdges = linspace(0,200,100);
+binEdges = linspace(0,720,100);
 useIds = find(T_SOL.isSunrise==1);
 SOLs = T_SOL.SOL(useIds);
-histogram(SOLs,binEdges);
+histogram(SOLs,binEdges,'FaceColor',lineColors(3,:));
 hold on;
 useIds = find(T_SOL.isSunrise==0);
 SOLs = T_SOL.SOL(useIds);
-histogram(SOLs,binEdges);
+histogram(SOLs,binEdges,'FaceColor','k');
 legend({'Sunrise','Sunset'});
 set(gca,'fontsize',14);
 title('Latency (How long does it take?)');
@@ -211,10 +223,10 @@ ylabel('Frequency');
 grid on;
 
 subplot(122);
-binEdges = linspace(1,1440,100);
-histogram(T_SOL.awakeIdx);
+binEdges = linspace(720-400,720+400,100);
+histogram(T_SOL.awakeIdx,binEdges,'FaceColor',lineColors(3,:));
 hold on;
-histogram(T_SOL.asleepIdx);
+histogram(T_SOL.asleepIdx,binEdges,'FaceColor','k');
 legend({'QB-AB','AB-QB'});
 set(gca,'fontsize',14);
 xlabel('Relative time to Sunrise/Sunset (min.)');
@@ -265,11 +277,13 @@ for iSeason = 1:5
 end
 writetable(T_SOL_summary,'T_SOL_summary.xlsx');
 
+cmap = [cool;0,0,0];
+clc
 seasonAbbr = {'Wi','Sp','Su','Au'};
 close all;
-ff(800,150);
+ff(600,120);
 for iSubplot = 1:4
-    pMat = NaN(4,4);
+    pMat_sol = NaN(4,4);
     for iSeason = 1:4
         for kSeason = iSeason:4
             if iSubplot == 1
@@ -290,26 +304,29 @@ for iSubplot = 1:4
                 y = [mean([T_SOL.awakeIdx(s1Ids),T_SOL.asleepIdx(s1Ids)],2);mean([T_SOL.awakeIdx(s2Ids),T_SOL.asleepIdx(s2Ids)],2)];
             end
             group = [zeros(size(s1Ids));ones(size(s2Ids))];
-            pMat(iSeason,kSeason) = anova1(y,group,'off');
+            pMat_sol(iSeason,kSeason) = anova1(y,group,'off');
         end
     end
+    disp(rowNames{iSubplot});
+    flip(pMat_sol)
+    writematrix(flip(pMat_sol),fullfile(exportPath,sprintf('%s.csv',rowNames{iSubplot})));
     subplot(1,4,iSubplot);
-    alphaData = ~isnan(pMat);
-    imagesc(pMat,'AlphaData',alphaData);
+    alphaData = ~isnan(pMat_sol);
+    imagesc(pMat_sol,'AlphaData',alphaData);
     xticks(1:4);
     yticks(xticks);
     xticklabels(seasonAbbr);
     yticklabels(seasonAbbr);
     title(rowNames{iSubplot});
-    colormap(flip(magma));
-    caxis([0 0.01]);
+    colormap(cmap); %flip(magma)
+    caxis([0 0.0499]);
     set(gca,'fontsize',12);
     set(gca,'ydir','normal');
     drawnow;
 end
 cb = cbAside(gca,'p-value','k');
 cb.FontSize = 12;
-cb.TickLabels = caxis;
+cb.TickLabels = [0 0.05];
 
 doSave = 1;
 if doSave
@@ -337,9 +354,9 @@ end
 %         drawnow;
 
 %% (1/3) Probability Density histograms
-doSave = 0;
+doSave = 1;
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
-nBins = 9; % mins
+nBins_sd = 9; % mins
 showMinutes = 60;
 sleepThresh = 5; % binWidth below
 ssBeforeAfterPad = 30; % minutes
@@ -405,26 +422,25 @@ for iSeason = 1:4
     
     if ~isempty(sleepDurations)
         sleepDurations_season{iSeason} = sleepDurations;
-        binEdges = logspace(0,2,nBins+1);
-        if iSeason == 1
-            patch([sleepThresh,max(binEdges),max(binEdges),sleepThresh],[0,0,1,1],'black','FaceAlpha',.1,'EdgeColor','none');
+        binEdges_sd = logspace(0,2,nBins_sd+1);
+        if iSeason == 1 % do once
+            patch([sleepThresh,max(binEdges_sd),max(binEdges_sd),sleepThresh],[0,0,1,1],'black','FaceAlpha',.1,'EdgeColor','none');
             hold on;
             xline(sleepThresh,'k:');
             text(sleepThresh,maxY-0.02,strcat(sprintf('%i minutes',sleepThresh),'\rightarrow'),'horizontalalignment','right','fontsize',14);
         end
-        histogram(sleepDurations,binEdges,'Normalization','probability','EdgeColor',colors(iSeason,:),'DisplayStyle','Stairs','lineWidth',4,'EdgeAlpha',0.75);
+        histogram(sleepDurations,binEdges_sd,'Normalization','probability','EdgeColor',colors(iSeason,:),'DisplayStyle','Stairs','lineWidth',4,'EdgeAlpha',0.75);
         lns(iSeason) = plot(-1,-1,'-','lineWidth',3,'color',colors(iSeason,:));
+        counts = histcounts(sleepDurations,binEdges_sd,'Normalization','probability');
+        countsMat(iSeason,:) = counts;
         
         % find center of 'sleep' peak
-        counts = histcounts(sleepDurations,binEdges,'Normalization','probability');
         overSample = 10000;
         countsSmooth = smoothdata(equalVectors(counts,overSample),'gaussian',overSample/10);
         binsSmooth = equalVectors(binEdges,overSample);
         locs = peakseek(countsSmooth);
         maxBin = binsSmooth(locs(end));
         text(17,maxY-iSeason*0.015,strcat(sprintf('%s: %1.2f',seasonLabels{iSeason}(1:2),maxBin),'\rightarrow'),'horizontalalignment','right','fontsize',12,'color',colors(iSeason,:));
-        
-        countsMat(iSeason,:) = counts;
         
         %         xline(median(sleepDurations),':','lineWidth',4,'color',colors(iSeason,:));
         xline(maxBin,':','lineWidth',2,'color',colors(iSeason,:));
@@ -450,7 +466,7 @@ end
 
 %% (2/3) setup pMat
 nSurr = 1000;
-pMat = NaN(4,4,size(countsMat,2));
+pMat_sd = NaN(4,4,size(countsMat,2));
 surrDiff = [];
 for iSeason = 1:4
     for kSeason = iSeason:4
@@ -460,33 +476,34 @@ for iSeason = 1:4
         group = [zeros(size(sleepDurations_season{iSeason})) ones(size(sleepDurations_season{kSeason}))];
         for iSurr = 1:nSurr
             group = group(randperm(length(group)));
-            counts_i = histcounts(y(group==0),binEdges,'Normalization','probability');
-            counts_k = histcounts(y(group==1),binEdges,'Normalization','probability');
+            counts_i = histcounts(y(group==0),binEdges_sd,'Normalization','probability');
+            counts_k = histcounts(y(group==1),binEdges_sd,'Normalization','probability');
             surrDiff(iSurr,:) = counts_i - counts_k;
         end
-        for iBin = 1:size(pMat,3)
+        for iBin = 1:size(pMat_sd,3)
             % control for direction
             if actualDiff(iBin) > 0
-                pMat(iSeason,kSeason,iBin) = sum(surrDiff(:,iBin) > actualDiff(iBin)) / nSurr;
+                pMat_sd(iSeason,kSeason,iBin) = sum(surrDiff(:,iBin) > actualDiff(iBin)) / nSurr;
             else
-                pMat(iSeason,kSeason,iBin) = sum(surrDiff(:,iBin) < actualDiff(iBin)) / nSurr;
+                pMat_sd(iSeason,kSeason,iBin) = sum(surrDiff(:,iBin) < actualDiff(iBin)) / nSurr;
             end
         end
     end
 end
 %% (3/3) plot pMat
 doSave = 1;
+cmap = [cool;0,0,0];
 fs = 12;
 close all;
-h = ff(1400,100);
+h = ff(1000,100);
 seasonAbbr = {'Wi','Sp','Su','Au'};
-for iBin = 1:size(pMat,3)
-    subplot(1,size(pMat,3),iBin);
-    ps = squeeze(pMat(:,:,iBin));
+for iBin = 1:size(pMat_sd,3)
+    subplot(1,size(pMat_sd,3),iBin);
+    ps = squeeze(pMat_sd(:,:,iBin));
     imagesc(ps,'AlphaData',~isnan(ps));
-    caxis([0,0.01]);
-    colormap(flip(magma));
-    title(sprintf('%1.0f-%1.0f min.',binEdges(iBin),binEdges(iBin+1)));
+    caxis([0,0.0499]);
+    colormap(cmap); % flip(magma)
+    title(sprintf('%1.0f-%1.0f min.',binEdges_sd(iBin),binEdges_sd(iBin+1)));
     xticks(1:4);
     yticks(1:4);
     xticklabels(seasonAbbr);
@@ -495,7 +512,7 @@ for iBin = 1:size(pMat,3)
     set(gca,'ydir','normal')
 end
 cb = cbAside(gca,'p-value','k');
-cb.TickLabels = caxis;
+cb.TickLabels = [0 0.05];
 cb.FontSize = fs;
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'DarkQBDuration_pMat.eps')); % required for vector lines
