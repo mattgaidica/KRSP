@@ -3,7 +3,7 @@
 % trans_to = [trans_to Tawake.awake'];
 % trans_on = [trans_on day(Tawake.datetime,'dayofyear')'];
 
-%% SOL_T table setup (1/?), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
+%% SOL_T table setup (1/3), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
 close all
 nSmooth = 10; % minutes
 alpha = 0.2;
@@ -168,33 +168,9 @@ for iRec = 1:size(sq_asleep,1)
 end
 warning ('on','all');
 writetable(T_SOL,'T_SOL');
-%%
+%% SOL_T cleaning and seasonal histograms (2/3)
 T_SOL = readtable('T_SOL');
 origSz = size(T_SOL,1);
-
-% % % % alpha = [0 99];
-% % % % useIds = find(T_SOL.isSunrise==1);
-% % % % SOLs = T_SOL.SOL(useIds);
-% % % % [~,TF] = rmoutliers(SOLs,'percentiles',alpha);
-% % % % T_SOL(useIds(TF),:) = [];
-% % % % fprintf('rm %i sunrise\n',sum(TF));
-% % % % 
-% % % % useIds = find(T_SOL.isSunrise==0);
-% % % % SOLs = T_SOL.SOL(useIds);
-% % % % [~,TF] = rmoutliers(SOLs,'percentiles',alpha);
-% % % % T_SOL(useIds(TF),:) = [];
-% % % % fprintf('rm %i sunset\n',sum(TF));
-% % % % 
-% % % % alpha = [1 99];
-% % % % awakeIds = T_SOL.awakeIdx;
-% % % % [~,TF] = rmoutliers(awakeIds,'percentiles',alpha);
-% % % % T_SOL(TF,:) = [];
-% % % % fprintf('rm %i awake\n',sum(TF));
-% % % % 
-% % % % asleepIds = T_SOL.awakeIdx;
-% % % % [~,TF] = rmoutliers(asleepIds,'percentiles',alpha);
-% % % % T_SOL(TF,:) = [];
-% % % % fprintf('rm %i asleep\n',sum(TF));
 
 T_SOL(T_SOL.awakeIdx == 1,:) = [];
 T_SOL(T_SOL.asleepIdx == 1,:) = [];
@@ -204,37 +180,75 @@ fprintf('%i outliers removed (%1.1f%%), %i remain\n',origSz-fnSize,100*((origSz-
 
 lineColors = lines(5);
 close all;
-ff(1200,400);
-
-subplot(121);
-binEdges = linspace(0,720,100);
-useIds = find(T_SOL.isSunrise==1);
-SOLs = T_SOL.SOL(useIds);
-histogram(SOLs,binEdges,'FaceColor',lineColors(3,:));
-hold on;
-useIds = find(T_SOL.isSunrise==0);
-SOLs = T_SOL.SOL(useIds);
-histogram(SOLs,binEdges,'FaceColor','k');
-legend({'Sunrise','Sunset'});
-set(gca,'fontsize',14);
-title('Latency (How long does it take?)');
-xlabel('Time (min.)');
-ylabel('Frequency');
-grid on;
-
-subplot(122);
-binEdges = linspace(720-400,720+400,100);
-histogram(T_SOL.awakeIdx,binEdges,'FaceColor',lineColors(3,:));
-hold on;
-histogram(T_SOL.asleepIdx,binEdges,'FaceColor','k');
-legend({'QB-AB','AB-QB'});
-set(gca,'fontsize',14);
-xlabel('Relative time to Sunrise/Sunset (min.)');
-ylabel('Frequency');
-title('Time of Onset/Offset (When does it happen?)');
-xticks([720-200,720,720+200]);
-xticklabels({'-200','0','+200'});
-grid on;
+ff(500,900);
+rows = 5;
+cols = 2;
+for iSeason = 1:5
+    if iSeason == 1
+        useIds = find(T_SOL.isSunrise==1);
+        SOLs_sunrise = T_SOL.SOL(useIds);
+        sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
+        
+        useIds = find(T_SOL.isSunrise==0);
+        SOLs_sunset = T_SOL.SOL(useIds);
+        sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
+        seasonLabel = 'All';
+        sunriseColor = repmat(0.8,[1,3]);
+    else
+        useIds = find(T_SOL.isSunrise==1 & T_SOL.season == iSeason - 1);
+        SOLs_sunrise = T_SOL.SOL(useIds);
+        sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
+        
+        useIds = find(T_SOL.isSunrise==0 & T_SOL.season == iSeason - 1);
+        SOLs_sunset = T_SOL.SOL(useIds);
+        sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
+        seasonLabel = seasonLabels{iSeason-1};
+        sunriseColor = colors(iSeason-1,:);
+    end
+    
+    subplot(rows,cols,prc(cols,[iSeason,1]));
+    binEdges = linspace(0,250,50);
+    histogram(SOLs_sunrise,binEdges,'FaceColor',sunriseColor);
+    hold on;
+    histogram(SOLs_sunset,binEdges,'FaceColor','k');
+    set(gca,'fontsize',14);
+    if iSeason == 5
+        xlabel('Duration (min.)');
+    end
+    ylabel('Frequency');
+    if iSeason == 1
+        title({'Latency',seasonLabel});
+    else
+        title(seasonLabel);
+    end
+    grid on;
+    legend({'Sunrise','Sunset'},'fontsize',11);
+    legend boxoff;
+    
+    subplot(rows,cols,prc(cols,[iSeason,2]));
+    binEdges = linspace(720-400,720+400,50);
+    histogram(sunrise_means,binEdges,'FaceColor',sunriseColor);
+    hold on;
+    histogram(sunset_means,binEdges,'FaceColor','k');
+    set(gca,'fontsize',14);
+    if iSeason == 5
+        xlabel('Rel. Time (min.)');
+    end
+% %     ylabel('Frequency');
+    xticks([720-300,720,720+300]);
+    xticklabels({'-300','0','+300'});
+    if iSeason == 1
+        title({'Onset/Offset',seasonLabel});
+    else
+        title(seasonLabel);
+    end
+    grid on;
+% %     legend({'QB-AB','AB-QB'},'fontsize',11,'autoupdate','off');
+% %     legend boxoff;
+    xline(720,'k-');
+    
+    drawnow;
+end
 
 doSave = 1;
 if doSave
@@ -243,11 +257,7 @@ if doSave
     close(gcf);
 end
 
-% !! need to clean table before using
-% figure;histogram(T_SOL.SOL(T_SOL.isSunrise==1));
-% figure;histogram(T_SOL.SOL(T_SOL.isSunrise==0));
-
-%%
+%% T_SOL table and p-value matrix (3/3)
 rowNames = {'Latency to AB','AB Rel. to Sunrise','Latency to QB','QB Rel. to Sunset'};
 varTypes = {'string','string','string','string','string','string'};
 T_SOL_summary = table('Size',[4,6],'VariableNames',{'Description',seasonLabels{:},'All'},'VariableType',varTypes);
@@ -277,7 +287,8 @@ for iSeason = 1:5
 end
 writetable(T_SOL_summary,'T_SOL_summary.xlsx');
 
-cmap = [cool;0,0,0];
+cmap = parula(1000);
+cmap = [cmap(100:900,:);0,0,0];
 clc
 seasonAbbr = {'Wi','Sp','Su','Au'};
 close all;
@@ -335,24 +346,6 @@ if doSave
     close(gcf);
 end
 
-%         plot([t(minIdx) t(maxIdx)],[x_norm(minIdx),x_norm(maxIdx)],'color',[repmat(0.15,[1,3]),0.8],'linewidth',10);
-%         xlim([0 24]);
-%         xticks(0:24);
-%         xticklabels({'±12','','','','','','-6','','','','','','0','','','','','','+6','','','','','±12'});
-%         xline(12,'k:');
-%         ylim([-0.1 1.1]);
-%         yticks([0 0.2 0.5 0.8 1]);
-%         ylabel('QB Mean (norm.)')
-%         if iSun == 1
-%             xlabel('Hrs. Relative to Sunrise');
-%         else
-%             xlabel('Hrs. Relative to Sunset');
-%         end
-%         set(gca,'fontsize',14);
-%         title(seasonLabels{iSeason});
-%         grid on;
-%         drawnow;
-
 %% (1/3) Probability Density histograms
 doSave = 1;
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
@@ -363,7 +356,7 @@ ssBeforeAfterPad = 30; % minutes
 maxY = 0.25;
 % main plot
 close all
-h = ff(550,300);
+h = ff(450,250);
 lns = [];
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
 sleepDurations_season = {};
@@ -435,15 +428,15 @@ for iSeason = 1:4
         countsMat(iSeason,:) = counts;
         
         % find center of 'sleep' peak
-        overSample = 10000;
-        countsSmooth = smoothdata(equalVectors(counts,overSample),'gaussian',overSample/10);
-        binsSmooth = equalVectors(binEdges,overSample);
-        locs = peakseek(countsSmooth);
-        maxBin = binsSmooth(locs(end));
-        text(17,maxY-iSeason*0.015,strcat(sprintf('%s: %1.2f',seasonLabels{iSeason}(1:2),maxBin),'\rightarrow'),'horizontalalignment','right','fontsize',12,'color',colors(iSeason,:));
+% % % %         overSample = 10000;
+% % % %         countsSmooth = smoothdata(equalVectors(counts,overSample),'gaussian',overSample/10);
+% % % %         binsSmooth = equalVectors(binEdges,overSample);
+% % % %         locs = peakseek(countsSmooth);
+% % % %         maxBin = binsSmooth(locs(end));
+% % % %         text(17,maxY-iSeason*0.015,strcat(sprintf('%s: %1.2f',seasonLabels{iSeason}(1:2),maxBin),'\rightarrow'),'horizontalalignment','right','fontsize',12,'color',colors(iSeason,:));
         
         %         xline(median(sleepDurations),':','lineWidth',4,'color',colors(iSeason,:));
-        xline(maxBin,':','lineWidth',2,'color',colors(iSeason,:));
+% % % %         xline(maxBin,':','lineWidth',2,'color',colors(iSeason,:));
         set(gca,'xscale','log');
         drawnow;
     end
@@ -492,7 +485,8 @@ for iSeason = 1:4
 end
 %% (3/3) plot pMat
 doSave = 1;
-cmap = [cool;0,0,0];
+cmap = parula(1000);
+cmap = [cmap(100:900,:);0,0,0];
 fs = 12;
 close all;
 h = ff(1000,100);
