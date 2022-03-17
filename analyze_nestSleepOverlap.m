@@ -156,18 +156,21 @@ end
 figure(h);
 
 %% season_residuals
-resBins = linspace(-4,4,16);
+resBins = linspace(-4,4,10);
 subplot_tight(1,3,3,subplotMargins);
 y = [];
 group = [];
 for iSeason = 1:4
     y = [y season_residuals{iSeason}];
     group = [group repmat(iSeason,[1,numel(season_residuals{iSeason})])];
-    counts = histcounts(season_residuals{iSeason},resBins) ./ numel(season_residuals{iSeason});
-    x = linspace(min(resBins),max(resBins),numel(counts));
+% % % %     counts = histcounts(season_residuals{iSeason},resBins) ./ numel(season_residuals{iSeason});
+    histogram(season_residuals{iSeason},resBins,'EdgeColor',colors(iSeason,:),'Normalization','probability',...
+        'FaceColor','none','DisplayStyle','stairs','linewidth',4,'EdgeAlpha',0.65);
+%     x = linspace(min(resBins),max(resBins),numel(counts));
     hold on;
-    xline(sum(x.*counts),'color',colors(iSeason,:),'linewidth',2);
-    plot(equalVectors(x,100),smoothdata(equalVectors(counts,100),'gaussian',10),'-','linewidth',4,'color',colors(iSeason,:));
+    xline(mean(season_residuals{iSeason}),':','color',colors(iSeason,:),'linewidth',2);
+%     xline(sum(x.*counts),'color',colors(iSeason,:),'linewidth',2);
+%     plot(x,counts,'-','linewidth',4,'color',colors(iSeason,:)); % !! make hisotgram stairs?
 end
 % stats on pairwise residuals
 [p,tbl,stats] = anova1(y,group,'off');
@@ -181,21 +184,21 @@ grid on;
 set(gca,'fontsize',16);
 title('QB vs. In Nest Residuals');
 xlabel('Residual (hrs)');
-ylim([0 0.35]);
-text(min(xlim)+0.05,0.335,'\leftarrow more QB in nest','horizontalalignment','left',...
+% ylim([0 0.35]);
+text(min(xlim)+0.05,0.475,'\leftarrow more QB in nest','horizontalalignment','left',...
     'verticalalignment','middle','fontsize',14);
-text(max(xlim)-0.05,0.315,'less QB in nest \rightarrow ','horizontalalignment','right',...
+text(max(xlim)-0.05,0.475,'less QB in nest \rightarrow ','horizontalalignment','right',...
     'verticalalignment','middle','fontsize',14);
 
-mutlCmpY = .3;
+mutlCmpY = .425;
 mutlCmpX = -3.6;
 yStep = .02;
 fs = 12;
-text(mutlCmpX,mutlCmpY,sprintf('Au-Wi p = %1.1e***',c(3,6)),'horizontalalignment','left',...
+text(mutlCmpX,mutlCmpY,sprintf('Au-Wi p = %1.1e',c(3,6)),'horizontalalignment','left',...
     'verticalalignment','middle','fontsize',fs);
-text(mutlCmpX,mutlCmpY-yStep,sprintf('Au-Sp p = %1.1e*',c(5,6)),'horizontalalignment','left',...
+text(mutlCmpX,mutlCmpY-yStep,sprintf('Au-Sp p = %1.1e',c(5,6)),'horizontalalignment','left',...
     'verticalalignment','middle','fontsize',fs);
-text(mutlCmpX,mutlCmpY-yStep*2,sprintf('Au-Su p = %1.1e**',c(6,6)),'horizontalalignment','left',...
+text(mutlCmpX,mutlCmpY-yStep*2,sprintf('Au-Su p = %1.1e',c(6,6)),'horizontalalignment','left',...
     'verticalalignment','middle','fontsize',fs);
 text(mutlCmpX,mutlCmpY-yStep*3,'Others N.S.','horizontalalignment','left',...
     'verticalalignment','middle','fontsize',fs);
