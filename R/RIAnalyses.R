@@ -22,6 +22,7 @@ n$preg<-as.factor(n$is_preg)
 
 # remove Winter and add mast interaction
 # n_noWinter<-subset(n,n$season!=1)
+# see investigate sex correlations in run_this.m
 summary(test<-lmer(qb~season*mast*+sex+age+I(age^2)+longevity+(1|squirrel_id),n))
 visreg(test,"sex",by="mast")
 visreg(test,"sex",by="season")
@@ -35,6 +36,7 @@ n_noMast<-subset(n,n$mast!=1)
 summary(test<-lmer(qb~season+age+I(age^2)+longevity+(1|squirrel_id),n_noMast))
 visreg(test,"age",'season')
 visreg(test,"longevity",by="season")
+
 
 summary(test<-lmer(RI_odba~season+age+I(age^2)+longevity+(1|squirrel_id),n_noMast))
 visreg(test,"age",'season')

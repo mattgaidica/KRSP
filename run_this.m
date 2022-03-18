@@ -7,7 +7,10 @@ for iSq = 1:size(sqkey,1)
 end
 fprintf("%i no file\n",iFile);
 
-%%
+%% how different is QB for females vs. males
+
+
+%% valid and preg info
 iValid = 0;
 iFemalePreg = 0;
 femaleRecDays = [];
@@ -129,9 +132,9 @@ for iPlot = 1:2
     colororder(barColors);
     title('Mast years are darker, pregnant data marked P');
 end
-%%
-% litter = readtable('litter.csv');
-% RITable = readtable(fullfile('R','RITable.csv'));
+%% when did litters happen in mast and non-mast years?
+litter = readtable(fullfile('R','krsp_litter.csv'));
+RITable = readtable(fullfile('R','RITable.csv'));
 close all
 ff(750,300);
 lw1 = 1;
@@ -204,96 +207,113 @@ for iSeason = 1:4
     xlim([-2.5 2.5]);
     ylim(xlim);
 end
-%%
-all_ids = find(ismember(RITable.season,4) & ~isnan(RITable.traps_rec));
-% nmast_ids = find(ismember(RITable.season,3) & RITable.is_mast == 0 & ~isnan(RITable.traps_rec));
-useLims = [-2.5 2.5];
+%% show that trapping incidence only affects QB during the day (isolated for season)
+rows = 3;
+cols = 4;
+close all;
+ff(1200,700);
+for iSeason = 1:4
+    all_ids = find(ismember(RITable.season,iSeason) & ~isnan(RITable.traps_rec));
+    % nmast_ids = find(ismember(RITable.season,3) & RITable.is_mast == 0 & ~isnan(RITable.traps_rec));
+    useLims = [-2.5 2.5];
 
-close all
-ff(900,300);
-subplot(131);
-x = RITable.traps_rec(all_ids);
-y = normalize(RITable.qb(all_ids));
-plot(x,y,'k.','markersize',40);
-[r,p] = corr(x,y);
+    subplot(rows,cols,prc(cols,[1,iSeason]));
+    x = RITable.traps_rec(all_ids);
+    y = normalize(RITable.qb(all_ids));
+    plot(x,y,'k.','markersize',40);
+    [r,p] = corr(x,y);
 
-f = fit(x,y,'poly1');
-hold on;
-plot(useLims,f(useLims),'r-');
+    f = fit(x,y,'poly1');
+    hold on;
+    plot(useLims,f(useLims),'r-');
 
-xticks([useLims(1),0,useLims(2)]);
-yticks([useLims(1),0,useLims(2)]);
-xlim(useLims);
-ylim(useLims);
-set(gca,'fontsize',14);
-xlabel('Trapping Incidence (Z, TI)');
-ylabel('Quiescent Behavior (Z, QB)');
-title(sprintf("Summer QB vs. TI\nr = %1.2f, p = %1.2e",r,p));
-grid on;
+    xticks([useLims(1),0,useLims(2)]);
+    yticks([useLims(1),0,useLims(2)]);
+    xlim(useLims);
+    ylim(useLims);
+    set(gca,'fontsize',14);
+    xlabel('Trapping Incidence (Z, TI)');
+    ylabel('Quiescent Behavior (Z, QB)');
+    if p >= 0.05
+        title(sprintf("%s QB vs. TI\nr = %1.2f, N.S.",seasonLabels{iSeason},r));
+    else
+        title(sprintf("%s QB vs. TI\nr = %1.2f, p = %1.2e",seasonLabels{iSeason},r,p));
+    end
+    
+    grid on;
 
-subplot(132);
-y = normalize(RITable.qb_day(all_ids));
-plot(x,y,'k.','markersize',40);
-[r,p] = corr(x,y);
+    subplot(rows,cols,prc(cols,[2,iSeason]));
+    y = normalize(RITable.qb_day(all_ids));
+    plot(x,y,'k.','markersize',40);
+    [r,p] = corr(x,y);
 
-f = fit(x,y,'poly1');
-hold on;
-plot(useLims,f(useLims),'r-');
+    f = fit(x,y,'poly1');
+    hold on;
+    plot(useLims,f(useLims),'r-');
 
-xticks([useLims(1),0,useLims(2)]);
-yticks([useLims(1),0,useLims(2)]);
-xlim(useLims);
-ylim(useLims);
-set(gca,'fontsize',14);
-xlabel('Trapping Incidence (Z, TI)');
-ylabel('Quiescent Behavior (Z, QB)');
-title(sprintf("Summer Day-QB vs. TI\nr = %1.2f, p = %1.2e",r,p));
-grid on;
+    xticks([useLims(1),0,useLims(2)]);
+    yticks([useLims(1),0,useLims(2)]);
+    xlim(useLims);
+    ylim(useLims);
+    set(gca,'fontsize',14);
+    xlabel('Trapping Incidence (Z, TI)');
+    ylabel('Quiescent Behavior (Z, QB)');
+    if p >= 0.05
+        title(sprintf("%s Day-QB vs. TI\nr = %1.2f, N.S.",seasonLabels{iSeason},r));
+    else
+        title(sprintf("%s Day-QB vs. TI\nr = %1.2f, p = %1.2e",seasonLabels{iSeason},r,p));
+    end
+    grid on;
 
-subplot(133);
-y = normalize(RITable.qb_night(all_ids));
-plot(x,y,'k.','markersize',40);
-[r,p] = corr(x,y);
+    subplot(rows,cols,prc(cols,[3,iSeason]));
+    y = normalize(RITable.qb_night(all_ids));
+    plot(x,y,'k.','markersize',40);
+    [r,p] = corr(x,y);
 
-f = fit(x,y,'poly1');
-hold on;
-plot(useLims,f(useLims),'r-');
+    f = fit(x,y,'poly1');
+    hold on;
+    plot(useLims,f(useLims),'r-');
 
-xticks([useLims(1),0,useLims(2)]);
-yticks([useLims(1),0,useLims(2)]);
-xlim(useLims);
-ylim(useLims);
-set(gca,'fontsize',14);
-xlabel('Trapping Incidence (Z, TI)');
-ylabel('Quiescent Behavior (Z, QB)');
-title(sprintf("Summer Night-QB vs. TI\nr = %1.2f, p = %1.2e",r,p));
-grid on;
+    xticks([useLims(1),0,useLims(2)]);
+    yticks([useLims(1),0,useLims(2)]);
+    xlim(useLims);
+    ylim(useLims);
+    set(gca,'fontsize',14);
+    xlabel('Trapping Incidence (Z, TI)');
+    ylabel('Quiescent Behavior (Z, QB)');
+    if p >= 0.05
+        title(sprintf("%s Night-QB vs. TI\nr = %1.2f, N.S.",seasonLabels{iSeason},r));
+    else
+        title(sprintf("%s Night-QB vs. TI\nr = %1.2f, p = %1.2e",seasonLabels{iSeason},r,p));
+    end
+    grid on;
+end
 
-%%
-clc
-useIds = find(RITable.is_preg==1 & RITable.season==2 & RITable.days==5);
-RITable.year(useIds);
-% RITable.isq(useIds(1))
-useIds = find(RITable.is_preg==0 & RITable.sex==1 & RITable.season==2 & RITable.days==5);
-RITable.year(useIds);
-% RITable.isq(useIds(1))
-T = loadTStruct(1,sqkey,Tss);
-writetable(T,'~/Downloads/Axy_Deb_sqid12678_iSq001_Spring2015_Male.csv');
+%% investigate sex correlations
+close all;
+ff(700,250);
+lns = [];
+mastColors = {'k','r'};
+for iSeason = 1:4
+    subplot(1,4,iSeason);
+    for iMast = 0:1
+        for iMale = 0:1
+            useIds = find(RITable.sex == iMale & RITable.season == iSeason & RITable.is_mast == iMast);
+            lns(iMast+1) = plot(iMale,mean(RITable.qb(useIds)),'.','color',mastColors{iMast+1},'markersize',30);
+            hold on;
+        end
+    end
+    xticks([0,1]);
+    xlim([-1 2]);
+    xticklabels({'Female','Male'});
+    xtickangle(30);
+    ylabel('QB');
+    title(seasonLabels{iSeason});
+    xline(0,'k:');
+    xline(1,'k:');
+    legend(lns,{'Non-mast','Mast'},'location','southoutside');
+end
 
-close all
-ff(1200,800);
-plot(T.odba);
-ylabel('ODBA');
-xlabel('Time (min)');
-
-T = loadTStruct(3,sqkey,Tss);
-writetable(T,'~/Downloads/Axy_Deb_sqid13288_iSq003_Spring2015_FemaleLac.csv');
-hold on
-plot(T.odba);
-
-legend({'Male','FemaleLac'});
-set(gca,'fontsize',14);
-xlim([1,size(T,1)])
 %%
 close all
 h=figure; plot(rand(10));

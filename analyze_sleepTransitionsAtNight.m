@@ -15,7 +15,7 @@ warning ('off','all');
 iRow = 0;
 
 doSave = 1;
-doDebug = 1;
+doDebug = 0;
 if doDebug
     debugPath = '/Users/matt/Downloads/debug';
     ms = 35;
@@ -159,6 +159,7 @@ for iRec = 1:size(sq_asleep,1)
                  T_SOL.season(iRow) = iSeason;
             end
         end
+        T_SOL.is_mast(iRow) = ismember(sq_years(iRec),[2014,2019]);
 % % % %         T_SOL.asleepData(iRow) = {asleepNorm};
     end
     if doSave && doDebug
@@ -168,7 +169,7 @@ for iRec = 1:size(sq_asleep,1)
 end
 warning ('on','all');
 writetable(T_SOL,'T_SOL');
-%% SOL_T cleaning and seasonal histograms (2/3)
+%% load SOL_T cleaning and seasonal histograms (2/3)
 T_SOL = readtable('T_SOL');
 origSz = size(T_SOL,1);
 
@@ -178,85 +179,89 @@ T_SOL(T_SOL.asleepIdx == 1,:) = [];
 fnSize = size(T_SOL,1);
 fprintf('%i outliers removed (%1.1f%%), %i remain\n',origSz-fnSize,100*((origSz-fnSize)/origSz),fnSize);
 
-lineColors = lines(5);
+%% plot all seasons with mast cond
+colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 close all;
-ff(500,900);
-rows = 5;
-cols = 2;
-for iSeason = 1:5
-    if iSeason == 1
-        useIds = find(T_SOL.isSunrise==1);
-        SOLs_sunrise = T_SOL.SOL(useIds);
-        sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
-        
-        useIds = find(T_SOL.isSunrise==0);
-        SOLs_sunset = T_SOL.SOL(useIds);
-        sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
-        seasonLabel = 'All';
-        sunriseColor = repmat(0.8,[1,3]);
-    else
-        useIds = find(T_SOL.isSunrise==1 & T_SOL.season == iSeason - 1);
-        SOLs_sunrise = T_SOL.SOL(useIds);
-        sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
-        
-        useIds = find(T_SOL.isSunrise==0 & T_SOL.season == iSeason - 1);
-        SOLs_sunset = T_SOL.SOL(useIds);
-        sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
-        seasonLabel = seasonLabels{iSeason-1};
-        sunriseColor = colors(iSeason-1,:);
-    end
-    
-    subplot(rows,cols,prc(cols,[iSeason,1]));
-    binEdges = linspace(0,250,50);
-    histogram(SOLs_sunrise,binEdges,'FaceColor',sunriseColor);
-    hold on;
-    histogram(SOLs_sunset,binEdges,'FaceColor','k');
-    set(gca,'fontsize',14);
-    if iSeason == 5
-        xlabel('Duration (min.)');
-    end
-    ylabel('Frequency');
-    if iSeason == 1
-        title({'Latency',seasonLabel});
-    else
-        title(seasonLabel);
-    end
-    grid on;
-    legend({'Sunrise','Sunset'},'fontsize',11);
-    legend boxoff;
-    
-    subplot(rows,cols,prc(cols,[iSeason,2]));
-    binEdges = linspace(720-400,720+400,50);
-    histogram(sunrise_means,binEdges,'FaceColor',sunriseColor);
-    hold on;
-    histogram(sunset_means,binEdges,'FaceColor','k');
-    set(gca,'fontsize',14);
-    if iSeason == 5
-        xlabel('Rel. Time (min.)');
-    end
-% %     ylabel('Frequency');
-    xticks([720-300,720,720+300]);
-    xticklabels({'-300','0','+300'});
-    if iSeason == 1
-        title({'Onset/Offset',seasonLabel});
-    else
-        title(seasonLabel);
-    end
-    grid on;
-% %     legend({'QB-AB','AB-QB'},'fontsize',11,'autoupdate','off');
-% %     legend boxoff;
-    xline(720,'k-');
-    
-    drawnow;
-end
+mastCond = {[0,1],0,1};
+mastTitle = {'All Years','Non-mast','Mast'};
+doSave = 0;
+for iMast = 1:3
+    ff(500,900);
+    rows = 5;
+    cols = 2;
+    for iSeason = 1:5
+        if iSeason == 1
+            useIds = find(T_SOL.isSunrise==1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            SOLs_sunrise = T_SOL.SOL(useIds);
+            sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
 
-doSave = 1;
-if doSave
-    print(gcf,'-painters','-depsc',fullfile(exportPath,'T_SOL_cleanHistograms.eps')); % required for vector lines
-    saveas(gcf,fullfile(exportPath,'T_SOL_cleanHistograms.jpg'),'jpg');
-    close(gcf);
-end
+            useIds = find(T_SOL.isSunrise==0 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            SOLs_sunset = T_SOL.SOL(useIds);
+            sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
+            seasonLabel = 'All Seasons';
+            sunriseColor = repmat(0.8,[1,3]);
+        else
+            useIds = find(T_SOL.isSunrise==1 & T_SOL.season == iSeason - 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            SOLs_sunrise = T_SOL.SOL(useIds);
+            sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
 
+            useIds = find(T_SOL.isSunrise==0 & T_SOL.season == iSeason - 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            SOLs_sunset = T_SOL.SOL(useIds);
+            sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
+            seasonLabel = seasonLabels{iSeason-1};
+            sunriseColor = colors(iSeason-1,:);
+        end
+
+        subplot(rows,cols,prc(cols,[iSeason,1]));
+        binEdges = linspace(0,250,50);
+        histogram(SOLs_sunrise,binEdges,'FaceColor',sunriseColor);
+        hold on;
+        histogram(SOLs_sunset,binEdges,'FaceColor','k');
+        set(gca,'fontsize',14);
+        if iSeason == 5
+            xlabel('Duration (min.)');
+        end
+        ylabel('Frequency');
+        if iSeason == 1
+            title({'Latency',sprintf('%s-%s',seasonLabel,mastTitle{iMast})});
+        else
+            title(sprintf('%s-%s',seasonLabel,mastTitle{iMast}));
+        end
+        grid on;
+        legend({'Sunrise','Sunset'},'fontsize',11);
+        legend boxoff;
+
+        subplot(rows,cols,prc(cols,[iSeason,2]));
+        binEdges = linspace(720-400,720+400,50);
+        histogram(sunrise_means,binEdges,'FaceColor',sunriseColor);
+        hold on;
+        histogram(sunset_means,binEdges,'FaceColor','k');
+        set(gca,'fontsize',14);
+        if iSeason == 5
+            xlabel('Rel. Time (min.)');
+        end
+    % %     ylabel('Frequency');
+        xticks([720-300,720,720+300]);
+        xticklabels({'-300','0','+300'});
+        if iSeason == 1
+            title({'Onset/Offset',sprintf('%s-%s',seasonLabel,mastTitle{iMast})});
+        else
+            title(sprintf('%s-%s',seasonLabel,mastTitle{iMast}));
+        end
+        grid on;
+    % %     legend({'QB-AB','AB-QB'},'fontsize',11,'autoupdate','off');
+    % %     legend boxoff;
+        xline(720,'k-');
+
+        drawnow;
+    end
+
+    if doSave
+        print(gcf,'-painters','-depsc',fullfile(exportPath,sprintf('%s-%s.eps','T_SOL_cleanHistograms',mastTitle{iMast}))); % required for vector lines
+        saveas(gcf,fullfile(exportPath,sprintf('%s-%s.jpg','T_SOL_cleanHistograms',mastTitle{iMast})),'jpg');
+        close(gcf);
+    end
+end
 %% T_SOL table and p-value matrix (3/3)
 rowNames = {'Latency to AB','AB Rel. to Sunrise','Latency to QB','QB Rel. to Sunset'};
 varTypes = {'string','string','string','string','string','string'};
