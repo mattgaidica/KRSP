@@ -1,4 +1,71 @@
-% setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
+%% predict_awake.m -> xcorrAsleep.m to produce RITable
+rowNames = {'Julian Day of Year';'Recording Sessions';'Unique Squirrels';'Day Length (hrs)';...
+    'QB per day (hrs)';'QB in daylight (hrs)';'QB in daylight (%)';'QB in darkness (hrs)';...
+    'QB in darkness (%)';'Total transitions'};
+varNames = {'Winter','Spring','Summer','Autumn','All'};
+
+mastCond = {[0,1],0,1};
+tableName = {'Tstats_All.xlsx','Tstats_NonMast.xlsx','Tstats_Mast.xlsx'};
+for iMast = 1:3
+    seasonDoy = {};
+    recordingSessions = {};
+    squirrels = {};
+    dayLength = {};
+    sleepPerDay = {};
+    sleepPerDay_percent = {};
+    sleepDaylight = {};
+    sleepDaylight_percent = {};
+    sleepDarkness = {};
+    sleepDarkness_percent = {};
+    sleepTrans = {};
+
+    for iSeason = 1:5
+        if iSeason == 5
+            useIds = find(ismember(RITable.is_mast,mastCond{iMast}));
+            seasonDoy{iSeason} = sprintf('%i-%i',1,366);
+            meanDayLength = mean(Tss.day_length);
+            stdDayLength = std(Tss.day_length);
+        else
+            useIds = find(ismember(RITable.season,iSeason) & ismember(RITable.is_mast,mastCond{iMast}));
+            seasonDoy{iSeason} = sprintf('%i-%i',seasonDoys(sIds(iSeason)),seasonDoys(sIds(iSeason+1))-1);
+            meanDayLength = mean(Tss.day_length(seasonDoys(sIds(iSeason):sIds(iSeason+1))));
+            stdDayLength = std(Tss.day_length(seasonDoys(sIds(iSeason):sIds(iSeason+1))));
+        end
+
+        recordingSessions{iSeason} = num2str(numel(useIds));
+        squirrels{iSeason} = num2str(numel(unique(RITable.squirrel_id(useIds))));
+        dayLength{iSeason} = sprintf('%1.2f ± %1.2f',meanDayLength/3600,stdDayLength/3600);
+
+        sleepPerDay{iSeason} = sprintf('%1.2f ± %1.2f',mean(RITable.qb_hrs(useIds))*24,std(RITable.qb_hrs(useIds))*24);
+        sleepDaylight{iSeason} = sprintf('%1.2f ± %1.2f',mean(RITable.qb_day_hrs(useIds))*24,std(RITable.qb_day_hrs(useIds))*24);
+        sleepDaylight_percent{iSeason} = sprintf('%1.0f%% ± %1.0f%%',mean(RITable.qb_day_hrs(useIds))*100,std(RITable.qb_day_hrs(useIds))*100);
+        sleepDarkness{iSeason} = sprintf('%1.2f ± %1.2f',mean(RITable.qb_night_hrs(useIds))*24,std(RITable.qb_night_hrs(useIds))*24);
+        sleepDarkness_percent{iSeason} = sprintf('%1.0f%% ± %1.0f%%',mean(RITable.qb_night_hrs(useIds))*100,std(RITable.qb_night_hrs(useIds))*100);
+        sleepTrans{iSeason} = sprintf('%1.0f ± %1.0f',mean(RITable.trans_per_raw(useIds)),std(RITable.trans_per_raw(useIds)));
+    end
+
+    Tstats = table(seasonDoy',recordingSessions',squirrels',dayLength',sleepPerDay',sleepDaylight',sleepDaylight_percent',...
+        sleepDarkness',sleepDarkness_percent',sleepTrans','VariableNames',rowNames,'RowNames',varNames);
+    Tstats = rows2vars(Tstats);
+    writetable(Tstats,fullfile(exportPath,tableName{iMast}));
+    disp(tableName{iMast});
+end
+%% follow-up with R stats
+% how much more do females sleep in mast?
+clc
+useIds = find(RITable.is_mast == 0 & RITable.sex == 0);
+femaleHrs = mean(RITable.qb_hrs(useIds))*24;
+useIds = find(RITable.is_mast == 0 & RITable.sex == 1);
+maleHrs = mean(RITable.qb_hrs(useIds))*24;
+fprintf('Non-mast m:%1.2fhrs, f:%1.2fhrs, (m-f):%1.2fhrs\n',maleHrs,femaleHrs,maleHrs-femaleHrs);
+
+useIds = find(RITable.is_mast == 1 & RITable.sex == 0);
+femaleHrs = mean(RITable.qb_hrs(useIds))*24;
+useIds = find(RITable.is_mast == 1 & RITable.sex == 1);
+maleHrs = mean(RITable.qb_hrs(useIds))*24;
+fprintf('Mast m:%1.2fhrs, f:%1.2fhrs, (m-f):%1.2fhrs\n',maleHrs,femaleHrs,maleHrs-femaleHrs);
+
+%% setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
 warning ('off','all');
 weather = readtable('HainesJunction_DailyTemps_Master.csv');
 warning ('on','all');
@@ -140,148 +207,6 @@ if true
     saveas(fh,fullfile(exportPath,'environmentalPolarPlot.png'));
     close(fh);
 end
-%% top table stats, see also /Users/matt/Documents/MATLAB/KRSP/Figures/cosinorEst.m
-% setup seasons in /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
-clc
-
-rowNames = {'Julian Day of Year';'Recording Sessions';'Unique Squirrels';'Day Length (hrs)';...
-    'QB per day (hrs)';'QB in daylight (hrs)';'QB in daylight (%)';'QB in darkness (hrs)';...
-    'QB in darkness (%)';'Total QB transitions';'QB transitions in daylight';'QB transitions per-hour daylight';...
-    'QB transitions in darkness';'QB transitions per-hour darkness'};
-varNames = {'Winter','Spring','Summer','Autumn','All'};
-
-seasonDoy = {};
-recordingSessions = {};
-squirrels = {};
-dayLength = {};
-sleepPerDay = {};
-sleepNest_percent = {};
-sleepDaylight = {};
-sleepDaylight_percent = {};
-sleepDarkness = {};
-sleepDarkness_percent = {};
-sleepTrans = {};
-sleepTransDaylight = {};
-sleepTransDaylight_perhour = {};
-sleepTransDarkness = {};
-sleepTransDarkness_perhour = {};
-
-for iS = 1:4
-    seasonDoy{iS} = sprintf('%i-%i',seasonDoys(sIds(iS)),seasonDoys(sIds(iS+1))-1);
-    metaSeasonIds = find([overlapMeta.meanSeason{:}]==iS);
-    recordingSessions{iS} = numel(metaSeasonIds);
-    squirrels{iS} = numel(unique([overlapMeta.squirrelId{metaSeasonIds}]));
-    
-    meanDayLength = mean(Tss.day_length(seasonDoys(sIds(iS):sIds(iS+1))));
-    stdDayLength = std(Tss.day_length(seasonDoys(sIds(iS):sIds(iS+1))));
-    dayLength{iS} = sprintf('%1.2f ± %1.2f',meanDayLength/3600,stdDayLength/3600);
-    
-    meanAsleep = nanmean([sqs_asleep{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    stdAsleep = nanstd([sqs_asleep{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    sleepPerDay{iS} = sprintf('%1.2f ± %1.2f',meanAsleep/60,stdAsleep/60);
-    
-% %     meanNest = nanmean([sqs_nest{seasonDoys(sIds(iS):sIds(iS+1))}]);
-% %     stdNest = nanstd([sqs_nest{seasonDoys(sIds(iS):sIds(iS+1))}]);
-% %     sleepNest_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',100*(meanAsleep/60)/(meanNest/60),...
-% %         100*(meanAsleep/60)/(stdNest/60));
-    
-    meanAsleep = nanmean([sqs_asleepDay{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    stdAsleep = nanstd([sqs_asleepDay{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    sleepDaylight{iS} = sprintf('%1.2f ± %1.2f',meanAsleep/60,stdAsleep/60);
-    sleepDaylight_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',100*(meanAsleep/60)/(meanDayLength/3600),...
-        100*(stdAsleep/60)/(meanDayLength/3600));
-    
-    meanAsleep = nanmean([sqs_asleepNight{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    stdAsleep = nanstd([sqs_asleepNight{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    sleepDarkness{iS} = sprintf('%1.2f ± %1.2f',meanAsleep/60,stdAsleep/60);
-    sleepDarkness_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',100*(meanAsleep/60)/(24-(meanDayLength/3600)),...
-        100*(stdAsleep/60)/(24-(meanDayLength/3600)));
-    
-    meanTrans = nanmean([sqs_trans{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    stdTrans = nanstd([sqs_trans{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    sleepTrans{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
-    
-    meanTrans = nanmean([sqs_transDay{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    stdTrans = nanstd([sqs_transDay{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    sleepTransDaylight{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
-    sleepTransDaylight_perhour{iS} = sprintf('%1.0f ± %1.0f',meanTrans/(meanDayLength/3600),...
-        stdTrans/(meanDayLength/3600));
-    
-    meanTrans = nanmean([sqs_transNight{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    stdTrans = nanstd([sqs_transNight{seasonDoys(sIds(iS):sIds(iS+1))}]);
-    sleepTransDarkness{iS} = sprintf('%1.0f ± %1.0f\n\n',meanTrans,stdTrans);
-    sleepTransDarkness_perhour{iS} = sprintf('%1.0f ± %1.0f\n\n',meanTrans/(24-(meanDayLength/3600)),...
-        stdTrans/(24-(meanDayLength/3600)));
-end
-iS = iS + 1;
-seasonDoy{iS} = "1-366";
-recordingSessions{iS} = nansum([recordingSessions{1:4}]);
-squirrels{iS} = nansum([squirrels{1:4}]);
-
-% % meanDayLength = mean(Tss.day_length(seasonDoys(1:366)));
-% % stdDayLength = std(Tss.day_length(seasonDoys(1:366)));
-% % dayLength{iS} = sprintf('%1.2f ± %1.2f',meanDayLength/3600,stdDayLength/3600);
-[m,s] = parseMeanStdString(dayLength);
-dayLength{iS} = sprintf('%1.2f ± %1.2f',m,s);
-    
-% % meanAsleep = nanmean([sqs_asleep{seasonDoys(1:366)}]);
-% % stdAsleep = nanstd([sqs_asleep{seasonDoys(1:366)}]);
-% % sleepPerDay{iS} = sprintf('%1.2f ± %1.2f',meanAsleep/60,stdAsleep/60);
-[m,s] = parseMeanStdString(sleepPerDay);
-sleepPerDay{iS} = sprintf('%1.2f ± %1.2f',m,s);
-
-meanAsleep = nanmean([sqs_asleepDay{seasonDoys(1:366)}]);
-stdAsleep = nanstd([sqs_asleepDay{seasonDoys(1:366)}]);
-% % sleepDaylight{iS} = sprintf('%1.2f ± %1.2f',meanAsleep/60,stdAsleep/60);
-% % sleepDaylight_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',100*(meanAsleep/60)/(meanDayLength/3600),...
-% %         100*(stdAsleep/60)/(meanDayLength/3600));
-[m,s] = parseMeanStdString(sleepDaylight);
-sleepDaylight{iS} = sprintf('%1.2f ± %1.2f',m,s);
-[m,s] = parseMeanStdString(sleepDaylight_percent);
-sleepDaylight_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',m,s);
-
-% % meanAsleep = nanmean([sqs_asleepNight{seasonDoys(1:366)}]);
-% % stdAsleep = nanstd([sqs_asleepNight{seasonDoys(1:366)}]);
-% % sleepDarkness{iS} = sprintf('%1.2f ± %1.2f',meanAsleep/60,stdAsleep/60);
-% % sleepDarkness_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',100*(meanAsleep/60)/(24-(meanDayLength/3600)),...
-% %         100*(stdAsleep/60)/(24-(meanDayLength/3600))); 
-[m,s] = parseMeanStdString(sleepDarkness);
-sleepDarkness{iS} = sprintf('%1.2f ± %1.2f',m,s);
-[m,s] = parseMeanStdString(sleepDarkness_percent);
-sleepDarkness_percent{iS} = sprintf('%1.0f%% ± %1.0f%%',m,s);
-
-% % meanTrans = nanmean([sqs_trans{seasonDoys(1:366)}]);
-% % stdTrans = nanstd([sqs_trans{seasonDoys(1:366)}]);
-% % sleepTrans{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
-[m,s] = parseMeanStdString(sleepTrans);
-sleepTrans{iS} = sprintf('%1.0f ± %1.0f',m,s);
-
-% % meanTrans = nanmean([sqs_transDay{seasonDoys(1:366)}]);
-% % stdTrans = nanstd([sqs_transDay{seasonDoys(1:366)}]);
-% % sleepTransDaylight{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
-% % sleepTransDaylight_perhour{iS} = sprintf('%1.0f ± %1.0f',meanTrans/(meanDayLength/3600),...
-% %         stdTrans/(meanDayLength/3600));
-[m,s] = parseMeanStdString(sleepTransDaylight);
-sleepTransDaylight{iS} = sprintf('%1.0f ± %1.0f',m,s);
-[m,s] = parseMeanStdString(sleepTransDaylight_perhour);
-sleepTransDaylight_perhour{iS} = sprintf('%1.0f ± %1.0f',m,s);
-
-% % meanTrans = nanmean([sqs_transNight{seasonDoys(1:366)}]);
-% % stdTrans = nanstd([sqs_transNight{seasonDoys(1:366)}]);
-% % sleepTransDarkness{iS} = sprintf('%1.0f ± %1.0f',meanTrans,stdTrans);
-% % sleepTransDarkness_perhour{iS} = sprintf('%1.0f ± %1.0f\n\n',meanTrans/(24-(meanDayLength/3600)),...
-% %         stdTrans/(24-(meanDayLength/3600)));
-[m,s] = parseMeanStdString(sleepTransDarkness);
-sleepTransDarkness{iS} = sprintf('%1.0f ± %1.0f',m,s);
-[m,s] = parseMeanStdString(sleepTransDarkness_perhour);
-sleepTransDarkness_perhour{iS} = sprintf('%1.0f ± %1.0f\n\n',m,s);
-    
-Tstats = table(seasonDoy',recordingSessions',squirrels',dayLength',sleepPerDay',sleepDaylight',sleepDaylight_percent',...
-    sleepDarkness',sleepDarkness_percent',sleepTrans',sleepTransDaylight',sleepTransDaylight_perhour',...
-    sleepTransDarkness',sleepTransDarkness_perhour','VariableNames',rowNames,'RowNames',varNames);
-Tstats = rows2vars(Tstats);
-writetable(Tstats,'Tstats.xlsx');
-disp("done");
 
 %% what best correlates with ODBA?
 close all

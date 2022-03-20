@@ -263,94 +263,113 @@ for iMast = 1:3
     end
 end
 %% T_SOL table and p-value matrix (3/3)
+doSave = 1;
 rowNames = {'Latency to AB','AB Rel. to Sunrise','Latency to QB','QB Rel. to Sunset'};
 varTypes = {'string','string','string','string','string','string'};
-T_SOL_summary = table('Size',[4,6],'VariableNames',{'Description',seasonLabels{:},'All'},'VariableType',varTypes);
 isSunriseArr = [1,0];
-iRow = 0;
-for ii = 1:numel(rowNames)
-    T_SOL_summary.Description(ii) = rowNames{ii}; 
-end
-for iSeason = 1:5
-    for iSun = 1:2
-        if iSeason == 5
-            useRows = find(T_SOL.isSunrise == isSunriseArr(iSun));
-        else
-            useRows = find(T_SOL.season == iSeason & T_SOL.isSunrise == isSunriseArr(iSun));
-        end
-        asleepAwakeMean = mean([T_SOL.awakeIdx(useRows),T_SOL.asleepIdx(useRows)],2);
-        SOLs = T_SOL.SOL(useRows);
-        
-        if iSun == 1
-            T_SOL_summary(1,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(SOLs),std(SOLs))};
-            T_SOL_summary(2,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(asleepAwakeMean)-720,std(asleepAwakeMean))};
-        else
-            T_SOL_summary(3,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(SOLs),std(SOLs))};
-            T_SOL_summary(4,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(asleepAwakeMean)-720,std(asleepAwakeMean))};
-        end
+mastCond = {[0,1],0,1};
+mastNames = {'All','NonMast','Mast'};
+SOLTableFiles = {'T_SOL_summary_All.xlsx','T_SOL_summary_NonMast.xlsx','T_SOL_summary_Mast.xlsx'};
+SOLFigureFiles = {'T_SOL_pMatrix_All','T_SOL_pMatrix_NonMast','T_SOL_pMatrix_Mast'};
+mastSOL = {};
+for iMast = 1:3
+    T_SOL_summary = table('Size',[4,6],'VariableNames',[{'Description'},seasonLabels(:)',{'All'}],'VariableType',varTypes);
+    for ii = 1:numel(rowNames)
+        T_SOL_summary.Description(ii) = rowNames{ii}; 
     end
-end
-writetable(T_SOL_summary,'T_SOL_summary.xlsx');
-
-cmap = parula(1000);
-cmap = [cmap(100:900,:);0,0,0];
-clc
-seasonAbbr = {'Wi','Sp','Su','Au'};
-close all;
-ff(600,120);
-for iSubplot = 1:4
-    pMat_sol = NaN(4,4);
-    for iSeason = 1:4
-        for kSeason = iSeason:4
-            if iSubplot == 1
-                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 1);
-                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 1);
-                y = [T_SOL.SOL(s1Ids);T_SOL.SOL(s2Ids)];
-            elseif iSubplot == 2
-                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 1);
-                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 1);
-                y = [mean([T_SOL.awakeIdx(s1Ids),T_SOL.asleepIdx(s1Ids)],2);mean([T_SOL.awakeIdx(s2Ids),T_SOL.asleepIdx(s2Ids)],2)];
-            elseif iSubplot == 3
-                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 0);
-                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 0);
-                y = [T_SOL.SOL(s1Ids);T_SOL.SOL(s2Ids)];
+    for iSeason = 1:5
+        for iSun = 1:2
+            if iSeason == 5
+                useRows = find(T_SOL.isSunrise == isSunriseArr(iSun) & ismember(T_SOL.is_mast,mastCond{iMast}));
             else
-                s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 0);
-                s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 0);
-                y = [mean([T_SOL.awakeIdx(s1Ids),T_SOL.asleepIdx(s1Ids)],2);mean([T_SOL.awakeIdx(s2Ids),T_SOL.asleepIdx(s2Ids)],2)];
+                useRows = find(T_SOL.season == iSeason & T_SOL.isSunrise == isSunriseArr(iSun) & ismember(T_SOL.is_mast,mastCond{iMast}));
             end
-            group = [zeros(size(s1Ids));ones(size(s2Ids))];
-            pMat_sol(iSeason,kSeason) = anova1(y,group,'off');
+            asleepAwakeMean = mean([T_SOL.awakeIdx(useRows),T_SOL.asleepIdx(useRows)],2);
+            SOLs = T_SOL.SOL(useRows);
+
+            if iSun == 1
+                T_SOL_summary(1,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(SOLs),std(SOLs))};
+                T_SOL_summary(2,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(asleepAwakeMean)-720,std(asleepAwakeMean))};
+            else
+                T_SOL_summary(3,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(SOLs),std(SOLs))};
+                T_SOL_summary(4,iSeason+1) = {sprintf('%1.2f ± %1.2f',mean(asleepAwakeMean)-720,std(asleepAwakeMean))};
+            end
         end
     end
-    disp(rowNames{iSubplot});
-    flip(pMat_sol)
-    writematrix(flip(pMat_sol),fullfile(exportPath,sprintf('%s.csv',rowNames{iSubplot})));
-    subplot(1,4,iSubplot);
-    alphaData = ~isnan(pMat_sol);
-    imagesc(pMat_sol,'AlphaData',alphaData);
-    xticks(1:4);
-    yticks(xticks);
-    xticklabels(seasonAbbr);
-    yticklabels(seasonAbbr);
-    title(rowNames{iSubplot});
-    colormap(cmap); %flip(magma)
-    caxis([0 0.0499]);
-    set(gca,'fontsize',12);
-    set(gca,'ydir','normal');
-    drawnow;
-end
-cb = cbAside(gca,'p-value','k');
-cb.FontSize = 12;
-cb.TickLabels = [0 0.05];
+    writetable(T_SOL_summary,fullfile(exportPath,SOLTableFiles{iMast}));
 
-doSave = 1;
-if doSave
-    print(gcf,'-painters','-depsc',fullfile(exportPath,'T_SOL_summary_pMatrix.eps')); % required for vector lines
-    saveas(gcf,fullfile(exportPath,'T_SOL_summary_pMatrix.jpg'),'jpg');
-    close(gcf);
-end
+    cmap = parula(1000);
+    cmap = [cmap(100:900,:);0,0,0];
+    clc
+    seasonAbbr = {'Wi','Sp','Su','Au'};
+    close all;
+    ff(600,120);
+    for iSubplot = 1:4
+        pMat_sol = NaN(4,4);
+        for iSeason = 1:4
+            for kSeason = iSeason:4
+                if iSubplot == 1
+                    s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    y = [T_SOL.SOL(s1Ids);T_SOL.SOL(s2Ids)];
+                elseif iSubplot == 2
+                    s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    y = [mean([T_SOL.awakeIdx(s1Ids),T_SOL.asleepIdx(s1Ids)],2);mean([T_SOL.awakeIdx(s2Ids),T_SOL.asleepIdx(s2Ids)],2)];
+                elseif iSubplot == 3
+                    s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 0 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 0 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    y = [T_SOL.SOL(s1Ids);T_SOL.SOL(s2Ids)];
+                else
+                    s1Ids = find(T_SOL.season == iSeason & T_SOL.isSunrise == 0 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    s2Ids = find(T_SOL.season == kSeason & T_SOL.isSunrise == 0 & ismember(T_SOL.is_mast,mastCond{iMast}));
+                    y = [mean([T_SOL.awakeIdx(s1Ids),T_SOL.asleepIdx(s1Ids)],2);mean([T_SOL.awakeIdx(s2Ids),T_SOL.asleepIdx(s2Ids)],2)];
+                end
+                if ismember(iMast,2:3)
+                    mastSOL{iSubplot,iMast-1,iSeason} = y(1:numel(s1Ids));
+                end
+                group = [zeros(size(s1Ids));ones(size(s2Ids))];
+                pMat_sol(iSeason,kSeason) = anova1(y,group,'off');
+            end
+        end
+        disp(rowNames{iSubplot});
+        flip(pMat_sol)
+        writematrix(flip(pMat_sol),fullfile(exportPath,sprintf('%s_%s.csv',rowNames{iSubplot},mastNames{iMast})));
+        subplot(1,4,iSubplot);
+        alphaData = ~isnan(pMat_sol);
+        imagesc(pMat_sol,'AlphaData',alphaData);
+        xticks(1:4);
+        yticks(xticks);
+        xticklabels(seasonAbbr);
+        yticklabels(seasonAbbr);
+        title(rowNames{iSubplot});
+        colormap(cmap); %flip(magma)
+        caxis([0 0.0499]);
+        set(gca,'fontsize',12);
+        set(gca,'ydir','normal');
+        drawnow;
+    end
+    cb = cbAside(gca,'p-value','k');
+    cb.FontSize = 12;
+    cb.TickLabels = [0 0.05];
 
+    if doSave
+%         print(gcf,'-painters','-depsc',fullfile(exportPath,[SOLFigureFiles{iMast},'.eps'])); % required for vector lines
+        saveas(gcf,fullfile(exportPath,[SOLFigureFiles{iMast},'.jpg']),'jpg');
+        close(gcf);
+    end
+end
+%%
+% do mast comparison
+mastPmat = [];
+for iSeason = 1:4
+    for iCond = 1:4
+        y = [mastSOL{iCond,1,iSeason};mastSOL{iCond,2,iSeason}];
+        group = [zeros(size(mastSOL{iCond,1,iSeason}));ones(size(mastSOL{iCond,2,iSeason}))];
+        mastPmat(iCond,iSeason) = anova1(y,group,'off');
+    end
+end
+writematrix(mastPmat,fullfile(exportPath,'SOL_mastPmat.csv'));
 %% (1/3) Probability Density histograms
 doSave = 1;
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
