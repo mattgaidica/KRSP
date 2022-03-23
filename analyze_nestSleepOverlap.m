@@ -111,10 +111,11 @@ set(gca,'fontsize',16);
 legend(lns,{'Squirrel Mean','Linear Fit','95% Confidence'},'location','northwest');
 legend box off;
 
-text(mean(xlim),min(ylim)+2,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center','fontsize',14);
-text(mean(xlim),min(ylim)+1,sprintf('QB = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
+fprintf('nest-sleep fit: r = %1.2f, p = %1.2e\n',r,p);
+% text(mean(xlim),min(ylim)+2,sprintf('r = %1.2f, p = %1.2e',r,p),'horizontalalignment','center','fontsize',14);
+% text(mean(xlim),min(ylim)+1,sprintf('QB = %1.2f × in nest + %1.2f',f.p1,f.p2),'horizontalalignment','center','fontsize',14);
 
-
+%%
 % try separating by mast
 h2 = ff(330,300);
 lns = [];
@@ -145,7 +146,7 @@ ci = confint(f);
 plot(xlim,[ci(1,1)*min(xlim)+ci(1,2),ci(1,1)*max(xlim)+ci(1,2)],'k:');
 plot(xlim,[ci(2,1)*min(xlim)+ci(2,2),ci(2,1)*max(xlim)+ci(2,2)],'k:');
 box off;
-legend(lns,{'Non-mast','Mast'},'location','southeast','fontsize',12);
+legend(lns,{'Non-mast','Mast'},'location','southeast','fontsize',20);
 if doSave
 %     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
     saveas(h2,fullfile(exportPath,'nestSleepOverlap_inset.eps'),'epsc');
@@ -153,9 +154,9 @@ if doSave
     close(h2);
 end
 
+%% season_residuals
 figure(h);
 
-%% season_residuals
 resBins = linspace(-4,4,10);
 subplot_tight(1,3,3,subplotMargins);
 y = [];

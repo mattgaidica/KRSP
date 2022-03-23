@@ -5,6 +5,8 @@
 #install.packages("sjPlot")
 #install.packages("MuMIn")
 #install.packages("pbkrtest")
+#install.packages("broom.mixed")
+#install.packages("gtools")
 
 require(lme4)
 require(lmerTest)
@@ -13,6 +15,8 @@ require(emmeans)
 require(MuMIn)
 require(sjPlot)
 require(pbkrtest)
+require(broom.mixed)
+require(dplyr)
 
 read.csv("/Users/matt/Documents/MATLAB/KRSP/R/RITable.csv")->n
 n$season<-as.factor(n$season)
@@ -23,24 +27,30 @@ n$preg<-as.factor(n$is_preg)
 # remove Winter and add mast interaction
 # n_noWinter<-subset(n,n$season!=1)
 # see investigate sex correlations in run_this.m
-summary(test<-lmer(qb~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
+summary(test<-lmer(qb~season*mast+sex*season+age+I(age^2)+(1|squirrel_id),n))
+test %>% tidy %>% mutate(signif = stars.pval(p.value))
+
+visreg(test,"sex")
 visreg(test,"sex",by="mast")
 visreg(test,"sex",by="season")
-visreg(test,"age",by='season')
+visreg(test,"age")
+visreg(test,"age",trans=exp,partial=TRUE)
+visreg(test,"age",by='season',trans=exp,partial=TRUE)
 visreg(test,"mast",by="season")
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-
-# isolate sex
 emmeans(test, list(pairwise ~ season*sex), adjust = "tukey")
-emmeans(test, list(pairwise ~ mast*sex), adjust = "tukey")
+# emmeans(test, list(pairwise ~ mast*sex), adjust = "tukey") # can't do, unless no winter
 
 # see if the results change for QB day or night
-summary(test<-lmer(qb_day~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
+summary(test<-lmer(qb_day~season*mast+age+I(age^2)+(1|squirrel_id),n))
+test %>% tidy %>% mutate(signif = stars.pval(p.value))
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 visreg(test,"age",by='season')
-summary(test<-lmer(qb_night~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
+
+summary(test<-lmer(qb_night~season*mast+age+I(age^2)+(1|squirrel_id),n))
+test %>% tidy %>% mutate(signif = stars.pval(p.value))
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-visreg(test,"age",by='season')
+visreg(test,"age",by='season',trans=exp,partial=TRUE)
 
 n_noMast<-subset(n,n$mast!=1)
 n_onlyMast<-subset(n,n$mast!=0)
