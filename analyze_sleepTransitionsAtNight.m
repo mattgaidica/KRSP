@@ -134,12 +134,12 @@ for iPlot = 1:2
     c = colorbar;
     
     if iPlot == 1
-        title('Median QB Duration');
+        title('QB Duration');
         ylabel(c,'Minutes','fontsize',gcaFontSize);
         %         caxis([0 25]);
         caxisauto(squeeze(allTransHist(iPlot,:,:)),1)
     else
-        title(sprintf('Probability of QB >%i min.',contQB));
+        title('Consolidated QB');
         ylabel(c,'Probability','fontsize',gcaFontSize);
         %         caxis([0.002 .014]);
         caxisauto(squeeze(allTransHist(iPlot,:,:)),1)
@@ -233,7 +233,9 @@ for iSeason = 1:4
             patch([contQB,max(binEdges_sd),max(binEdges_sd),contQB],[0,0,1,1],'black','FaceAlpha',.1,'EdgeColor','none');
             hold on;
             xline(contQB,'k:');
-            text(contQB,maxY-0.02,strcat(sprintf('%i minutes',contQB),'\rightarrow'),'horizontalalignment','right','fontsize',gcaFontSize);
+            text(contQB,0.02,strcat(sprintf('%i minutes',contQB),'\rightarrow'),'horizontalalignment','right','fontsize',gcaFontSize);
+            text(contQB,maxY-0.02,'\leftarrow fragmented ','horizontalalignment','right','fontsize',gcaFontSize);
+            text(contQB,maxY-0.02,' consolidated \rightarrow','horizontalalignment','left','fontsize',gcaFontSize);
         end
         histogram(sleepDurations,binEdges_sd,'Normalization','probability','EdgeColor',colors(iSeason,:),'DisplayStyle','Stairs','lineWidth',4,'EdgeAlpha',0.75);
         lns(iSeason) = plot(-1,-1,'-','lineWidth',3,'color',colors(iSeason,:));
@@ -259,7 +261,7 @@ set(gca,'fontsize',gcaFontSize);
 xlabel('QB Duration (minutes)');
 ylabel('Probability');
 ylim([0 maxY]);
-title('Dark QB Duration');
+title('QB Duration at Night');
 grid on;
 legend(lns,seasonLabels);
 legend box off;
@@ -302,8 +304,9 @@ if ~exist('pMat_sd','var')
     disp('done');
 end
 %% !RUNFIG! (3/3) plot pMat
-cmap = parula(1000);
-cmap = [cmap(100:900,:);0,0,0];
+cmap = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/goblue.png',200);
+% cmap = hot(1000);
+cmap = [cmap;0,0,0];
 % % % % close all;
 % % % % h = ff(1000,100);
 seasonAbbr = {'Wi','Sp','Su','Au'};
@@ -314,7 +317,7 @@ for iBin = 1:size(pMat_sd,3)
     imagesc(ps,'AlphaData',~isnan(ps));
     caxis([0,0.0499]);
     colormap(gca,cmap); % flip(magma)
-    title(sprintf('%1.0f min',mean([binEdges_sd(iBin),binEdges_sd(iBin+1)])));
+    title(sprintf('%1.0f-%1.0f',binEdges_sd(iBin),binEdges_sd(iBin+1)));
     xticks(1:4);
     xtickangle(-90);
     yticks(1:4);
@@ -665,6 +668,8 @@ for iMast = 1:3
             subplot(5,2,prc(2,[iSeason,1]));
         else
             subplot(rows,cols,figs{4+prc(2,[iSeason,1])});
+            pos = get(gca,'Position');
+            set(gca,'Position',pos.*[1 1 1 0.97]);
             cla(gca);
         end
         binEdges = linspace(0,250,50);
@@ -695,6 +700,8 @@ for iMast = 1:3
             subplot(5,2,prc(2,[iSeason,2]));
         else
             subplot(rows,cols,figs{4+prc(2,[iSeason,2])});
+            pos = get(gca,'Position');
+            set(gca,'Position',pos.*[1 1 1 0.97]);
             cla(gca);
         end
         binEdges = linspace(720-400,720+400,50);
@@ -734,6 +741,6 @@ for iMast = 1:3
         close(gcf);
     end
 end
-%% !RUNFIG!
+%% !RUNFIG! need to fix transparency manually
 print(gcf,'-painters','-depsc',fullfile(exportPath,'QBdur_SOL.eps')); % required for vector lines
 saveas(gcf,fullfile(exportPath,'QBdur_SOL.jpg'),'jpg');

@@ -24,7 +24,8 @@ for iSq = 1:numel(unRecs)
         theseAsleep = [];
         theseODBA = [];
         for thisId = useIds
-            % can use sq_odba_z here as comparison, rescale to +/-1
+% %             sunriseIdx = round(secDay(mean(Tss.sunrise(Tss.doy == sq_doys(thisId))))/60);
+% %             sunsetIdx = round(secDay(mean(Tss.sunset(Tss.doy == sq_doys(thisId))))/60);
             theseAsleep = [theseAsleep sq_asleep(thisId,:)]; % sq_asleep
             theseODBA = [theseODBA sq_odba(thisId,:)]; % sq_odba
         end
