@@ -7,9 +7,6 @@ for iSq = 1:size(sqkey,1)
 end
 fprintf("%i no file\n",iFile);
 
-%% how different is QB for females vs. males
-
-
 %% valid and preg info
 iValid = 0;
 iFemalePreg = 0;

@@ -43,12 +43,10 @@ emmeans(test, list(pairwise ~ season*sex), adjust = "tukey")
 
 # see if the results change for QB day or night
 summary(test<-lmer(qb_day~season*mast+age+I(age^2)+(1|squirrel_id),n))
-test %>% tidy %>% mutate(signif = stars.pval(p.value))
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 visreg(test,"age",by='season')
 
 summary(test<-lmer(qb_night~season*mast+age+I(age^2)+(1|squirrel_id),n))
-test %>% tidy %>% mutate(signif = stars.pval(p.value))
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 visreg(test,"age",by='season',trans=exp,partial=TRUE)
 
@@ -85,13 +83,6 @@ visreg(test,"sex",by="mast")
 # visreg(test,"sex",by="season")
 # visreg(test,"mast",by="season")
 # emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-
-summary(test<-lmer(trans_per~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
-emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-# remove mast
-summary(test<-lmer(trans_per~season+sex+age+I(age^2)+(1|squirrel_id),n))
-emmeans(test, list(pairwise ~ season), adjust = "tukey")
-
 
 visreg(test,'season')
 visreg(test,"season",by="mast")
