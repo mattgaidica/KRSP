@@ -56,6 +56,7 @@ box on;
 grid on;
 %%
 f = fit(sq_inNestMin'*24,sq_asleepMin'*24,'poly1');
+% % % % f = fit(sq_inNestMin'*24,overlapStats(:,2)*24,'poly1');
 
 % newer code, plots each point individually
 subplot_tight(1,3,2,subplotMargins);
@@ -63,6 +64,7 @@ for ii = 1:numel(sq_inNestMin)
     nrecs = numel(find(overlapMeta.squirrelId{ii} == [overlapMeta.squirrelId{:}]));
     x = sq_inNestMin(ii)*24;
     y = sq_asleepMin(ii)*24;
+% % % %     y = overlapStats(ii,2)'*24; % !!TRY
     iSeason = overlapMeta.meanSeason{ii};
     useMarkerSize = 7;
     if nrecs == 1
@@ -84,6 +86,7 @@ for iSeason = 1:4
     ss = ismember(mean_doys,seasonDoys(sIds(iSeason):sIds(iSeason+1)));
     x = sq_inNestMin(ss)*24;
     y = sq_asleepMin(ss)*24;
+% % % %     y = overlapStats(ss,2)'*24; % !!TRY
     season_residuals{iSeason} = y-f(x)';
 %     plot(x,y,'.','color',colors(iSeason,:),'markersize',15);
 %     hold on;
