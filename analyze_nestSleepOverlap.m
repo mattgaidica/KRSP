@@ -1,5 +1,5 @@
 % setup with /Users/matt/Documents/MATLAB/KRSP/predict_awake.m
-doSave = 1;
+doSave = 0;
 subplotMargins = [.15,.07]; % [vert, horz]
 
 close all
@@ -56,7 +56,7 @@ box on;
 grid on;
 %%
 f = fit(sq_inNestMin'*24,sq_asleepMin'*24,'poly1');
-% % % % f = fit(sq_inNestMin'*24,overlapStats(:,2)*24,'poly1');
+f = fit(sq_inNestMin'*24,overlapStats(:,2)*24,'poly1'); % !!TRY
 
 % newer code, plots each point individually
 subplot_tight(1,3,2,subplotMargins);
@@ -64,7 +64,7 @@ for ii = 1:numel(sq_inNestMin)
     nrecs = numel(find(overlapMeta.squirrelId{ii} == [overlapMeta.squirrelId{:}]));
     x = sq_inNestMin(ii)*24;
     y = sq_asleepMin(ii)*24;
-% % % %     y = overlapStats(ii,2)'*24; % !!TRY
+    y = overlapStats(ii,2)'*24; % !!TRY
     iSeason = overlapMeta.meanSeason{ii};
     useMarkerSize = 7;
     if nrecs == 1
@@ -86,16 +86,16 @@ for iSeason = 1:4
     ss = ismember(mean_doys,seasonDoys(sIds(iSeason):sIds(iSeason+1)));
     x = sq_inNestMin(ss)*24;
     y = sq_asleepMin(ss)*24;
-% % % %     y = overlapStats(ss,2)'*24; % !!TRY
+    y = overlapStats(ss,2)'*24; % !!TRY
     season_residuals{iSeason} = y-f(x)';
 %     plot(x,y,'.','color',colors(iSeason,:),'markersize',15);
 %     hold on;
 end
 
-xlim([6 24]);
-xticks(6:2:24);
-ylim([6 26]);
-yticks(6:2:24);
+xlim([8 22]);
+xticks(8:2:22);
+ylim([8 22]);
+yticks(8:2:22);
 
 % f(x) = p1*x + p2
 lns = [];
@@ -106,9 +106,9 @@ lns(3) = plot(xlim,[ci(1,1)*min(xlim)+ci(1,2),ci(1,1)*max(xlim)+ci(1,2)],'k:');
 plot(xlim,[ci(2,1)*min(xlim)+ci(2,2),ci(2,1)*max(xlim)+ci(2,2)],'k:');
 
 [r,p] = corr(sq_inNestMin'*24,sq_asleepMin'*24);
-title('QB vs. In Nest');
-xlabel('In Nest (hrs/day)');
-ylabel('QB (hrs/day)');
+title('In-nest QB vs. In-nest');
+xlabel('In-nest (hrs/day)');
+ylabel('In-nest QB (hrs/day)');
 grid on;
 set(gca,'fontsize',16);
 legend(lns,{'Squirrel Mean','Linear Fit','95% Confidence'},'location','northwest');
@@ -134,6 +134,7 @@ for iMast = 0:1
         if overlapMeta.is_mast{ii} == iMast
             x = sq_inNestMin(ii)*24;
             y = sq_asleepMin(ii)*24;
+            y = overlapStats(ii,2)'*24; % !!TRY
             lns(iMast+1) = plot(x,y,useMarker,'color','k','markersize',useMarkerSize,'linewidth',1);
             hold on;
         end
@@ -160,7 +161,7 @@ end
 %% season_residuals
 figure(h);
 
-resBins = linspace(-4,4,10);
+resBins = linspace(-1.5,1.5,10);
 subplot_tight(1,3,3,subplotMargins);
 y = [];
 group = [];
@@ -186,26 +187,29 @@ xlim([min(resBins),max(resBins)]);
 ylabel('Fraction of Squirrels');
 grid on;
 set(gca,'fontsize',16);
-title('QB vs. In Nest Residuals');
+title('In-nest QB vs. In-nest Residuals');
 xlabel('Residual (hrs)');
-% ylim([0 0.35]);
-text(min(xlim)+0.05,0.475,'\leftarrow more QB in nest','horizontalalignment','left',...
+ylim([0 0.7]);
+text(min(xlim)+0.05,max(ylim)-0.05,'\leftarrow less QB in nest','horizontalalignment','left',...
     'verticalalignment','middle','fontsize',14);
-text(max(xlim)-0.05,0.475,'less QB in nest \rightarrow ','horizontalalignment','right',...
+text(max(xlim)-0.05,max(ylim)-0.05,'more QB in nest \rightarrow ','horizontalalignment','right',...
     'verticalalignment','middle','fontsize',14);
 
-mutlCmpY = .425;
-mutlCmpX = -3.6;
-yStep = .02;
-fs = 12;
-text(mutlCmpX,mutlCmpY,sprintf('Au-Wi p = %1.1e',c(3,6)),'horizontalalignment','left',...
-    'verticalalignment','middle','fontsize',fs);
-text(mutlCmpX,mutlCmpY-yStep,sprintf('Au-Sp p = %1.1e',c(5,6)),'horizontalalignment','left',...
-    'verticalalignment','middle','fontsize',fs);
-text(mutlCmpX,mutlCmpY-yStep*2,sprintf('Au-Su p = %1.1e',c(6,6)),'horizontalalignment','left',...
-    'verticalalignment','middle','fontsize',fs);
-text(mutlCmpX,mutlCmpY-yStep*3,'Others N.S.','horizontalalignment','left',...
-    'verticalalignment','middle','fontsize',fs);
+% look at c, Summer is the only pairwise season p<0.05
+text(mean(season_residuals{3}),0.5,'*** ','color',colors(3,:),'horizontalalignment','right','fontsize',fs+4);
+
+% % % % mutlCmpY = .425;
+% % % % mutlCmpX = -3.6;
+% % % % yStep = .02;
+% % % % fs = 12;
+% % % % text(mutlCmpX,mutlCmpY,sprintf('Au-Wi p = %1.1e',c(3,6)),'horizontalalignment','left',...
+% % % %     'verticalalignment','middle','fontsize',fs);
+% % % % text(mutlCmpX,mutlCmpY-yStep,sprintf('Au-Sp p = %1.1e',c(5,6)),'horizontalalignment','left',...
+% % % %     'verticalalignment','middle','fontsize',fs);
+% % % % text(mutlCmpX,mutlCmpY-yStep*2,sprintf('Au-Su p = %1.1e',c(6,6)),'horizontalalignment','left',...
+% % % %     'verticalalignment','middle','fontsize',fs);
+% % % % text(mutlCmpX,mutlCmpY-yStep*3,'Others N.S.','horizontalalignment','left',...
+% % % %     'verticalalignment','middle','fontsize',fs);
 
 % addFigureLabels(h);
 % setFig('','',2); % not sure if this is needed?
