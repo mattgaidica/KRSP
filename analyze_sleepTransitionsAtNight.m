@@ -130,7 +130,7 @@ for iPlot = 1:2
     if iPlot == 2
         xlabel("Rel. to Solar Noon (hours)");
     end
-    ylabel('Julian Day of Year');
+    ylabel('Day of Year');
     c = colorbar;
     
     if iPlot == 1

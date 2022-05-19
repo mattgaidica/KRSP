@@ -1,3 +1,4 @@
+cd '/Users/matt/Documents/MATLAB/KRSP';
 loadPath = '/Users/matt/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
 sqkey = readtable('sqkey.txt');
 longevity = readtable(fullfile(pwd,'R','krsp_longevity.csv'));

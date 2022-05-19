@@ -1,3 +1,7 @@
-function cmap = jupiter
+function cmap = jupiter(varargin)
 cmapPath = '/Users/matt/Documents/MATLAB/Development/ChoiceTask/LFPs/utils/jupiter.jpg';
-cmap = mycmap(cmapPath);
+if ~isempty(varargin) % set nColors
+    cmap = mycmap(cmapPath,varargin{1});
+else
+    cmap = mycmap(cmapPath);
+end
