@@ -1,33 +1,23 @@
 %% !RUNFIG! turn on figure; setup in predict_awake.m
 close all
-ff(1000,900);
-doSave = 1;
+ff(500,900);
+doSave = 0;
 
-cols = 9 + 1 + 8; % =18, col10 is gutter
-rows = 3 + 3 + 3 + 1; % =10
+cols = 9;
+rows = 12;
 figs = {};
-figs{1} = [1:9 19:27 37:45];
-figs{2} = [55:63 73:81 91:99];
-figs{3} = [109:117 127:135 145:153];
-figs{4} = 163:171;
-
-figs{5} = [11:14 29:32];
-figs{6} = figs{5} + 4;
-figs{7} = figs{5} + 36;
-figs{8} = figs{6} + 36;
-figs{9} = figs{7} + 36;
-figs{10} = figs{8} + 36;
-figs{11} = figs{9} + 36;
-figs{12} = figs{10} + 36;
-figs{13} = figs{11} + 36;
-figs{14} = figs{12} + 36;
+figs{1} = 1:36;
+figs{2} = 37:72;
+figs{3} = 73:99;
+figs{4} = 100:108;
 
 contQB = 5; % minutes
 gcaFontSize = 12;
+titleFontMult = 1.25;
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 
-%% !RUNFIG!, set do=1 to recompute, MEAN AND PROBABILITY QB HEATMAP
-leftPanelPos = [1 1 1 0.85];
+%% !RUNFIG! (1/3) MEAN AND PROBABILITY QB HEATMAP, set do=1 once to recompute
+leftPanelPos = [1.2 1 0.97 0.8];
 windowSize = 7;
 seasonBins = round(linspace(1,366,60));
 yearDoys = 1:366;
@@ -45,8 +35,6 @@ for iBin = 1:numel(seasonBins)
 end
 seasonTicks = {'Winter','Spring','Summer','Autumn'};
 
-% % % % close all
-% % % % h = ff(800,600);
 clc
 if do
     do = 0;
@@ -103,10 +91,9 @@ if do
 end
 
 for iPlot = 1:2
-% % % %     subplot(2,1,iPlot);
     subplot(rows,cols,figs{iPlot});
     pos = get(gca,'Position');
-    set(gca,'Position',pos.*leftPanelPos + [0 0.05 0 0]);
+    set(gca,'Position',pos.*leftPanelPos);
     
     xSolarNoon = linspace(-12,12,size(squeeze(allTransHist(iPlot,:,:)),2));
     pcolor(xSolarNoon,seasonBins,squeeze(allTransHist(iPlot,:,:)));
@@ -126,27 +113,23 @@ for iPlot = 1:2
         useyticklabels{yidx} = seasonTicks{iSeason};
     end
     yticklabels(useyticklabels);
-    set(gca,'fontsize',gcaFontSize);
-    if iPlot == 2
-        xlabel("Rel. to Solar Noon (hours)");
-    end
+    set(gca,'fontsize',gcaFontSize,'TitleFontSizeMultiplier',titleFontMult);
+    xlabel("Rel. to Solar Noon (hours)");
     ylabel('Day of Year');
     c = colorbar;
     
     if iPlot == 1
-        title('QB Duration');
+        title('Median QB Duration');
         ylabel(c,'Minutes','fontsize',gcaFontSize);
-        %         caxis([0 25]);
         caxisauto(squeeze(allTransHist(iPlot,:,:)),1)
     else
-        title('Consolidated QB');
+        title('Consolidated QB Probability');
         ylabel(c,'Probability','fontsize',gcaFontSize);
-        %         caxis([0.002 .014]);
         caxisauto(squeeze(allTransHist(iPlot,:,:)),1)
     end
     
     %     caxis(caxis*0.8) % amplify colors
-    text(0,300,'No Data','verticalalignment','middle','horizontalalignment','center','fontsize',gcaFontSize);
+    text(0,295,'No Data','verticalalignment','middle','horizontalalignment','center','fontsize',gcaFontSize);
     
     hold on;
     plot(allSunrise,seasonBins,'color',[1 1 1 0.6],'linewidth',4);
@@ -154,17 +137,12 @@ for iPlot = 1:2
     hold off;
 end
 
-% % % % if doSave
-% % % %     print(gcf,'-painters','-depsc',fullfile(exportPath,'QBTransitions.eps')); % required for vector lines
-% % % %     saveas(gcf,fullfile(exportPath,'QBTransitions.jpg'),'jpg');
-% % % %     close(gcf);
-% % % % end
-
-%% !RUNFIG! (1/3) Probability Density histograms
+%% !RUNFIG! (2/3) Probability Density histograms
 nBins_sd = 9; % mins
 showMinutes = 60;
 ssBeforeAfterPad = 30; % minutes
 maxY = 0.25;
+leftPanelPos = [1 1 1 0.7];
 
 % % % % close all
 % % % % h = ff(450,250);
@@ -248,7 +226,8 @@ for iSeason = 1:4
         % % % %         binsSmooth = equalVectors(binEdges,overSample);
         % % % %         locs = peakseek(countsSmooth);
         % % % %         maxBin = binsSmooth(locs(end));
-        % % % %         text(17,maxY-iSeason*0.015,strcat(sprintf('%s: %1.2f',seasonLabels{iSeason}(1:2),maxBin),'\rightarrow'),'horizontalalignment','right','fontsize',12,'color',colors(iSeason,:));
+        % % % %         text(17,maxY-iSeason*0.015,strcat(sprintf('%s: %1.2f',seasonLabels{iSeason}(1:2),maxBin),'\rightarrow'),...
+        % % % %         'horizontalalignment','right','fontsize',12,'color',colors(iSeason,:));
         
         %         xline(median(sleepDurations),':','lineWidth',4,'color',colors(iSeason,:));
         % % % %         xline(maxBin,':','lineWidth',2,'color',colors(iSeason,:));
@@ -257,7 +236,9 @@ for iSeason = 1:4
     end
 end
 
-set(gca,'fontsize',gcaFontSize);
+set(gca,'fontsize',gcaFontSize,'TitleFontSizeMultiplier',titleFontMult);
+pos = get(gca,'Position');
+set(gca,'Position',pos.*leftPanelPos);
 xlabel('QB Duration (minutes)');
 ylabel('Probability');
 ylim([0 maxY]);
@@ -273,8 +254,8 @@ hold off;
 % % % %     close(h);
 % % % % end
 
-%% (2/3) setup pMat_sd
-nSurr = 1000;
+%% (3/3) setup pMat_sd
+nSurr = 100;
 if ~exist('pMat_sd','var')
     clc
     pMat_sd = NaN(4,4,size(countsMat,2));
@@ -326,16 +307,20 @@ for iBin = 1:size(pMat_sd,3)
     set(gca,'fontsize',gcaFontSize-4);
     set(gca,'ydir','normal')
     pos = get(gca,'Position');
-    set(gca,'Position',pos.*[1 1 0.9 0.6]+[0 -0.014 0 0]);
+    set(gca,'Position',pos.*[1 1 0.9 0.6]+[0 -0.03 0 0]);
 end
 cb = cbAside(gca,'p','k');
 cb.TickLabels = [0 0.05];
 cb.FontSize = gcaFontSize-2;
-% % % % if doSave
-% % % %     print(gcf,'-painters','-depsc',fullfile(exportPath,'DarkQBDuration_pMat.eps')); % required for vector lines
-% % % %     saveas(gcf,fullfile(exportPath,'DarkQBDuration_pMat.jpg'),'jpg');
-% % % %     close(h);
-% % % % end
+
+if doSave
+    %         print(gcf,'-painters','-depsc',fullfile(exportPath,'ConsolidatedQB.jpg')); % required for vector lines
+    saveas(gcf,fullfile(exportPath,'ConsolidatedQB.jpg'),'jpg');
+    close(gcf);
+end
+
+%% BELOW ARE TRANSITION PLOTS
+
 %% SOL_T table setup and visualization (1/3), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
 if do
     do = 0;
