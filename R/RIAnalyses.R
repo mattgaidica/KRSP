@@ -122,6 +122,7 @@ emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 #n_noMast<-subset(n,n$season!=1)
 #n_noMast<-subset(n_noMast,n$season!=2)
 #n_noMast<-subset(n_noMast,n$season!=3)
+# see: /Users/matt/Documents/MATLAB/KRSP/xcorrAsleep.m
 n_onlyAutumn<-subset(n,n$season!=1)
 n_onlyAutumn<-subset(n_onlyAutumn,n$season!=2)
 n_onlyAutumn<-subset(n_onlyAutumn,n$season!=3)

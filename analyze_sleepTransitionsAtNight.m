@@ -2,6 +2,7 @@
 close all
 ff(500,900);
 doSave = 0;
+doMast = 0; % all: [0,1]
 
 cols = 9;
 rows = 12;
@@ -50,7 +51,15 @@ if do
             all_durations = [];
 
             for iSq = uniqueSqs % must extract by recording to ensure durations are properly computed
-                theseSleepTrans = find(trans_to==0 & ismember(trans_on,theseDoys) & trans_is==iSq); %  & ~ismember(trans_yr,[2014,2019])
+                mastFilt = zeros(size(trans_to));
+                if ismember(1,doMast)
+                    mastFilt = mastFilt | ismember(trans_yr,[2014,2019]);
+                end
+                if ismember(0,doMast)
+                    mastFilt = mastFilt | ismember(trans_yr,[2015:2018,2020]);
+                end
+                
+                theseSleepTrans = find(trans_to==0 & ismember(trans_on,theseDoys) & trans_is==iSq & mastFilt); %  & ~ismember(trans_yr,[2014,2019])
                 if numel(theseSleepTrans) > windowSize * 200
                     allEntries = find(trans_is==iSq);
                     % must end with awake transition to get time
@@ -85,9 +94,11 @@ if do
             counts = counts(2:end-1); % rm edges
             binShift = round(((86400/2) - mean(secDay(Tss.noon(theseDoys)))) / (86400/nDayBins));
             allTransHist(iPlot,iBin,:) = circshift(counts,binShift);
-            disp(iBin);
+            fprintf('%i/%i season bins\n',iBin,numel(seasonBins));
         end
     end
+else
+    disp('Transitions not recomputed (do=0)');
 end
 
 for iPlot = 1:2
@@ -158,11 +169,16 @@ for iSeason = 1:4
     sleepDurations = [];
     transStarts = [];
     for iSq = uniqueSqs
-        theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason}));
+%         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason}));
         
-        % mast: [2014,2019], nmast: [2015:2018,2020]
-        %         theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason})...
-        %             & ismember(trans_yr,[2014,2019]));
+        mastFilt = zeros(size(trans_to));
+        if ismember(1,doMast)
+            mastFilt = mastFilt | ismember(trans_yr,[2014,2019]);
+        end
+        if ismember(0,doMast)
+            mastFilt = mastFilt | ismember(trans_yr,[2015:2018,2020]);
+        end
+        theseSleepTrans = find(trans_is==iSq & trans_to==0 & ismember(trans_on,useDoys{iSeason}) & mastFilt);
         
         % START light/dark transitions
         if ~isempty(theseSleepTrans)
@@ -216,6 +232,7 @@ for iSeason = 1:4
             text(contQB,maxY-0.02,' consolidated \rightarrow','horizontalalignment','left','fontsize',gcaFontSize);
         end
         histogram(sleepDurations,binEdges_sd,'Normalization','probability','EdgeColor',colors(iSeason,:),'DisplayStyle','Stairs','lineWidth',4,'EdgeAlpha',0.75);
+        hold on;
         lns(iSeason) = plot(-1,-1,'-','lineWidth',3,'color',colors(iSeason,:));
         counts = histcounts(sleepDurations,binEdges_sd,'Normalization','probability');
         countsMat(iSeason,:) = counts;

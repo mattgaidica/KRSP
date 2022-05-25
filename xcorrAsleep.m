@@ -109,7 +109,7 @@ for iSq = 1:size(sq_xcorr,1)
         midden_cones.year == sq_xcorr_yrs(iSq));
     if ~isempty(middenId)
         all_RI_MiddenCones(iSq) = midden_cones.cache_size_total(middenId);
-        all_RI_MiddenConesDiff(iSq) = midden_cones.cache_size_new(middenId) - midden_cones.cache_size_old(middenId);
+        all_RI_MiddenConesDiff(iSq) = midden_cones.cache_size_new(middenId);% - midden_cones.cache_size_old(middenId);
     end
     trappingIds = find(trapping.squirrel_id == sq_xcorr_squirrel_ids(iSq) & trapping.wgt > 0);
     all_RI_TrapsLife(iSq) = numel(trappingIds);
