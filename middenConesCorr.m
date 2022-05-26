@@ -85,5 +85,9 @@ for iPlot = 1:numel(plotLabels)
     xticks(floor(min(xlim)):ceil(max(xlim)));
     text(max(xlim),min(ylim),sprintf('r^2_{adj}=%1.3f, p=%1.3f',gof.adjrsquare,p),'horizontalalignment','right','verticalalignment','bottom','color','k');
 end
+xs = [-19,-3.2892];
+ys = 16.5;
+text(xs(1),ys,'A','fontsize',24);
+text(xs(2),ys,'B','fontsize',24);
 
 saveas(gcf,fullfile(exportPath,'NewMiddenCones_vs_X_grid.jpg'),'jpg');
