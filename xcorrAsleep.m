@@ -109,7 +109,9 @@ for iSq = 1:size(sq_xcorr,1)
         midden_cones.year == sq_xcorr_yrs(iSq));
     if ~isempty(middenId)
         all_RI_MiddenCones(iSq) = midden_cones.cache_size_total(middenId);
-        all_RI_MiddenConesDiff(iSq) = midden_cones.cache_size_new(middenId);% - midden_cones.cache_size_old(middenId);
+        if midden_cones.cache_size_new(middenId) > 0
+            all_RI_MiddenConesDiff(iSq) = midden_cones.cache_size_new(middenId);% - midden_cones.cache_size_old(middenId);
+        end
     end
     trappingIds = find(trapping.squirrel_id == sq_xcorr_squirrel_ids(iSq) & trapping.wgt > 0);
     all_RI_TrapsLife(iSq) = numel(trappingIds);
@@ -162,8 +164,9 @@ RITable.season = all_RI_Seasons';
 RITable.longevity = normalize(all_RI_Longevity');
 RITable.age = normalize(all_RI_Age');
 RITable.grid_cone_index = normalize(all_RI_GridConeIndex');
-RITable.midden_cones = normalize(all_RI_MiddenCones');
-RITable.midden_cones_diff = normalize(all_RI_MiddenConesDiff');
+RITable.midden_cones = normalize(all_RI_MiddenCones'); % probably useless
+RITable.midden_cones_diff(find(mastTable)) = normalize(all_RI_MiddenConesDiff(find(mastTable))');
+RITable.midden_cones_diff(find(~mastTable)) = normalize(all_RI_MiddenConesDiff(find(~mastTable))');
 RITable.traps_life = normalize(all_RI_TrapsLife');
 RITable.traps_rec = normalize(all_RI_TrapsRec');
 RITable.trap_wgt = normalize(all_RI_RecWeight');
