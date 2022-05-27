@@ -2,7 +2,15 @@
 close all
 ff(1000,450);
 doSave = 0;
-doMast = [1]; % all: [0,1]
+doMast = [0,1]; % all: [0,1]
+% alternatively, manually set do=1 then resave these
+if numel(doMast) > 1
+    load('allTransHist');
+elseif sum(doMast) == 1
+    load('allTransHist_mast');
+else
+    load('allTransHist_nonmast');
+end
 
 cols = 5;
 rows = 2;
