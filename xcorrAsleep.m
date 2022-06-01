@@ -356,10 +356,11 @@ upconf = vcrit/sqrt(L);
 
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
-ff(700,1100);
-for iZoom = 1:2
+ff(650,500);
+for iZoom = 1%:2 RM ZOOM
     for iSeason = 1:4
-        subplot(4,2,prc(2,[iSeason,iZoom]));
+% %         subplot(4,2,prc(2,[iSeason,iZoom])); RM ZOOM
+        subplot(2,2,iSeason);
         useIds = ismember(sq_xcorr_doys,useDoys{iSeason});
         xcorrMean = mean(sq_xcorr(useIds,:));
         xcorrStd = std(sq_xcorr(useIds,:));
@@ -439,9 +440,7 @@ for iZoom = 1:2
         end
         xtickangle(60)
         set(gca,'fontsize',14);
-        if iSeason == 4
-            xlabel('Lag (hrs)');
-        end
+        xlabel('Lag (hrs)');
         if iZoom == 1
             ylabel('Autocorrelation');
         end
@@ -449,7 +448,7 @@ for iZoom = 1:2
     end
 end
 
-doSave = 1;
+doSave = 0;
 if doSave
     print(gcf,'-painters','-depsc',fullfile(exportPath,'sleepRhythmicity.eps')); % required for vector lines
     saveas(gcf,fullfile(exportPath,'sleepRhythmicity.jpg'),'jpg');

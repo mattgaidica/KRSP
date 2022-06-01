@@ -120,13 +120,14 @@ fprintf('nest-sleep fit: r = %1.2f, p = %1.2e\n',r,p);
 
 %%
 % try separating by mast
-h2 = ff(330,300);
+% h2 = ff(330,300);
+axes('Position',[.51 .175 .1 .25]);
 lns = [];
 for iMast = 0:1
-    useMarkerSize = 7;
+    useMarkerSize = 4;
     if iMast == 1
         useMarker = '.';
-        useMarkerSize = 15;
+        useMarkerSize = 5;
     else
         useMarker = 'o';
     end
@@ -150,16 +151,19 @@ ci = confint(f);
 plot(xlim,[ci(1,1)*min(xlim)+ci(1,2),ci(1,1)*max(xlim)+ci(1,2)],'k:');
 plot(xlim,[ci(2,1)*min(xlim)+ci(2,2),ci(2,1)*max(xlim)+ci(2,2)],'k:');
 box off;
-legend(lns,{'Non-mast','Mast'},'location','southeast','fontsize',20);
-if doSave
-%     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
-    saveas(h2,fullfile(exportPath,'nestSleepOverlap_inset.eps'),'epsc');
-    saveas(h2,fullfile(exportPath,'nestSleepOverlap_inset.jpg'),'jpg');
-    close(h2);
-end
+set(gca,'color','none');
+lgn = legend(lns,{'Non-mast','Mast'},'location','southeast','fontsize',8,'box','off');
+pos = lgn.Position;
+lgn.Position = pos.*[1.03 1 1 1];
+% % % % if doSave
+% % % % %     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
+% % % %     saveas(h2,fullfile(exportPath,'nestSleepOverlap_inset.eps'),'epsc');
+% % % %     saveas(h2,fullfile(exportPath,'nestSleepOverlap_inset.jpg'),'jpg');
+% % % %     close(h2);
+% % % % end
 
 %% season_residuals
-figure(h);
+% % % % figure(h);
 
 resBins = linspace(-1.5,1.5,10);
 subplot_tight(1,3,3,subplotMargins);
@@ -214,6 +218,11 @@ text(mean(season_residuals{3}),0.5,'*** ','color',colors(3,:),'horizontalalignme
 % addFigureLabels(h);
 % setFig('','',2); % not sure if this is needed?
 set(h,'PaperPositionMode','auto');
+xs = [-9.7526,-5.8047,-1.9401]-.1;
+ys = 0.7365;
+text(xs(1),ys,'A','fontsize',24);
+text(xs(2),ys,'B','fontsize',24);
+text(xs(3),ys,'C','fontsize',24);
 
 if doSave
 %     print(gcf,'-painters','-depsc',fullfile(exportPath,'nestSleepOverlap.eps'));
