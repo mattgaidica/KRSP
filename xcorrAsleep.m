@@ -237,7 +237,8 @@ doSave = 0;
 ylims = [0 0.35];
 months =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',366);
-h = ff(400,300);
+h = ff(400,700);
+subplot(211);
 % [sort_RI,I] = sort(all_RI);
 [sort_RI,I] = sort(all_RI_odba);
 sort_doy = sq_xcorr_doys(I);
@@ -265,6 +266,7 @@ text(mean(xlim),ylims(2)-0.025,{'\uparrow','Mast Year'},...
 xlabel('Recording Session (sorted by RI)');
 xticks([]);
 grid on;
+box off;
 c = colorbar('location','southoutside');
 colormap(colors);
 c.Limits = [0,1];
@@ -273,16 +275,19 @@ c.TickLabels = months;
 c.TickDirection = 'out';
 c.FontSize = 11;
 title('Rythmicity Index by Recording Session');
+pos = get(gca,'position');
+set(gca,'position',pos.*[1 1 1 1.10]+[0 0 0 0]);
 
-set(gcf,'PaperPositionMode','auto');
-if doSave
-    print(gcf,'-painters','-depsc',fullfile(exportPath,'rhythmicityBySession.eps')); % required for vector lines
-    saveas(gcf,fullfile(exportPath,'rhythmicityBySession.jpg'),'jpg');
-    close(gcf);
-end
+% % % % set(gcf,'PaperPositionMode','auto');
+% % % % if doSave
+% % % %     print(gcf,'-painters','-depsc',fullfile(exportPath,'rhythmicityBySession.eps')); % required for vector lines
+% % % %     saveas(gcf,fullfile(exportPath,'rhythmicityBySession.jpg'),'jpg');
+% % % %     close(gcf);
+% % % % end
 
 colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
-h = ff(400,300);
+% % h = ff(400,300);
+subplot(212);
 mast_xs = [];
 mast_ys = [];
 mast_cmap = [];
@@ -311,7 +316,7 @@ for iSeason = 1:4
 end
 bs = beeswarm(mast_xs,mast_ys,'corral_style','omit','sort_style','square','colormap',...
     mast_cmap,'overlay_style','box','MarkerFaceAlpha',1);
-ylim(ylims);
+ylim([ylims(1),ylims(2)+.05]);
 yticks(ylims(1):0.1:ylims(2));
 uniq_xs = unique(mast_xs);
 xticks(uniq_xs);
@@ -319,30 +324,19 @@ xticklabels({'Non-mast','Mast','Non-mast','Mast','Non-mast','Mast','Non-mast','M
 xtickangle(-90);
 set(gca,'fontsize',14);
 ylabel('Rythmicity Index (RI)');
+box off;
+set(gca,'YGrid','on');
+for ii = 1:4
+    text(ii,.02,seasonLabels{ii},'horizontalalignment','center','color',repmat(0.5,[1,3]));
+end
+pos = get(gca,'position');
+set(gca,'position',pos.*[1 1 1 1.10]+[0 0.025 0 0]);
+title('Rhythmicity Index vs. Non-mast or Mast Year');
 
-% get pvals from R
-% % % % hold on;
-% % % % barY = ylims(2) - 0.06;
-% % % % pvalY = ylims(2) - 0.05;
-% % % % for iSeason = 1:4
-% % % %     p = anova1(mast_ys(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),...
-% % % %         mast_xs(mast_xs == uniq_xs(iSeason*2-1) | mast_xs == uniq_xs(iSeason*2)),'off');
-% % % %     if p < 0.05
-% % % %         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[barY barY],'k-','linewidth',3);
-% % % %         text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),pvalY,sprintf('*p =\n%1.2e',p),...
-% % % %             'horizontalalignment','center','verticalalignment','bottom','fontsize',11);
-% % % %     elseif p > 0.99 % winter mast
-% % % %         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[barY barY],'color',repmat(0.75,[1,3]),'linewidth',3);
-% % % %         text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),pvalY,'N/A',...
-% % % %             'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
-% % % %     else
-% % % %         plot([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)],[barY barY],'color',repmat(0.75,[1,3]),'linewidth',3);
-% % % %         text(mean([uniq_xs(iSeason*2-1),uniq_xs(iSeason*2)]),pvalY,sprintf('p =\n%1.2e',p),...
-% % % %             'horizontalalignment','center','verticalalignment','bottom','fontsize',11,'color',repmat(0.75,[1,3]));
-% % % %     end
-% % % % end
-
-title('Rhythmicity Index Mast vs. Non-mast Years');
+xs = -0.3;
+ys = [0.89,0.425];
+text(xs,ys(1),'A','fontsize',24);
+text(xs,ys(2),'B','fontsize',24);
 
 % need to re-open in illustrator, had to reshapre artboard, select > same >
 % fill color, delete winter mast
