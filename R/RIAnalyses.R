@@ -28,7 +28,7 @@ n$preg<-as.factor(n$is_preg)
 # n_noWinter<-subset(n,n$season!=1)
 # see investigate sex correlations in run_this.m
 summary(test<-lmer(qb~season*mast+sex*season+age+I(age^2)+(1|squirrel_id),n))
-test %>% tidy %>% mutate(signif = stars.pval(p.value))
+tab_model(test)
 
 visreg(test,"sex")
 visreg(test,"sex",by="mast")
@@ -38,17 +38,27 @@ visreg(test,"age",trans=exp,partial=TRUE)
 visreg(test,"age",by='season',trans=exp,partial=TRUE)
 visreg(test,"mast",by="season")
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-emmeans(test, list(pairwise ~ season*sex), adjust = "tukey")
 # emmeans(test, list(pairwise ~ mast*sex), adjust = "tukey") # can't do, unless no winter
 
 # see if the results change for QB day or night
 summary(test<-lmer(qb_day~season*mast+age+I(age^2)+(1|squirrel_id),n))
+tab_model(test)
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 visreg(test,"age",by='season')
 
 summary(test<-lmer(qb_night~season*mast+age+I(age^2)+(1|squirrel_id),n))
+tab_model(test)
 emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 visreg(test,"age",by='season',trans=exp,partial=TRUE)
+
+summary(test<-lmer(qb_nest~season*mast+sex*season+age+I(age^2)+(1|squirrel_id),n))
+tab_model(test)
+emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
+
+# RI_odba
+summary(test<-lmer(RI_odba~season*mast+sex*season+age+I(age^2)+(1|squirrel_id),n))
+tab_model(test)
+emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 
 n_noMast<-subset(n,n$mast!=1)
 n_onlyMast<-subset(n,n$mast!=0)
@@ -78,44 +88,6 @@ visreg(test,"traps_rec");
 summary(test<-lmer(traps_rec~season*mast+sex+(1|squirrel_id),n))
 visreg(test,"sex",by="season")
 visreg(test,"sex",by="mast")
-
-# summary(test<-lmer(qb_nest~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
-# visreg(test,"sex",by="season")
-# visreg(test,"mast",by="season")
-# emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-
-visreg(test,'season')
-visreg(test,"season",by="mast")
-visreg(test,"mast",by="season")
-visreg(test,"traps_rec",by="season")
-emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-
-n$trans_all<-n$trans_day+n$trans_night
-summary(test<-lmer(trans_all~season+(1|squirrel_id),n))
-visreg(test,"season")
-emmeans(test, list(pairwise ~ season), adjust = "tukey")
-
-summary(test<-lmer(trans_all~season*mast+(1|squirrel_id),n))
-visreg(test,"mast",by="season")
-emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
-
-# removing day/night trans, too much
-# summary(test<-lmer(trans_day~season*mast+sex+age+I(age^2)++(1|squirrel_id),n))
-# visreg(test,"trans_day",by="mast")
-# visreg(test,"trans_day",by="season")
-# visreg(test,"sex",by="season")
-# visreg(test,"sex",by="mast")
-# summary(test<-lmer(trans_night~season*mast+sex+age+I(age^2)+(1|squirrel_id),n))
-# visreg(test,"trans_night",by="mast")
-# visreg(test,"trans_night",by="season")
-# visreg(test,"sex",by="season")
-# visreg(test,"sex",by="mast")
-
-# is RI associated with longevity in the same test?
-# summary(test<-lmer(RI_odba~season*mast+longevity+(1|squirrel_id),n))
-# visreg(test,"mast",by="season")
-# visreg(test,"mast",by="season")
-# emmeans(test, list(pairwise ~ season*mast), adjust = "tukey")
 
 #n_noMast<-subset(n,n$mast!=1)
 # !! currently removing seasons 1,2 for midden_cones in MATLAB, no need to do it here

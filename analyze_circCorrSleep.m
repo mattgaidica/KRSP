@@ -45,7 +45,7 @@ end
 %% sleep mean IN PAPER
 close all
 subplotMargins = [.1,0]; % [vert, horz]
-doSave = true;
+doSave = 0;
 nHalfWindow = 30;
 allDoys = 1:366;
 op = 1; %0.1; % make =1 to export, then change back to 10% in illustrator
@@ -62,8 +62,8 @@ for iSun = 1:2
         shiftDoys = circshift(allDoys,-iDoy+1+nHalfWindow);
         theseDoys = shiftDoys(1:nHalfWindow*2+1);
         useIds = find(ismember(sq_doys,theseDoys));% & ismember(sq_sex,iSex));
-        sunrises(iDoy) = round(mean(secDay(Tss.sunrise(ismember(Tss.doy,theseDoys))),1)/60); % minutes
-        sunsets(iDoy) = round(mean(secDay(Tss.sunset(ismember(Tss.doy,theseDoys))),1)/60);
+        sunrises(iDoy) = round(mean(secDay(Tss.sunrise(ismember(Tss.doy,theseDoys))),1) / 60); % minutes
+        sunsets(iDoy) = round(mean(secDay(Tss.sunset(ismember(Tss.doy,theseDoys))),1) / 60);
         if numel(useIds) > 1
             % data comes in uncentered
             if iSun == 1
@@ -80,6 +80,8 @@ for iSun = 1:2
     colors = seasonColors(1:366);
     modR = 0;
     
+% % % %     sunrises = round(imgaussfilt(sunrises,100,'padding','circular'));
+% % % %     sunsets = round(imgaussfilt(sunsets,100,'padding','circular'));
     for iDoy = circshift(1:366,0) % for color overlay
         polarTime = linspace(0,2*pi,size(theseAsleep_mean,2));
         polarplot(polarTime,theseAsleep_mean(iDoy,:),'color',[colors(iDoy,:),op],'linewidth',2);

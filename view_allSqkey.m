@@ -1,6 +1,6 @@
 if do
     sqkey = readtable('sqkey');
-    filePath = '/Users/matt/Box Sync/KRSP Axy Data/Temp';
+    filePath = '/Users/matt/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
     % constant datetime x-axis?
     
     xs = zeros(size(sqkey,1),1);
@@ -50,22 +50,27 @@ if do
 end
 
 
-% close all;
+close all;
+colors = lines(5); % females = 4, males = 5
 rows = 3;
 cols = 2;
-ff(900,800,2);
+ff(600,700,2);
 subplot(rows,cols,[1,2]);
 ms = 5;
-plot(F_scatt_x,F_scatt_y,'m.','markersize',ms);
+plot(F_scatt_x,F_scatt_y,'.','markersize',ms,'color',colors(4,:));
 hold on;
-plot(M_scatt_x,M_scatt_y,'b.','markersize',ms);
+plot(M_scatt_x,M_scatt_y,'.','markersize',ms,'color',colors(5,:));
 ylim([1 sqCount]);
 xlim([1 366]);
 xlabel('day of year');
-ylabel('squirrel');
+ylabel('rec. session');
 set(gca,'fontsize',14);
-title(sprintf('%i squirrels (%iF + %iM), %i rec days',sqCount,...
-    numel(unique(F_scatt_y)),numel(unique(M_scatt_y)),numel(M_scatt_x)+numel(F_scatt_y)));
+title(sprintf('%i recording sessions, %i recording days',sqCount,numel(M_scatt_x)+numel(F_scatt_y)));
+grid on;
+lns = [];
+lns(1) = plot(-100,-100,'.','markersize',25,'color',colors(4,:));
+lns(2) = plot(-100,-100,'.','markersize',25,'color',colors(5,:));
+legend(lns,'Female','Male','location','southeast','box','off');
 
 lw = 2;
 subplot(rows,cols,[3,4]);
@@ -76,19 +81,21 @@ nFLac = histcounts(F_scattLac_x,binEdges);
 nFPreg = histcounts(F_scattPreg_x,binEdges);
 plot(1:366,nM+nF,'-k','linewidth',lw);
 hold on;
-plot(1:366,nF,'-m','linewidth',lw);
-plot(find(nFLac~=0),nFLac(nFLac~=0),'xm');
-plot(find(nFPreg~=0),nFPreg(nFPreg~=0),'om');
-plot(1:366,nM,'-b','linewidth',lw);
-ylabel('rec days');
+plot(1:366,nF,'-','linewidth',lw,'color',colors(4,:));
+plot(find(nFLac~=0),nFLac(nFLac~=0),'x','color',colors(4,:));
+plot(find(nFPreg~=0),nFPreg(nFPreg~=0),'o','color',colors(4,:));
+plot(1:366,nM,'-','linewidth',lw,'color',colors(5,:));
+ylabel('rec. days');
 xlabel('day of year');
 xlim([1 366]);
 set(gca,'fontsize',14);
 legend({'Total','Female','\rightarrowLactating','\rightarrowPregnant','Male'},'location','northwest');
 legend box off;
+grid on;
 
 % F/M histograms per-year
 sexKey = {'F','M'};
+sexLabels = {'Female','Male'};
 for ii = 1:2
     subplot(rows,cols,ii+4);
     squirrels = strcmp(sqkey.sex,sexKey{ii});
@@ -96,8 +103,11 @@ for ii = 1:2
     years = sqkey.year(squirrels&files);
     n = histcounts(years,2013.5:1:2020.5);
     bar(2014:2020,n,'k');
-    title(sprintf([sexKey{ii},', n = %i'],sum(n)));
+    title(sprintf([sexLabels{ii},' (n = %i)'],sum(n)));
     ylim([0 70]);
     set(gca,'fontsize',14);
     xtickangle(30);
+    grid on;
+    ylabel('recording sessions');
 end
+saveas(gcf,fullfile(exportPath,'KRSP_axyDataCoverage.jpg'),'jpg');
