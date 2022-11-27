@@ -22,7 +22,7 @@ if do
         ms = 35;
         rows = 2;
         cols = 1;
-        close all
+        close all 
         psSec = 0.00; % sec
         mnLabels = {'Sunrise','Sunset'};
     end
@@ -87,6 +87,8 @@ if do
                 
                 set(gca,'fontsize',gcaFontSize);
                 title(sprintf('Rel. to %s, iRec = %04d',mnLabels{iSun},iRec));
+            end
+     
                 legend([ln1,ln2,ln3,ln4],{'QB','normpdf','QB × normpdf','Nest'},'Autoupdate','off');
                 m1 = [];
                 m2 = [];
