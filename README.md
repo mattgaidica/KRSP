@@ -2,7 +2,7 @@ __Data Analysis Steps — Studd data__
 
 These data are on the remote desktop (and Box).
 
-1. Run `compile_odba(filespath,'')` from the remote desktop on the top-most directory (it performs a recursive search for all `.csv` files. This generates `.mat` files with decimated date, ODBA, and temp data.
+1. Run `compile_odba(filespath,'')` from the remote desktop on the top-most directory (it performs a recursive search for all `.csv` files). This generates `.mat` files with decimated date, ODBA, and temp data.
 2. Copy all the generated `.mat` files (e.g., use the filter bar on the top-most directory: `*.mat`); place those files in `Box > Temp` (or separate directory) for analysis.
 
 __Data Analysis Steps — Westrick data__

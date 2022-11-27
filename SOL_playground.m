@@ -286,6 +286,17 @@ for ii = 1:numel(sqKeyArr_un)
 end
 badIds = sqKeyArr_un(fracBad > .5);
 fprintf("bad: %s\n",compose("%i",badIds));
+
+%% ^plot bad ids
+for ii = 1:numel(badIds)
+    useIds = find(sq_sqkeyrow == badIds(ii));
+    ff(1200,300);
+    for jj = 1:numel(useIds)
+        plot(sq_odba(useIds(jj),:),'k');
+        hold on;
+    end
+    hold on;
+end
 % bad: 392
 % bad: 393
 % bad: 394
