@@ -15,10 +15,12 @@ useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
 sTitles = {'Winter','Spring','Summer','Autumn'};
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
 seasonLookup = {};
+seasonIndex = [];
 for ii = 1:366
     for jj = 1:4
         if ismember(ii,useDoys{jj})
             seasonLookup{ii} = seasonLabels(jj);
+            seasonIndex(ii) = jj;
         end
     end
 end
