@@ -1,6 +1,5 @@
 % setup in predict_awake.m
 % SOL_T table setup and visualization (1/3), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
-do=1
 doSave = 1;
 doDebug = 1;
 gcaFontSize = 12;
