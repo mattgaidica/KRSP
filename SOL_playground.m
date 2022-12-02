@@ -1,3 +1,5 @@
+% T_SOL = readtable('T_SOL');
+%%
 % close all
 ff(1200,800);
 titleLabels = {'Sunrise SOL','Sunset SOL'};
@@ -31,10 +33,11 @@ end
 % close all
 useMonths =  {'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'};
 titleLabels_sol = {'Sunrise SOL','Sunset SOL'};
-ff(1000,400);
-reqSessions = 3;
-rows = 1;
-cols = 3;
+ff(1000,1000);
+reqSessions = 2;
+nSmooth = 2;
+rows = 2;
+cols = 2;
 colors = lines(7);
 sleepWakeColors = colors([5,7],:);
 seasonColors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
@@ -50,17 +53,22 @@ for iSun = 1:2
     for iDoy = 1:366
         doyArr = circshift(1:366,-iDoy+windowHalfSize);
         useDoys = doyArr(1:windowHalfSize*2);
-        useIds = find(T_SOL.isSunrise == sunriseKey(iSun) & ismember(T_SOL.doy,useDoys) & ismember(T_SOL.is_mast,[0,1]));
+        useIds = find(T_SOL.isSunrise == sunriseKey(iSun) & ismember(T_SOL.doy,useDoys) &...
+            ismember(T_SOL.is_mast,[0,1]) & T_SOL.sex == 1 & T_SOL.SOL < 200);
         if numel(useIds) > reqSessions - 1
             SOL_med(iDoy) = median(T_SOL.SOL(useIds),1);
             SOL_std(iDoy) = std(T_SOL.SOL(useIds),1);
-            sleepWake_med(iDoy) = median(mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2));
+            if iSun == 1 % sunrise
+                sleepWake_med(iDoy) = median(T_SOL.asleepIdx(useIds));
+            else
+                sleepWake_med(iDoy) = median(T_SOL.awakeIdx(useIds));
+            end
         end
     end
     theta = linspace(0,2*pi,366);
     %     polarplot(theta,SOL_med,'color',repmat(0.7,[4,1]),'linewidth',1);
     %     hold on;
-    smoothMedSOL = imgaussfilt(SOL_med,3,'padding','circular'); % center about 0
+    smoothMedSOL = imgaussfilt(SOL_med,nSmooth,'padding','circular'); % center about 0
     for iSeason = 1:4
         polarplot((theta(seasonCell{iSeason})),repmat(nanmean(smoothMedSOL(seasonCell{iSeason})),...
             size(seasonCell{iSeason})),'color',[seasonColors(iSeason,:),0.4],'linewidth',15);
@@ -78,17 +86,19 @@ for iSun = 1:2
     pax.ThetaDir = 'clockwise';
     pax.FontSize = 14;
     grid on;
+    legend({'Winter','Spring','Summer','Autumn','Raw'},'location','eastoutside');
     
-    subplot(rows,cols,3);
-    smoothSleepWakeMed = imgaussfilt(sleepWake_med,3,'padding','circular'); % center about 0
+    subplot(rows,cols,3:4);
+    if iSun == 1
+        polarplot(theta,repmat(720,[1,366]),'color','k','linewidth',1);
+        hold on;
+    end
+    smoothSleepWakeMed = imgaussfilt(sleepWake_med,nSmooth,'padding','circular'); % center about 0
     polarplot(theta,smoothSleepWakeMed,'color',sleepWakeColors(iSun,:),'linewidth',3);
-    hold on;
-    polarplot(theta,repmat(720,[1,366]),'color','k','linewidth',1);
-    hold on;
     title('Sleep/Wake Timing');
     rticks(720);
     rticklabels([]);
-    rlim([720-360 720+160]);
+    rlim([720-400 720+160]);
     pax = gca;
     pax.ThetaTick = linspace(0,360,13);
     pax.ThetaTickLabels = useMonths;
@@ -96,6 +106,7 @@ for iSun = 1:2
     pax.ThetaDir = 'clockwise';
     pax.FontSize = 14;
     grid on;
+    legend({'Sunrise/Sunset','Wake','Sleep'},'location','eastoutside');
 end
 %% how consistent are SOLs for an individual rec session?
 SOLs = [];
@@ -259,7 +270,7 @@ SOLArr = [];
 colorsArr = [];
 sqKeyArr = [];
 recCount = 0;
-useIds = find(T_SOL.isSunrise == 1 & T_SOL.firstEE-720 < -300);
+useIds = find(T_SOL.isSunrise == 0 & T_SOL.SOL > 300 & T_SOL.sex == 1);
 for ii = 1:numel(useIds)
     recCount = recCount + 1;
     EEArr(recCount) = T_SOL.firstEE(useIds(ii));
@@ -267,22 +278,24 @@ for ii = 1:numel(useIds)
     colorsArr(recCount,:) = seasonColors(T_SOL.season(useIds(ii),:),:);
     sqKeyArr(recCount) = T_SOL.sq_key_id(useIds(ii));
 end
-% % close all
-% % ff(600,400);
-% % scatter(EEArr-720,SOLArr,5,colorsArr,'filled');
-% % text(EEArr-720,SOLArr,compose('%i',sqKeyArr));
+close all
+ff(600,400);
+scatter(EEArr-720,SOLArr,5,colorsArr,'filled');
+text(EEArr-720,SOLArr,compose('%i',sqKeyArr));
 
 clc
 sqKeyArr_un = unique(sqKeyArr);
 fracBad = [];
 for ii = 1:numel(sqKeyArr_un)
-    useIds = find(T_SOL.isSunrise == 1 & T_SOL.sq_key_id == sqKeyArr_un(ii));
+    useIds = find(T_SOL.isSunrise == 0 & T_SOL.sq_key_id == sqKeyArr_un(ii));
     eeArr = [];
+    solArr = [];
     for jj = 1:numel(useIds)
         eeArr(jj) = T_SOL.firstEE(useIds(jj))-720;
+        solArr(jj) = T_SOL.SOL(useIds(jj));
     end
-    fracBad(ii) = sum(eeArr < -200) / numel(eeArr);
-    fprintf("sqKeyId %i: %i/%i\n",sqKeyArr_un(ii),sum(eeArr < -200),numel(eeArr));
+    fracBad(ii) = sum(solArr > 300) / numel(solArr);
+    fprintf("sqKeyId %i: %i/%i\n",sqKeyArr_un(ii),sum(solArr > 300),numel(eeArr));
 end
 badIds = sqKeyArr_un(fracBad > .5);
 fprintf("bad: %s\n",compose("%i",badIds));
@@ -292,7 +305,7 @@ for ii = 1:numel(badIds)
     useIds = find(sq_sqkeyrow == badIds(ii));
     ff(1200,300);
     for jj = 1:numel(useIds)
-        plot(sq_odba(useIds(jj),:),'k');
+        plot(sq_odba(useIds(jj),:));
         hold on;
     end
     hold on;

@@ -1,14 +1,17 @@
 % setup in predict_awake.m
 % SOL_T table setup and visualization (1/3), see also: /Users/matt/Documents/MATLAB/KRSP/analyze_circCorrSleep.m
+do=1
 doSave = 1;
-doDebug = 0;
+doDebug = 1;
 gcaFontSize = 12;
 colors = lines(5);
+useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
+    seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
 
 if do
     do = 0;
     close all
-    nSmooth = 10; % minutes
+    nSmooth = 20; % minutes
     alpha = 0.2;
     x = linspace(-3,3,1440);
     mypdf = normalize(normpdf(x,0,1),'range');
@@ -16,7 +19,7 @@ if do
     T_SOL = table;
     warning ('off','all');
     iRow = 0;
-    
+   
     if doDebug
         debugPath = '/Users/matt/Downloads/debug';
         ms = 35;
@@ -43,12 +46,16 @@ if do
             end
             shiftedAsleep = circshift(sq_asleep(iRec,:),shiftBy);
             shiftedNest = circshift(sq_nest(iRec,:),shiftBy);
+            shiftedODBA = normalize(circshift(sq_odba(iRec,:),shiftBy),'range');
             
-            if std(shiftedAsleep) == 0
+            asleepRatio = sum(shiftedAsleep) / numel(shiftedAsleep);
+            ratioThresh = 0.1;
+            if asleepRatio < ratioThresh || 1-asleepRatio < ratioThresh
                 fprintf('skipping std rec%i\n',iRec);
                 continue;
             end
-            asleepNorm = normalize(imgaussfilt(shiftedAsleep,nSmooth,'Padding','circular'),'range');
+%             asleepNorm = normalize(imgaussfilt(shiftedAsleep,nSmooth,'Padding','circular'),'range');
+            asleepNorm = normalize(smoothdata(shiftedAsleep,'gaussian',nSmooth),'range');
             if iSun == 1
                 awakeNorm = -asleepNorm + 1;
             else
@@ -65,7 +72,8 @@ if do
                 ln1 = plot(asleepNorm,'k','linewidth',3);
                 hold on;
                 ln2 = plot(mypdf,':','color',repmat(0.15,[1,3]));
-                ln3 = plot(asleepNorm.*mypdf,'color',repmat(0.15,[1,3]));
+%                 ln3 = plot(asleepNorm.*mypdf,'color',repmat(0.15,[1,3])); % QB x normpdf
+                ln3 = plot(shiftedODBA,'color',repmat(0.15,[1,3]));
                 xline(720);
                 yline(alpha,'r--'); yline(1-alpha,'r--');
                 xlim([1 1440]);
@@ -86,10 +94,10 @@ if do
                 yyaxis left;
                 
                 set(gca,'fontsize',gcaFontSize);
-                title(sprintf('Rel. to %s, iRec = %04d',mnLabels{iSun},iRec));
-            end
-     
-                legend([ln1,ln2,ln3,ln4],{'QB','normpdf','QB × normpdf','Nest'},'Autoupdate','off');
+                titleString = sprintf("iRec%04d-iSq%03d-yr%03d-doy%03d-%s-%s",...
+                    iRec,sq_sqkeyrow(iRec),sq_years(iRec),sq_doys(iRec),mnLabels{iSun},seasonLookup(sq_doys(iRec)));
+                title(titleString);
+                legend([ln1,ln2,ln3,ln4],{'QB','normpdf','ODBA','Nest'},'Autoupdate','off'); % QB × normpdf
                 m1 = [];
                 m2 = [];
             end
@@ -103,7 +111,6 @@ if do
                     if doDebug
                         delete(m1);
                         m1 = plot(awakeIdx,asleepNorm(awakeIdx),'g.','markersize',ms);
-                        drawnow;
                         pause(psSec);
                     end
                     awakeIdx = awakeIdx - 1; % backtrack index until alpha
@@ -113,7 +120,6 @@ if do
                     if doDebug
                         delete(m2);
                         m2 = plot(asleepIdx,asleepNorm(asleepIdx),'r.','markersize',ms);
-                        drawnow;
                         pause(psSec);
                     end
                     asleepIdx = asleepIdx - 1;
@@ -126,7 +132,6 @@ if do
                 [~,firstEE] = closest(nestExits,mean(asleepIdx,awakeIdx)); 
                 if doDebug
                     plot([asleepIdx,awakeIdx],[asleepNorm(asleepIdx),asleepNorm(awakeIdx)],'color',repmat(0.5,[1,4]),'linewidth',10);
-                    drawnow;
                 end
             else % sunset
                 [~,asleepIdx] = closest(locs,720);
@@ -134,7 +139,6 @@ if do
                     if doDebug
                         delete(m1);
                         m1 = plot(asleepIdx,asleepNorm(asleepIdx),'r.','markersize',ms);
-                        drawnow;
                         pause(psSec);
                     end
                     asleepIdx = asleepIdx - 1;
@@ -144,7 +148,6 @@ if do
                     if doDebug
                         delete(m2);
                         m2 = plot(awakeIdx,asleepNorm(awakeIdx),'g.','markersize',ms);
-                        drawnow;
                         pause(psSec);
                     end
                     awakeIdx = awakeIdx - 1;
@@ -155,7 +158,6 @@ if do
                 end
                 if doDebug
                     plot([asleepIdx,awakeIdx],[asleepNorm(asleepIdx),asleepNorm(awakeIdx)],'color',repmat(0.5,[1,4]),'linewidth',10);
-                    drawnow;
                 end
                 % nest entrance
                 [~,firstEE] = closest(nestEntrances,mean(asleepIdx,awakeIdx));
@@ -198,7 +200,7 @@ if do
             T_SOL.sq_key_id(iRow) = sq_sqkeyrow(iRec);
         end
         if doSave && doDebug
-            saveas(gcf,fullfile(debugPath,sprintf('iRec%04d.jpg',iRec)));
+            saveas(gcf,fullfile(debugPath,titleString+'.jpg'));
             close gcf;
         end
     end
@@ -216,7 +218,7 @@ end
 % use: T_SOL = readtable('T_SOL');
 
 %% T_SOL table and p-value matrix (3/3)
-doSave = 1;
+doSave = 0;
 rowNames = {'Latency to AB','AB Rel. to Sunrise','Latency to QB','QB Rel. to Sunset'};
 varTypes = {'string','string','string','string','string','string'};
 isSunriseArr = [1,0];
@@ -325,9 +327,11 @@ end
 writematrix(mastPmat,fullfile(exportPath,'SOL_mastPmat.csv'));
 
 %% !RUNFIG! plot all seasons with mast cond
+colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
+useSex = [1];
 mastCond = {[0,1],0,1};
-mastTitle = {'',' - Non-mast',' - Mast'};
-doMast = 0; % if 0, it assumes this is part of the big plot (all conds), else, creates the supp figure
+mastTitle = {' - Both Mast',' - Non-mast',' - Mast'};
+doMast = 1; % if 0, it assumes this is part of the big plot (all conds), else, creates the supp figure
 ylims = [0.2,0.3,0.2,0.3,0.4];
 if doMast
     close all;
@@ -340,23 +344,23 @@ for iMast = 1:3
             continue;
         end
     end
-    for iSeason = 1:5
+    for iSeason = 1:5 % sseason 1 = all
         if iSeason == 1
-            useIds = find(T_SOL.isSunrise==1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            useIds = find(T_SOL.isSunrise==1 & ismember(T_SOL.is_mast,mastCond{iMast}) & ismember(T_SOL.sex,useSex));
             SOLs_sunrise = T_SOL.SOL(useIds);
             sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
             
-            useIds = find(T_SOL.isSunrise==0 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            useIds = find(T_SOL.isSunrise==0 & ismember(T_SOL.is_mast,mastCond{iMast}) & ismember(T_SOL.sex,useSex));
             SOLs_sunset = T_SOL.SOL(useIds);
             sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
             seasonLabel = 'All Seasons';
             sunriseColor = repmat(0.8,[1,3]);
         else
-            useIds = find(T_SOL.isSunrise==1 & T_SOL.season == iSeason - 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            useIds = find(T_SOL.isSunrise==1 & T_SOL.season == iSeason - 1 & ismember(T_SOL.is_mast,mastCond{iMast}) & ismember(T_SOL.sex,useSex));
             SOLs_sunrise = T_SOL.SOL(useIds);
             sunrise_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
             
-            useIds = find(T_SOL.isSunrise==0 & T_SOL.season == iSeason - 1 & ismember(T_SOL.is_mast,mastCond{iMast}));
+            useIds = find(T_SOL.isSunrise==0 & T_SOL.season == iSeason - 1 & ismember(T_SOL.is_mast,mastCond{iMast}) & ismember(T_SOL.sex,useSex));
             SOLs_sunset = T_SOL.SOL(useIds);
             sunset_means = mean([T_SOL.awakeIdx(useIds),T_SOL.asleepIdx(useIds)],2);
             seasonLabel = seasonLabels{iSeason-1};
@@ -436,8 +440,8 @@ for iMast = 1:3
     end
     
     if doMast
-        print(gcf,'-painters','-depsc',fullfile(exportPath,sprintf('%s-%s.eps','T_SOL_cleanHistograms',mastTitle{iMast}))); % required for vector lines
-        saveas(gcf,fullfile(exportPath,sprintf('%s-%s.jpg','T_SOL_cleanHistograms',mastTitle{iMast})),'jpg');
+%         print(gcf,'-painters','-depsc',fullfile(exportPath,sprintf('%s-%s.eps','T_SOL_cleanHistograms',mastTitle{iMast}))); % required for vector lines
+        saveas(gcf,fullfile(exportPath,sprintf('%s%s.jpg','T_SOL_cleanHistograms',mastTitle{iMast})),'jpg');
         close(gcf);
     end
 end

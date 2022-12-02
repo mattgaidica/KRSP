@@ -14,6 +14,15 @@ useDoys = {seasonDoys(sIds(1):sIds(2)),seasonDoys(sIds(2):sIds(3)),...
     seasonDoys(sIds(3):sIds(4)),seasonDoys(sIds(4):sIds(5))};
 sTitles = {'Winter','Spring','Summer','Autumn'};
 seasonLabels = {'Winter','Spring','Summer','Autumn'};
+seasonLookup = {};
+for ii = 1:366
+    for jj = 1:4
+        if ismember(ii,useDoys{jj})
+            seasonLookup{ii} = seasonLabels(jj);
+        end
+    end
+end
+seasonLookup = string(seasonLookup);
 clc
 if do
     weather = readtable('HainesJunction_DailyTemps_Master.csv');
