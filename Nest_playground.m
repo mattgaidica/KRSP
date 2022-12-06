@@ -7,16 +7,19 @@ if do % protect
     nestMeta = NaN(1,3);
     rowCount = 0;
     for iRec = 1:size(sq_asleep,1)
+        fprintf("iRec: %i/%i\n",iRec,size(sq_asleep,1));
         if sq_sex(iRec) == 0
+            curKey = sq_sqkeyrow(iRec); % keep tracking position
             continue;
         end
-        fprintf("iRec: %i/%i\n",iRec,size(sq_asleep,1));
+
         nestData = sq_nest(iRec,:);
         odbaData = sq_odba(iRec,:);
         
         diffNest = diff(nestData);
         nestStateChangeIds = find(ismember(diffNest,[-1,1]));
         for ii = 1:numel(nestStateChangeIds)
+            % only use 'sustained' entries/exits (based on pre/post minutes)
             if (ii == numel(nestStateChangeIds) || nestStateChangeIds(ii+1) - nestStateChangeIds(ii) >= postMinutes) && nestStateChangeIds(ii) > preMinutes
                 rowCount = rowCount + 1;
                 nestOdba(rowCount,:) = NaN(1,preMinutes+postMinutes+1);
@@ -32,61 +35,91 @@ if do % protect
     end
 end
 %% by squirrel
+seasonColors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 unSqRow = unique(nestMeta(:,3));
 stateKey = [-1,1]; % exiting, entering
 sqOdba = [];
+sqGradient = [];
 sqSeason = [];
+maxGrad = [];
+sqGradDoy = [];
 for iState = 1:2
     for iSq = 1:numel(unSqRow)
         useRows = find(nestMeta(:,1) == stateKey(iState) & nestMeta(:,3) == unSqRow(iSq));
-        theseOdba = nestOdba(useRows,:);
-        meanOdba = nanmean(theseOdba);
+        if ~isempty(useRows)
+            theseOdba = nestOdba(useRows,:);
+            meanOdba = nanmedian(theseOdba);
+            iSeason = seasonIndex(nestMeta(useRows(1),2));
+            sqSeason(iSq) = iSeason;
+            sqGradDoy(iSq) = nestMeta(useRows(1),2);
+        else
+            meanOdba = NaN(1,size(nestOdba,2));
+            sqGradDoy(iSq) = NaN;
+        end
         sqOdba(iState,iSq,:) = meanOdba;
-        iSeason = seasonIndex(nestMeta(useRows(1),2));
-        sqSeason(iSq) = iSeason;
+        sqGradient(iState,iSq,:) = gradient(meanOdba);
+        if iState == 1
+            maxGrad(iState,iSq) = max(gradient(meanOdba));
+        else
+            maxGrad(iState,iSq) = min(gradient(meanOdba));
+        end
     end
 end
 
-seasonColors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
+% close all
+% ff(1000,600);
+% for iSq = 1:size(maxGrad,2)
+%     plot(maxGrad(:,iSq),'color',[seasonColors(sqSeason(iSq),:),0.5],'linewidth',1.75);
+%     hold on;
+%     plot(1,maxGrad(1,iSq),'.','color',[seasonColors(sqSeason(iSq),:),0.5]);
+%     plot(2,maxGrad(2,iSq),'.','color',[seasonColors(sqSeason(iSq),:),0.5]);
+% end
+% xlim([1-.1 2+.1]);
+% xticks([1,2]);
+% xticklabels({'Exit','Enter'});
+% ylabel('ODBA Gradient');
+% grid on;
+
 close all
-ff(900,600);
+h1 = ff(900,900);
 nestTitles = {'Just Exited Nest','Just Entered Nest'};
-stateThresh = [];
-seasonOdba = [];
-rows = 3;
-cols = 4;
-figKey = [1,2,5,6;3,4,7,8];
+rows = 2;
+cols = 2;
 for iState = 1:2
-    subplot(rows,cols,figKey(iState,:));
+    figure(h1);
     for iSeason = 1:4
+        subplot(rows,cols,iState);
         meanOdba = squeeze(sqOdba(iState,sqSeason==iSeason,:));
-        seasonOdba(iSeason,:) = mean(meanOdba);
-        plot(seasonOdba(iSeason,:),'color',seasonColors(iSeason,:),'linewidth',3);
+        seasonOdba = nanmean(meanOdba);
+        plot(seasonOdba,'color',seasonColors(iSeason,:),'linewidth',3);
         hold on;
+        
+        xline(preMinutes+1);
+        xlim([1 preMinutes+postMinutes+1]);
+        title(nestTitles{iState});
+        grid on;
+        xlabel('minutes');
+        set(gca,'fontsize',14);
+        ylabel('ODBA');
+        
+        subplot(rows,cols,iState+2);
+        meanGradient = squeeze(sqGradient(iState,sqSeason==iSeason,:));
+        seasonGradient = nanmean(meanGradient);
+        plot(seasonGradient,'color',seasonColors(iSeason,:),'linewidth',3);
+        hold on;
+        
+        xline(preMinutes+1);
+        xlim([1 preMinutes+postMinutes+1]);
+        title(nestTitles{iState});
+        grid on;
+        xlabel('minutes');
+        set(gca,'fontsize',14);
+        ylabel('ODBA Gradient');
     end
-    xline(preMinutes+1);
-    xlim([1 preMinutes+postMinutes+1]);
-    title(nestTitles{iState});
-    grid on;
-    xlabel('minutes');
+%     [p,anovatab,stats] = anova1(decayRates,group,'off');
+%     c = multcompare(stats,'display','off');
 end
 
-for iSeason = 1:4
-    subplot(rows,cols,8+iSeason);
-    y = seasonOdba(iSeason,postMinutes-2:end)';
-    x = [1:numel(y)]';
-    [f,gof,output] = fit(x,y,'b*x^m');
-    fcoeffs = coeffvalues(f);
-    confBounds = predint(f,x,0.95);
-    plot(x,f(x),'color',seasonColors(iSeason,:),'linewidth',3);
-    hold on;
-    plot(confBounds,'-','color',seasonColors(iSeason,:));
-    ylim([0.05 0.4]);
-    grid on;
-    title(seasonLabels{iSeason});
-    legend({sprintf("m = %1.3f",fcoeffs(2))});
-    xlabel('minutes');
-end
 
 %% by state/season
 seasonColors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
@@ -136,7 +169,7 @@ for iState = 1:2
             end
             plot(meanOdba,'color',[doyColors(iDoy,:) 0.2],'linewidth',1);
             hold on;
-%             drawnow;
+            %             drawnow;
         end
     end
     xline(preMinutes+1);
