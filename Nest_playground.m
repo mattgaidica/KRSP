@@ -121,6 +121,11 @@ for iState = 1:2
 end
 
 
+
+
+
+
+%% OLD
 %% by state/season
 seasonColors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
 close all
