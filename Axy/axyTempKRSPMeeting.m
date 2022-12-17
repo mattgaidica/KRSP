@@ -4,7 +4,7 @@ if do
 end
 savePath = '/Users/matt/Dropbox (Personal)/Presentations/2022 KRSP';
 
-%% find all nest trans, plot temp
+%% find all nest trans, plot perievent temp/nest
 nMin = 60;
 windowHalfSize = 60*nMin;
 nest = strcmp(T.Nest,'Nest');
@@ -97,22 +97,29 @@ xlabel('Temp (C)');
 title('In/Out Nest by K-means');
 legend({'In Nest','Out of Nest'},'location','northwest');
 % saveas(gcf,fullfile(savePath,'temp-histograms-k-means.jpg'));
-
-%%
-colors = lines(5);
-startSample = 60*60*36;
-useSamples = 60*60*24; % hours
-x = T.X(startSample:startSample+useSamples-1);
-y = T.Y(startSample:startSample+useSamples-1);
-z = T.Z(startSample:startSample+useSamples-1);
-temp = T.temp(startSample:startSample+useSamples-1);
+%% ^histogram based on nest class (not my own k-means)
+nest = strcmp(T.Nest,'Nest');
+temp = T.temp;
 temp_filt = temp;
 temp_filt(temp==22.5) = NaN;
 temp_filt = inpaint_nans(temp_filt);
-temp_smooth = smoothdata(temp_filt,'gaussian',120);
-odba = abs(gradient(x)) + abs(gradient(y)) + abs(gradient(z));
-nest = strcmp(T.Nest(startSample:startSample+useSamples-1),'Nest');
-% nest = circshift(nest,-133);
+temp_smooth = smoothdata(temp_filt,'gaussian',60);
+ff(400,400);
+histogram(temp_smooth(nest==1),50);
+hold on;
+histogram(temp_smooth(nest==0),50);
+
+%% plot axy/temp/nest subsection
+colors = lines(5);
+startSample = 60*60*48;
+useSamples = 60*60*24; % hours
+useRange = startSample:startSample+useSamples-1;
+tempFilt = filterTemp(T,120);
+temp = tempFilt(useRange);
+odba = T.odba(useRange);
+% nest = strcmp(T.Nest(startSample:startSample+useSamples-1),'Nest');
+% [tempDelay,nestFixed] = findTempDelay(T);
+nest = nestFixed(useRange);
 
 colors = lines(5);
 t = linspace(0,useSamples/60,numel(x)); % minutes
@@ -131,7 +138,7 @@ set(gca,'fontsize',14);
 yyaxis right;
 plot(t,nest,'color',colors(5,:),'linewidth',2);
 hold on;
-plot(t,normalize(temp_smooth,'range'),'r-');
+plot(t,normalize(temp,'range'),'r-');
 set(gca,'ycolor',colors(5,:));
 set(gca,'fontsize',14);
 ylim([-.1 1.1]);
@@ -143,10 +150,3 @@ grid on;
 legend({'ODBA','Nest Class','Temp'})
 title('April 2015');
 % saveas(gcf,fullfile(savePath,'axy-temp-data-overview.jpg'));
-
-%% temp/odba xcorr
-[r,lags] = xcorr(temp_smooth,odba);
-ff(1200,400);
-plot(lags,r);
-grid on;
-d = finddelay(temp_smooth,odba);
