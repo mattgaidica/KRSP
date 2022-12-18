@@ -75,7 +75,7 @@ end
 
 %% temp histogram
 colors = lines(5);
-close all
+% close all
 ff(1200,400);
 subplot(121);
 histogram(temp_smooth,100,'facecolor','k','edgecolor','none');
