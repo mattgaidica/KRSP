@@ -6,14 +6,15 @@ savePath = '/Users/matt/Dropbox (Personal)/Presentations/2022 KRSP';
 
 odba = T.odba;
 [temp,unshiftedNest] = getTempAndNest(T.temp,120); % perform k-means on temp, remove repeating vals
-newNest = filterNest(unshiftedNest,odba,temp); % remove unprobably transitions
-[shiftNest,nest] = fixTempDelay(newNest,odba,temp);
-nest = removeShortTransitions(nest,60); % rm <60 seconds
+filteredNest = filterNest(unshiftedNest,odba,temp); % remove unprobable transitions
+rmShortNest = removeShortTransitions(filteredNest,10); % optional
+nest = fixTempDelay(rmShortNest,odba,temp); % re-align nest
 
 %% find all nest trans, plot perievent temp/nest
+perieventNest = removeShortTransitions(nest,60*10); % optional
 nMin = 60;
 windowHalfSize = 60*nMin;
-diff_nest = diff(nest);
+diff_nest = diff(perieventNest);
 enterLocs = find(diff_nest==1);
 exitLocs = find(diff_nest==-1);
 enterNestTemp = NaN(1,windowHalfSize*2);
@@ -27,7 +28,7 @@ for ii = 1:numel(enterLocs)
     if useRange(1) > 0 && useRange(end) < numel(temp)
         jj = jj + 1;
         enterNestTemp(jj,:) = temp(useRange);
-        enterNest(jj,:) = nest(useRange);
+        enterNest(jj,:) = perieventNest(useRange);
     end
 end
 jj = 0;
@@ -36,7 +37,7 @@ for ii = 1:numel(exitLocs)
     if useRange(1) > 0 && useRange(end) < numel(temp)
         jj = jj + 1;
         exitNestTemp(jj,:) = temp(useRange);
-        exitNest(jj,:) = nest(useRange);
+        exitNest(jj,:) = perieventNest(useRange);
     end
 end
 t = linspace(-nMin,nMin,size(enterNestTemp,2));
@@ -48,6 +49,8 @@ nestData = {enterNest,exitNest};
 for ii = 1:2
     subplot(1,2,ii);
     plot(t,tempData{ii}');
+    hold on;
+    ln1 = plot(t,mean(tempData{ii}),'color',[1 0 0 0.4],'linewidth',4);
     if ii == 1
         useylim = ylim;
     else
@@ -62,9 +65,10 @@ for ii = 1:2
     set(gca,'ycolor','k');
     set(gca,'fontsize',14);
     ylim([-1 2]);
-    title(titleLabels{ii});
+    title(sprintf("%s (n=%i)",titleLabels{ii},size(nestData{ii},1)));
     xlabel('Time (min)');
     grid on;
+    legend(ln1,'avg temp');
 end
 saveas(gcf,fullfile(savePath,'enter-exit-nest-temp-data.jpg'));
 %% ^plot individually
@@ -91,34 +95,30 @@ title('Temp Histogram');
 
 [IDX,C] = kmeans(temp,2);
 subplot(122);
-histogram(temp(IDX==2),50,'edgecolor','none','facecolor','k','facealpha',0.75);
+histogram(temp(nest==1),50,'edgecolor','none','facecolor','k','facealpha',0.75);
 hold on;
-histogram(temp(IDX==1),50,'edgecolor','none','facecolor',colors(5,:),'facealpha',0.75);
+histogram(temp(nest==0),50,'edgecolor','none','facecolor',colors(5,:),'facealpha',0.75);
 grid on;
 set(gca,'fontsize',14);
 ylabel('Samples');
 xlabel('Temp (C)');
 title('In/Out Nest by K-means');
 legend({'In Nest','Out of Nest'},'location','northwest');
-% saveas(gcf,fullfile(savePath,'temp-histograms-k-means.jpg'));
-%% ^histogram based on nest class (not my own k-means)
-ff(400,400);
-histogram(temp(strcmp(T.Nest,'Nest')==1),50);
-hold on;
-histogram(temp(strcmp(T.Nest,'Nest')==0),50);
+saveas(gcf,fullfile(savePath,'temp-histograms-k-means.jpg'));
 
 %% plot axy/temp/nest subsection
-startSample = 60*60*60;
-useSamples = 60*60*12; % hours
+startSample = 1+60*60* 48;
+useSamples = 60*60*48; % hours
 useRange = startSample:startSample+useSamples-1;
 tempRange = temp(useRange);
+oldNestRange = strcmp(T.Nest(useRange),'Nest');
 odbaRange = odba(useRange);
 nestRange = nest(useRange);
 % nestRange = strcmp(T.Nest(useRange),'Nest');
 
 colors = lines(5);
 t = linspace(0,useSamples/60,useSamples); % minutes
-close all
+% close all
 ff(1200,400);
 ylabel('raw axy');
 plot(t,odbaRange,'k','linewidth',2);
@@ -128,6 +128,7 @@ set(gca,'fontsize',14);
 yyaxis right;
 plot(t,nestRange,'color',colors(5,:),'linewidth',3);
 hold on;
+% plot(t,oldNestRange,'-','color',[0.2 1 0.5 0.5],'linewidth',2);
 plot(t,normalize(tempRange,'range'),'r-','linewidth',2);
 set(gca,'ycolor',colors(5,:));
 set(gca,'fontsize',14);
@@ -137,6 +138,6 @@ yticklabels({'Out of Nest','In Nest'});
 xlim([min(t),max(t)]);
 xlabel('Time (min)');
 grid on;
-legend({'ODBA','Nest Class','Temp'})
+legend({'ODBA','New Nest','Temp'})
 title('December 2015');
 % saveas(gcf,fullfile(savePath,'axy-temp-data-overview.jpg'));

@@ -4,6 +4,6 @@ if do
 %     T = readtable('/Volumes/GAIDICASSD/KRSP/KRSP Axy Data/Emily Studds Axy/Late November 2016/G6_Nov25_2016.csv');
     do = 0;
 end
-
-tempSorter_init(T,30,false);
+perieventNest = removeShortTransitions(nest,60*15); % optional
+tempSorter_init(temp,perieventNest,30,false);
 % saveas(gcf,fullfile(savePath,'tempSorter-selection-tool.jpg'));

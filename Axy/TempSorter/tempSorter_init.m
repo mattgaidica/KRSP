@@ -1,31 +1,10 @@
-function tempSorter_init(T,nMin,doAuto)
+function tempSorter_init(temp,nest,nMin,doAuto)
     windowHalfSize = 60*nMin;
-    nest = strcmp(T.Nest,'Nest');
-    temp = T.temp;
-    temp_filt = temp;
-    temp_filt(temp==22.5) = NaN;
-    temp_filt = inpaint_nans(temp_filt);
-    temp_smooth = smoothdata(temp_filt,'gaussian',60);
     
-    IDX = kmeans(temp_smooth,2);
-    k1Mean = mean(temp_smooth(IDX==1));
-    k1Std = std(temp_smooth(IDX==1));
-    k2Mean = mean(temp_smooth(IDX==2));
-    k2Std = std(temp_smooth(IDX==2));
-    if k1Mean > k2Mean
-        inNestMean = k1Mean;
-        inNestStd = k1Std;
-        outNestMean = k2Mean;
-        outNestStd = k2Std;
-        meanTemp = min(temp_smooth(IDX==1));
-    else
-        inNestMean = k2Mean;
-        inNestStd = k2Std;
-        outNestMean = k1Mean;
-        outNestStd = k1Std;
-        meanTemp = min(temp_smooth(IDX==2));
-    end
-    
+    inNestMean = mean(temp(nest==1));
+    inNestStd = std(temp(nest==1));
+    outNestMean = mean(temp(nest==0));
+    outNestStd = std(temp(nest==0));
     
     diff_nest = diff(nest);
     enterLocs = find(diff_nest==1);
@@ -36,29 +15,29 @@ function tempSorter_init(T,nMin,doAuto)
     jj = 0;
     for ii = 1:numel(enterLocs)
         useRange = enterLocs(ii)-windowHalfSize:enterLocs(ii)+windowHalfSize-1;
-        if useRange(1) > 0 && useRange(end) < numel(temp_smooth)
+        if useRange(1) > 0 && useRange(end) < numel(temp)
             jj = jj + 1;
-            enterNestTemp(jj,:) = temp_smooth(useRange);
+            enterNestTemp(jj,:) = temp(useRange);
         end
     end
     jj = 0;
     for ii = 1:numel(exitLocs)
         useRange = exitLocs(ii)-windowHalfSize:exitLocs(ii)+windowHalfSize-1;
-        if useRange(1) > 0 && useRange(end) < numel(temp_smooth)
+        if useRange(1) > 0 && useRange(end) < numel(temp)
             jj = jj + 1;
-            exitNestTemp(jj,:) = temp_smooth(useRange);
+            exitNestTemp(jj,:) = temp(useRange);
         end
     end
     t = linspace(-nMin,nMin,size(enterNestTemp,2));
     
     save(fullfile(pwd,'tempSession'),'t','enterLocs','exitLocs','enterNestTemp','exitNestTemp',...
-        'inNestMean','inNestStd','outNestMean','outNestStd','meanTemp','doAuto');
+        'inNestMean','inNestStd','outNestMean','outNestStd','doAuto');
     plotTrans(true);
 end
 
 function plotTrans(doInit)
     load(fullfile(pwd,'tempSession'),'t','enterNestTemp','exitNestTemp',...
-        'inNestMean','inNestStd','outNestMean','outNestStd','meanTemp','doAuto');
+        'inNestMean','inNestStd','outNestMean','outNestStd','doAuto');
     rows = 2;
     cols = 2;
     ylims = [min([enterNestTemp(:);exitNestTemp(:)]) max([enterNestTemp(:);exitNestTemp(:)])];
@@ -166,7 +145,7 @@ function plotTrans(doInit)
         end
         if ~isempty(useIds)
             ln1 = plot(t,mean(enterNestTemp(useIds,:)),'k','linewidth',2);
-            legend(ln1,{'avg'},'location','northwest','AutoUpdate','off');
+%             legend(ln1,{'avg'},'location','northwest','AutoUpdate','off');
         else
             legend off;
         end
@@ -198,7 +177,7 @@ function plotTrans(doInit)
         end
         if ~isempty(useIds)
             ln1 = plot(t,mean(exitNestTemp(useIds,:)),'k','linewidth',2);
-            legend(ln1,{'avg'},'location','northwest','AutoUpdate','off');
+%             legend(ln1,{'avg'},'location','northwest','AutoUpdate','off');
         else
             legend off;
         end
