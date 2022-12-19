@@ -4,15 +4,15 @@ if do
 end
 savePath = '/Users/matt/Dropbox (Personal)/Presentations/2022 KRSP';
 
+odba = T.odba;
+[temp,unshiftedNest] = getTempAndNest(T.temp,120); % perform k-means on temp, remove repeating vals
+newNest = filterNest(unshiftedNest,odba,temp); % remove unprobably transitions
+[shiftNest,nest] = fixTempDelay(newNest,odba,temp);
+nest = removeShortTransitions(nest,60); % rm <60 seconds
+
 %% find all nest trans, plot perievent temp/nest
 nMin = 60;
 windowHalfSize = 60*nMin;
-nest = strcmp(T.Nest,'Nest');
-temp = T.temp;
-temp_filt = temp;
-temp_filt(temp==22.5) = NaN;
-temp_filt = inpaint_nans(temp_filt);
-temp_smooth = smoothdata(temp_filt,'gaussian',60);
 diff_nest = diff(nest);
 enterLocs = find(diff_nest==1);
 exitLocs = find(diff_nest==-1);
@@ -24,23 +24,23 @@ exitNest = NaN(numel(exitLocs),windowHalfSize*2);
 jj = 0;
 for ii = 1:numel(enterLocs)
     useRange = enterLocs(ii)-windowHalfSize:enterLocs(ii)+windowHalfSize-1;
-    if useRange(1) > 0 && useRange(end) < numel(temp_smooth)
+    if useRange(1) > 0 && useRange(end) < numel(temp)
         jj = jj + 1;
-        enterNestTemp(jj,:) = temp_smooth(useRange);
+        enterNestTemp(jj,:) = temp(useRange);
         enterNest(jj,:) = nest(useRange);
     end
 end
 jj = 0;
 for ii = 1:numel(exitLocs)
     useRange = exitLocs(ii)-windowHalfSize:exitLocs(ii)+windowHalfSize-1;
-    if useRange(1) > 0 && useRange(end) < numel(temp_smooth)
+    if useRange(1) > 0 && useRange(end) < numel(temp)
         jj = jj + 1;
-        exitNestTemp(jj,:) = temp_smooth(useRange);
+        exitNestTemp(jj,:) = temp(useRange);
         exitNest(jj,:) = nest(useRange);
     end
 end
 t = linspace(-nMin,nMin,size(enterNestTemp,2));
-close all;
+% close all;
 ff(1200,400);
 titleLabels = {'Enter Nest','Exit Nest'};
 tempData = {enterNestTemp,exitNestTemp};
@@ -48,11 +48,15 @@ nestData = {enterNest,exitNest};
 for ii = 1:2
     subplot(1,2,ii);
     plot(t,tempData{ii}');
-    ylim([20 33]);
+    if ii == 1
+        useylim = ylim;
+    else
+        ylim(useylim);
+    end
     ylabel('Temp (C)');
 
     yyaxis right;
-    plot(t,nestData{ii}','k-');
+    plot(t,nestData{ii}','-','color',[0 0 0 0.4],'linewidth',2);
     yticks([0 1]);
     yticklabels({'Out of Nest','In Nest'});
     set(gca,'ycolor','k');
@@ -78,18 +82,18 @@ colors = lines(5);
 % close all
 ff(1200,400);
 subplot(121);
-histogram(temp_smooth,100,'facecolor','k','edgecolor','none');
+histogram(temp,100,'facecolor','k','edgecolor','none');
 grid on;
 set(gca,'fontsize',14);
 ylabel('Samples');
 xlabel('Temp (C)');
 title('Temp Histogram');
 
-[IDX,C] = kmeans(temp_smooth,2);
+[IDX,C] = kmeans(temp,2);
 subplot(122);
-histogram(temp_smooth(IDX==2),50,'edgecolor','none','facecolor','k','facealpha',1);
+histogram(temp(IDX==2),50,'edgecolor','none','facecolor','k','facealpha',0.75);
 hold on;
-histogram(temp_smooth(IDX==1),50,'edgecolor','none','facecolor',colors(5,:),'facealpha',1);
+histogram(temp(IDX==1),50,'edgecolor','none','facecolor',colors(5,:),'facealpha',0.75);
 grid on;
 set(gca,'fontsize',14);
 ylabel('Samples');
@@ -98,47 +102,33 @@ title('In/Out Nest by K-means');
 legend({'In Nest','Out of Nest'},'location','northwest');
 % saveas(gcf,fullfile(savePath,'temp-histograms-k-means.jpg'));
 %% ^histogram based on nest class (not my own k-means)
-nest = strcmp(T.Nest,'Nest');
-temp = T.temp;
-temp_filt = temp;
-temp_filt(temp==22.5) = NaN;
-temp_filt = inpaint_nans(temp_filt);
-temp_smooth = smoothdata(temp_filt,'gaussian',60);
 ff(400,400);
-histogram(temp_smooth(nest==1),50);
+histogram(temp(strcmp(T.Nest,'Nest')==1),50);
 hold on;
-histogram(temp_smooth(nest==0),50);
+histogram(temp(strcmp(T.Nest,'Nest')==0),50);
 
 %% plot axy/temp/nest subsection
-colors = lines(5);
-startSample = 60*60*48;
-useSamples = 60*60*24; % hours
+startSample = 60*60*60;
+useSamples = 60*60*12; % hours
 useRange = startSample:startSample+useSamples-1;
-tempFilt = filterTemp(T,120);
-temp = tempFilt(useRange);
-odba = T.odba(useRange);
-% nest = strcmp(T.Nest(startSample:startSample+useSamples-1),'Nest');
-% [tempDelay,nestFixed] = findTempDelay(T);
-nest = nestFixed(useRange);
+tempRange = temp(useRange);
+odbaRange = odba(useRange);
+nestRange = nest(useRange);
+% nestRange = strcmp(T.Nest(useRange),'Nest');
 
 colors = lines(5);
-t = linspace(0,useSamples/60,numel(x)); % minutes
+t = linspace(0,useSamples/60,useSamples); % minutes
 close all
 ff(1200,400);
-% ylabel('raw axy');
-plot(t,odba,'k','linewidth',2);
+ylabel('raw axy');
+plot(t,odbaRange,'k','linewidth',2);
 ylabel('ODBA');
 set(gca,'fontsize',14);
-% hold on;
-% plot(t,detrend((x)));
-% hold on;
-% plot(t,detrend((y)));
-% plot(t,detrend((z)));
 
 yyaxis right;
-plot(t,nest,'color',colors(5,:),'linewidth',2);
+plot(t,nestRange,'color',colors(5,:),'linewidth',3);
 hold on;
-plot(t,normalize(temp,'range'),'r-');
+plot(t,normalize(tempRange,'range'),'r-','linewidth',2);
 set(gca,'ycolor',colors(5,:));
 set(gca,'fontsize',14);
 ylim([-.1 1.1]);
@@ -148,5 +138,5 @@ xlim([min(t),max(t)]);
 xlabel('Time (min)');
 grid on;
 legend({'ODBA','Nest Class','Temp'})
-title('April 2015');
+title('December 2015');
 % saveas(gcf,fullfile(savePath,'axy-temp-data-overview.jpg'));
