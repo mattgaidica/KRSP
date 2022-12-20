@@ -41,6 +41,7 @@ searchWindow = 60*10; % minutes
 % % 
 % % return;
 
+% ODBA method
 searchIncs = [60,10,1];
 searchRange = 1:searchIncs(1):searchWindow; % init
 fprintf("Searching for minimum, backstepping %1.0f minutes\n",searchWindow/60);

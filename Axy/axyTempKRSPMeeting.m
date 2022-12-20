@@ -7,8 +7,8 @@ savePath = '/Users/matt/Dropbox (Personal)/Presentations/2022 KRSP';
 odba = T.odba;
 [temp,unshiftedNest] = getTempAndNest(T.temp,120); % perform k-means on temp, remove repeating vals
 filteredNest = filterNest(unshiftedNest,odba,temp); % remove unprobable transitions
-rmShortNest = removeShortTransitions(filteredNest,10); % optional
-nest = fixTempDelay(rmShortNest,odba,temp); % re-align nest
+% rmShortNest = removeShortTransitions(filteredNest,10); % optional
+% nest = fixTempDelay(rmShortNest,odba,temp); % re-align nest
 
 %% find all nest trans, plot perievent temp/nest
 perieventNest = removeShortTransitions(nest,60*10); % optional

@@ -1,5 +1,5 @@
 function [temp,nest] = getTempAndNest(temp,nSmooth)
-temp = smoothdata(temp,'movmedian',60); % take care of dips
+temp = smoothdata(temp,'movmedian',30); % take care of dips
 % find repeating values and fill them in
 [C,~,ic] = unique(temp);
 freq = accumarray(ic,1) / numel(temp);
