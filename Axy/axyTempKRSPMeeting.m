@@ -108,7 +108,7 @@ saveas(gcf,fullfile(savePath,'temp-histograms-k-means.jpg'));
 
 %% plot axy/temp/nest subsection
 startSample = 1+60*60* 48;
-useSamples = 60*60*48; % hours
+useSamples = 60*60*12; % hours
 useRange = startSample:startSample+useSamples-1;
 tempRange = temp(useRange);
 oldNestRange = strcmp(T.Nest(useRange),'Nest');
