@@ -1,7 +1,7 @@
-useSamples = 60*60*8; % hours
+samplesPerSegment = 60*60*8; % hours
 close all
-ff(1200,400);
-nSegments = ceil(numel(temp)/useSamples);
+ff(1400,800);
+nSegments = ceil(numel(temp)/samplesPerSegment);
 if do
     transArr = [];
     jj = 0;
@@ -10,8 +10,8 @@ if do
     forceQuit = false;
     fs = 14;
     for ii = 1:nSegments
-        startSample = (ii-1) * useSamples + 1;
-        useRange = startSample:startSample+useSamples-1;
+        startSample = (ii-1) * samplesPerSegment + 1;
+        useRange = startSample:startSample+samplesPerSegment-1;
         tempRange = normalize(temp(useRange));
         odbaRange = normalize(odba(useRange),'range',[min(tempRange),max(tempRange)]);
         nestRange = nest(useRange);
@@ -92,7 +92,6 @@ for ii = 1:numel(trainingNest)
     end
     trainingNest(ii) = nestState;
 end
-trainingNest(564584:568413) = nest(564584:568413);
 
 close all;
 ff(1200,400);
@@ -101,4 +100,4 @@ hold on;
 plot(trainingNest,'g-');
 plot(nest+1.1,'m-');
 
-fprintf('%1.2f alike\n',sum(trainingNest==nest)/numel(nest));
+fprintf('%1.2f alike\n',sum(trainingNest(1:ii)==nest(1:ii))/ii);

@@ -1,4 +1,4 @@
-function [binNestSense,nestSense] = nestSenseAlg(temp,odba,wArr)
+function [binNestSense,nestSense,comp1,comp2,comp3] = nestSenseAlg(temp,odba,wArr)
 
 if isempty(wArr)
     useThresh = 0;
@@ -16,9 +16,15 @@ else
     odbaSm = wArr(6);
 end
 comp1 = w_temp*normalize(temp);
-comp2 = gradient(smoothdata(temp,'gaussian',gradSm));
+comp2 = gradient(smoothdata(temp,'gaussian',gradSm*60));
 comp2 = w_tempGrad*normalize(comp2.*abs(comp2));
-comp3 = w_odba*-smoothdata(normalize(odba),'gaussian',odbaSm);
-nestSense = comp1+comp2+comp3;
-nestSense = smoothdata(normalize(nestSense),'gaussian',1);
+comp3 = w_odba*-normalize(smoothdata(odba,'gaussian',odbaSm*60));
+% comp4 = w_temp*smoothdata(normalize(temp),'gaussian',60*60*10);
+nestSense = comp1+abs(comp2).*comp3;
+nestSense = normalize(smoothdata(nestSense,'gaussian',60*5));
+
+% nestGrad = normalize(smoothdata(gradient(nestSense),'gaussian',60*5));
+
 binNestSense = normalize(nestSense>useThresh,'range');
+% binNestSense(abs(nestGrad) < 1) = NaN;
+% binNestSense = fillmissing(binNestSense,'nearest');

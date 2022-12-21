@@ -1,7 +1,7 @@
 % !! it seems that you want to check the data around a transition, not just
 % at the transition
 threshSweep = .5;
-wSweep = 0:2:4;
+wSweep = 0:2:6;
 smSweep = 60:360:360*4;
 
 nestRange = trainingNest;
@@ -35,7 +35,7 @@ if do
     end
     do = false;
 end
-%Corr (r=0.9812): Thresh=0.5, w_Temp:8.0, w_TempGrad:4.0, w_ODBA:8.0, smGrad:560, smODBA:360
+% Best Corr (r=0.9814): Thresh=0.5, w_Temp:4.0, w_TempGrad:2.0, w_ODBA:4.0, smGrad:780, smODBA:420
 %%
 [y,k] = sort(corrArr);
 maxk = k(end);
@@ -68,13 +68,15 @@ for ii = 1:6
 end
 % saveas(gcf,fullfile(savePath,'model-corr-analysis.jpg'));
 %%
-startSample = 1+60*60* 48;
-useSamples = 60*60*48; % hours
+startSample = 1+60*60* 0;
+useSamples = 60*60* 48*2; % hours
 useRange = startSample:startSample+useSamples-1;
 tempRange = temp(useRange);
-oldNestRange = strcmp(T.Nest(useRange),'Nest');
+% oldNestRange = strcmp(T.Nest(useRange),'Nest');
 odbaRange = odba(useRange);
 % nestRange = nest(useRange);
+% nestRange = strcmp(T.Nest(useRange),'Nest'); % compare against original
+nestRange = trainingNest(useRange);
 nestRange = strcmp(T.Nest(useRange),'Nest'); % compare against original
 % % ax = [];
 % % colors = lines(5);
@@ -87,19 +89,22 @@ nestRange = strcmp(T.Nest(useRange),'Nest'); % compare against original
 % % plot(normalize(tempRange),'color',[1 0 0 0.5],'linewidth',2);
 % % yyaxis right;
 
-[binNestSense,nestSense] = nestSenseAlg(tempRange,odbaRange,[]);
+useThresh = 0;
+% Apr2015: [0.5,4,2,4,780,420]
+[binNestSense,nestSense,comp1,comp2,comp3] = nestSenseAlg(tempRange,odbaRange,[useThresh,4,2,2,780,420]);
 
 % % binNestSense = normalize(sign(nestSense),'range');
 % % binNestSense(binNestSense==0.5) = NaN;
 % % binNestSense = fillmissing(binNestSense,'previous');
 ax = [];
 t = linspace(0,numel(nestSense)/60,numel(nestSense));
+colors = lines(5);
 close all
 ff(1200,900);
 ax(1) = subplot(211);
 ln1 = plot(t,odbaRange,'-');
 hold on;
-ln2 = plot(t,nestSense,'k-','linewidth',3);
+ln2 = plot(t,nestSense,'k-','linewidth',2);
 ln3 = yline(useThresh,'k:','linewidth',1);
 grid on;
 set(gca,'fontsize',14);
@@ -110,19 +115,20 @@ yyaxis right;
 ln4 = plot(t,normalize(tempRange),'-','color','r','linewidth',1);
 hold on;
 ln5 = plot(t,binNestSense,'-','color',colors(5,:),'linewidth',2);
-ln6 = plot(t,nestRange,'-','color',[colors(4,:),0.4],'linewidth',2);
+ln6 = plot(t,nestRange+1.1,'-','color',[colors(4,:),0.4],'linewidth',2);
 set(gca,'ycolor','k');
 yticks([0,1]);
-ylim([-4 2]);
+ylim([-4 3]);
 yticklabels({'Out of Nest','In Nest'});
-legend([ln1,ln2,ln4,ln5,ln6],{'ODBA','p(Nest)','Temp','New Nest','Old Nest'});
+legend([ln1,ln2,ln4,ln5,ln6],{'ODBA','p(Nest)','Temp','New Nest','Train Nest'});
 
 ax(2) = subplot(212);
 plot(t,comp1,'-');
 hold on;
 plot(t,comp2,'-');
 plot(t,comp3,'-');
-plot(t,nestSense,'k-','linewidth',3);
+plot(t,comp4,'-');
+plot(t,nestSense,'k-','linewidth',2);
 grid on;
 legend({'Temp','Grad','ODBA','Sense'});
 set(gca,'fontsize',14);
