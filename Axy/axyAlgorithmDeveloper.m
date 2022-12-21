@@ -1,7 +1,8 @@
 % !! it seems that you want to check the data around a transition, not just
 % at the transition
-threshSweep = -1:0.25:1;
-wSweep = -2:8;
+threshSweep = .5;
+wSweep = 0:2:4;
+smSweep = 60:360:360*4;
 
 nestRange = trainingNest;
 odbaRange = odba;
@@ -16,47 +17,56 @@ if do
         for iW1 = 1:numel(wSweep)
             for iW2 = 1:numel(wSweep)
                 for iW3 = 1:numel(wSweep)
-                    fprintf("%i%% -- %i/%i - %i/%i - %i/%i - %i/%i\n",...
-                        round(100*ii/(numel(threshSweep)*numel(wSweep)*numel(wSweep)*numel(wSweep))),...
-                        iT,numel(threshSweep),iW1,numel(wSweep),iW2,numel(wSweep),iW3,numel(wSweep));
-                    binNestSense = nestSenseAlg(tempRange,odbaRange,...
-                        [threshSweep(iT),wSweep(iW1),wSweep(iW2),wSweep(iW3)]);
-                    ii = ii + 1;
-                    corrArr(ii) = sum(binNestSense==nestRange) / numel(nestRange);
-                    lookupArr(ii,1:4) = [iT,iW1,iW2,iW3];
+                    for iSm1 = 1:numel(smSweep)
+                        for iSm2 = 1:numel(smSweep)
+                            fprintf("%i%% -- %i/%i - %i/%i - %i/%i - %i/%i - %i/%i - %i/%i\n",...
+                                round(100*ii/(numel(threshSweep)*numel(wSweep).^3*numel(smSweep).^2)),...
+                                iT,numel(threshSweep),iW1,numel(wSweep),iW2,numel(wSweep),iW3,numel(wSweep),iSm1,numel(smSweep),iSm2,numel(smSweep));
+                            binNestSense = nestSenseAlg(tempRange,odbaRange,...
+                                [threshSweep(iT),wSweep(iW1),wSweep(iW2),wSweep(iW3),smSweep(iSm1),smSweep(iSm2)]);
+                            ii = ii + 1;
+                            corrArr(ii) = sum(binNestSense==nestRange) / numel(nestRange);
+                            lookupArr(ii,1:6) = [iT,iW1,iW2,iW3,iSm1,iSm2];
+                        end
+                    end
                 end
             end
         end
     end
     do = false;
 end
-
+%Corr (r=0.9812): Thresh=0.5, w_Temp:8.0, w_TempGrad:4.0, w_ODBA:8.0, smGrad:560, smODBA:360
 %%
 [y,k] = sort(corrArr);
 maxk = k(end);
-fprintf("Best Corr (r=%1.4f): Thresh=%1.1f, w_Temp:%1.1f, w_TempGrad:%1.1f, w_ODBA:%1.1f\n",...
-    y(end),threshSweep(lookupArr(maxk,1)),wSweep(lookupArr(maxk,2)),wSweep(lookupArr(maxk,3)),wSweep(lookupArr(maxk,4)));
+fprintf("Best Corr (r=%1.4f): Thresh=%1.1f, w_Temp:%1.1f, w_TempGrad:%1.1f, w_ODBA:%1.1f, smGrad:%i, smODBA:%i\n",...
+    y(end),threshSweep(lookupArr(maxk,1)),wSweep(lookupArr(maxk,2)),wSweep(lookupArr(maxk,3)),wSweep(lookupArr(maxk,4)),...
+    smSweep(lookupArr(maxk,5)),smSweep(lookupArr(maxk,6)));
 
 close all
 ff(1200,300);
-titleLabels = {'Threshold (Z)','Temp (w)','Temp Gradient (w)','ODBA (w)'};
+titleLabels = {'Threshold (Z)','Temp (w)','Temp Gradient (w)','ODBA (w)','smGrad','smODBA'};
 ylabelLabel = 'Corr w/ Studd';
 ms = 7;
-for ii = 1:4
-    subplot(1,4,ii);
+for ii = 1:6
+    subplot(1,6,ii);
     if ii == 1
         x = threshSweep(lookupArr(k,ii));
-    else
+    elseif ii < 5
         x = wSweep(lookupArr(k,ii));
+    else
+        x = smSweep(lookupArr(k,ii));
     end
     scatter(x,y,ms,magma(numel(y)),'filled');
+    xticks(unique(x));
     xlabel(titleLabels{ii});
     ylabel(ylabelLabel);
     title(titleLabels{ii});
     grid on;
     set(gca,'fontsize',14);
+    ylim([.9 1]);
 end
-saveas(gcf,fullfile(savePath,'model-corr-analysis.jpg'));
+% saveas(gcf,fullfile(savePath,'model-corr-analysis.jpg'));
 %%
 startSample = 1+60*60* 48;
 useSamples = 60*60*48; % hours
