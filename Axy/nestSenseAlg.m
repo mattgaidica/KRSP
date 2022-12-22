@@ -1,5 +1,5 @@
 function [binNestSense,nestSense,comp1,comp1_3,comp3,comp2_3,comp4] = nestSenseAlg(temp,odba,nest,wArr)
-
+useThresh = 0;
 if isempty(wArr)
 %     useThresh = 0;
 %     w_temp = 3;
@@ -8,13 +8,12 @@ if isempty(wArr)
 %     gradSm = 60*10;
 %     odbaSm = 60*10;
 else
-    useThresh = wArr(1);
-    w_kmeans = wArr(2);
-    w_temp = wArr(3);
-    w_tempGrad = wArr(4);
-    w_odba = wArr(5);
-    gradSm = wArr(6);
-    odbaSm = wArr(7);
+    w_kmeans = wArr(1);
+    w_temp = wArr(2);
+    w_tempGrad = wArr(3);
+    w_odba = wArr(4);
+    gradSm = wArr(5);
+    odbaSm = wArr(6);
 end
 % adj_odba = (odba - mean(odba(nest==0))) ./ std(odba);
 
