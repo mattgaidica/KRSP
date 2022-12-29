@@ -1,50 +1,39 @@
-function [binNestSense,nestSense,alg_temp,alg_tempRange,alg_invOdba,alg_tempGradObda,alg_kmeansNest,smOdba]...
-    = nestSenseAlg(temp,odba,nest,wArr,zOffset)
-useThresh = 0.2;
-if isempty(wArr)
-%     useThresh = 0;
-%     w_temp = 3;
-%     w_tempGrad = 1;
-%     w_odba = 1;
-%     gradSm = 60*10;
-%     odbaSm = 60*10;
-else
-    w_kmeans = wArr(1);
-    w_temp = wArr(2);
-    w_tempGrad = wArr(3);
-    w_odba = wArr(4);
-    gradSm = wArr(5);
-    odbaSm = wArr(6);
-end
-% adj_odba = (odba - mean(odba(nest==0))) ./ std(odba);
+function [binNestSense,sense] = nestSenseAlg(temp,odba,nest,senseParams)
+sense = {};
 
-% temp has to sweep across days (like original k-means alg)
-temp = temp-smoothdata(temp,'movmean',86400*3);
-alg_temp = w_temp*normalize(temp);
+% senseParams.thresh = wArr(1);
+% senseParams.w_kmeans = wArr(2);
+% senseParams.w_temp = wArr(3);
+% senseParams.w_tempGrad = wArr(4);
+% senseParams.w_odba = wArr(5);
+% senseParams.sm_tempGrad = wArr(6);
+% senseParams.sm_odba = wArr(7);
+% senseParams.offset_odba;
 
-alg_tempGrad = gradient(smoothdata(temp,'gaussian',gradSm*60));
-alg_tempGrad = w_tempGrad*normalize(alg_tempGrad.*abs(alg_tempGrad)); % square it for some drama:
+temp = temp-smoothdata(temp,'movmean',86400 * 3); % subtract moving mean for large changes over time
+sense.tempZ = senseParams.w_temp*normalize(temp);
 
-smOdba = smoothdata(normalize(odba)+zOffset,'gaussian',odbaSm*60); % normal inside smooth
-alg_invOdba = w_odba*-smOdba;
+sense.tempGrad = gradient(smoothdata(temp,'gaussian',senseParams.sm_tempGrad * 60));
+sense.tempGrad = senseParams.w_tempGrad * normalize(sense.tempGrad .* abs(sense.tempGrad)); % square it for some drama:
+
+sense.smOdba = smoothdata(normalize(odba) + senseParams.offset_odba,'gaussian',senseParams.sm_odba * 60); % normal inside smooth
+sense.invOdba = senseParams.w_odba * -sense.smOdba;
 
 % only using this means temp grad and ODBA *together* are important
-alg_tempGradObda = alg_tempGrad.*smOdba; % this does NOT get normalized, !!unweighted?
+sense.tempGradObda = sense.tempGrad .* sense.smOdba; % this does NOT get normalized, !!unweighted?
 
 % ODBA should be more important around arbitrary temperatures
-alg_tempRange = normalize(-abs(mean(temp)-temp),'range',[0,1]).*alg_invOdba;
+sense.tempRange = normalize(-abs(mean(temp)-temp),'range',[0,1]) .* sense.invOdba;
 
 % bias towards original classification
-alg_kmeansNest = w_kmeans*normalize(nest,'range',[-1 1]);
+sense.kmeansNest = senseParams.w_kmeans * normalize(nest,'range',[-1 1]);
 
-nestSense = alg_temp + alg_tempGradObda + alg_invOdba + alg_tempRange + alg_kmeansNest;
-nestSense = smoothdata(nestSense,'gaussian',60*5);
-% nestSense = nestSense./sqrt(abs(nestSense)); % redlwuce large z-scores
-nestSense = normalize(nestSense);
+sense.nest = sense.tempZ + sense.tempGradObda + sense.invOdba + sense.tempRange + sense.kmeansNest;
+sense.nest = smoothdata(sense.nest,'gaussian',60 * 5);
+% sense.nest = sense.nest./sqrt(abs(sense.nest)); % redlwuce large z-scores
+sense.nest = normalize(sense.nest);
 
-% nestGrad = normalize(smoothdata(gradient(nestSense),'gaussian',60*5));
-
-binNestSense = normalize(nestSense>0,'range'); % turn into binary in/out nest
-binNestSense(abs(nestSense) < useThresh) = NaN; % set small values to ambiguous
+binNestSense = normalize(sense.nest > 0,'range'); % turn into binary in/out nest
+binNestSense(abs(sense.nest) < senseParams.thresh) = NaN; % set small values to ambiguous
 binNestSense = fillmissing(binNestSense,'previous'); % fill with previous
 binNestSense = fillmissing(binNestSense,'next'); % in case beginning is NaN
