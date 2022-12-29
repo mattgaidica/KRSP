@@ -1,6 +1,6 @@
 function [binNestSense,nestSense,alg_temp,alg_tempRange,alg_invOdba,alg_tempGradObda,alg_kmeansNest,smOdba]...
     = nestSenseAlg(temp,odba,nest,wArr,zOffset)
-useThresh = 0;
+useThresh = 0.2;
 if isempty(wArr)
 %     useThresh = 0;
 %     w_temp = 3;
@@ -44,6 +44,7 @@ nestSense = normalize(nestSense);
 
 % nestGrad = normalize(smoothdata(gradient(nestSense),'gaussian',60*5));
 
-binNestSense = normalize(nestSense>useThresh,'range');
-% binNestSense(abs(nestGrad) < 1) = NaN;
-% binNestSense = fillmissing(binNestSense,'nearest');
+binNestSense = normalize(nestSense>0,'range'); % turn into binary in/out nest
+binNestSense(abs(nestSense) < useThresh) = NaN; % set small values to ambiguous
+binNestSense = fillmissing(binNestSense,'previous'); % fill with previous
+binNestSense = fillmissing(binNestSense,'next'); % in case beginning is NaN
