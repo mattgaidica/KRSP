@@ -16,5 +16,13 @@ for ii = 1:numel(addVals)
         break;
     end
 end
-figure;plot(addVals(1:ii),resArr(1:ii,1));hold on;plot(addVals(1:ii),resArr(1:ii,2));grid on;
+ff(300,200);
+plot(addVals(1:ii),resArr(1:ii,1));
+hold on;
+plot(addVals(1:ii),resArr(1:ii,2));
+grid on;
+
 zOffset = addVals(addIdx);
+title(sprintf('max out-nest/min in-nest Z=%1.2f',zOffset));
+xlabel('Z-offset');
+ylabel('ODBA');

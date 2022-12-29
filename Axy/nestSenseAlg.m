@@ -1,4 +1,4 @@
-function [binNestSense,nestSense,alg_temp,alg_tempRange,alg_invOdba,alg_tempGradObda,alg_kmeansNest]...
+function [binNestSense,nestSense,alg_temp,alg_tempRange,alg_invOdba,alg_tempGradObda,alg_kmeansNest,smOdba]...
     = nestSenseAlg(temp,odba,nest,wArr,zOffset)
 useThresh = 0;
 if isempty(wArr)
@@ -18,7 +18,10 @@ else
 end
 % adj_odba = (odba - mean(odba(nest==0))) ./ std(odba);
 
+% temp has to sweep across days (like original k-means alg)
+temp = temp-smoothdata(temp,'movmean',86400*3);
 alg_temp = w_temp*normalize(temp);
+
 alg_tempGrad = gradient(smoothdata(temp,'gaussian',gradSm*60));
 alg_tempGrad = w_tempGrad*normalize(alg_tempGrad.*abs(alg_tempGrad)); % square it for some drama:
 
@@ -34,9 +37,9 @@ alg_tempRange = normalize(-abs(mean(temp)-temp),'range',[0,1]).*alg_invOdba;
 % bias towards original classification
 alg_kmeansNest = w_kmeans*normalize(nest,'range',[-1 1]);
 
-nestSense = alg_temp+alg_tempGradObda+alg_invOdba+alg_tempRange+alg_kmeansNest;
+nestSense = alg_temp + alg_tempGradObda + alg_invOdba + alg_tempRange + alg_kmeansNest;
 nestSense = smoothdata(nestSense,'gaussian',60*5);
-nestSense = nestSense./sqrt(abs(nestSense)); % reduce large z-scores
+% nestSense = nestSense./sqrt(abs(nestSense)); % redlwuce large z-scores
 nestSense = normalize(nestSense);
 
 % nestGrad = normalize(smoothdata(gradient(nestSense),'gaussian',60*5));
