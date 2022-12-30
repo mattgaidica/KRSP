@@ -2,35 +2,43 @@ if do
     T = readtable('/Users/matt/Documents/Data/KRSP/AxyCSV/J1_Sep1_2014.csv');
     odba = T.odba;
     [temp,nest] = getTempAndNest(T.temp,60);
-    zOffset = findZOffset(temp,odba,nest);
+    offset_odba = findZOffset(temp,odba,nest);
     do = 0;
 end
 
-wSweep = 0:0.5:5;
+threshSweep = .2;
+wSweep = 0:1:5;
 smSweep = [360,720,1200];
-
-useThresh = 1;
-useKmeans = 0;
 
 if doCalc
     corrArr = [];
     lookupArr = [];
     ii = 0;
-    for iW1 = 1:numel(wSweep)
-        for iW2 = 1:numel(wSweep)
-            for iW3 = 1:numel(wSweep)
-                for iSm1 = 1:numel(smSweep)
-                    for iSm2 = 1:numel(smSweep)
-                        fprintf("%i%% -- %i/%i - %i/%i - %i/%i - %i/%i - %i/%i\n",...
-                            round(100*ii/(numel(wSweep).^3*numel(smSweep).^2)),...
-                            iW1,numel(wSweep),iW2,numel(wSweep),iW3,numel(wSweep),iSm1,numel(smSweep),iSm2,numel(smSweep));
-                        wArr = [useKmeans,wSweep(iW1),wSweep(iW2),wSweep(iW3),smSweep(iSm1),smSweep(iSm2)];
-                        [binNestSense,~,alg_temp,~,~,~,~,smOdba] = nestSenseAlg(temp,odba,nest,wArr,zOffset);
-                        nMin = 20;
-                        [t,periOdba,periTemp] = periEventNest(binNestSense,smOdba,alg_temp,nMin);
-                        ii = ii + 1;
-                        corrArr(ii) = mean(abs(mean(periOdba{1})-mean(periTemp{1}))) + mean(abs(mean(periTemp{2})-mean(periOdba{2})));
-                        lookupArr(ii,1:5) = [iW1,iW2,iW3,iSm1,iSm2];
+    for iT = 1:numel(threshSweep)
+        for iW1 = 1:numel(wSweep)
+            for iW2 = 1:numel(wSweep)
+                for iW3 = 1:numel(wSweep)
+                    for iSm1 = 1:numel(smSweep)
+                        for iSm2 = 1:numel(smSweep)
+                            fprintf("%i%% -- %i/%i - %i/%i - %i/%i - %i/%i - %i/%i - %i/%i\n",...
+                                round(100*ii/(numel(threshSweep)*numel(wSweep).^3*numel(smSweep).^2)),...
+                                iT,numel(threshSweep),iW1,numel(wSweep),iW2,numel(wSweep),iW3,numel(wSweep),iSm1,numel(smSweep),iSm2,numel(smSweep));
+                            
+                            senseParams = {};
+                            senseParams.thresh = threshSweep(iT);
+                            senseParams.w_kmeans = 0;
+                            senseParams.w_temp = wSweep(iW1);
+                            senseParams.w_tempGrad = wSweep(iW2);
+                            senseParams.w_odba = wSweep(iW3);
+                            senseParams.sm_tempGrad = smSweep(iSm1);
+                            senseParams.sm_odba = smSweep(iSm2);
+                            senseParams.offset_odba = offset_odba;
+                            [binNestSense,sense] = nestSenseAlg(temp,odba,nest,senseParams);
+                            
+                            ii = ii + 1;
+                            corrArr(ii) = sum(binNestSense==nestRange) / numel(nestRange);
+                            lookupArr(ii,1:6) = [iT,iW1,iW2,iW3,iSm1,iSm2];
+                        end
                     end
                 end
             end
@@ -65,6 +73,6 @@ for ii = 1:5
     title(titleLabels{ii});
     grid on;
     set(gca,'fontsize',14);
-%     ylim([0 1]);
+    %     ylim([0 1]);
 end
 % saveas(gcf,fullfile(savePath,'model-corr-analysis.jpg'));

@@ -1,8 +1,15 @@
-samplesPerSegment = 60*60*8; % hours
-close all
-ff(1400,800);
-nSegments = ceil(numel(temp)/samplesPerSegment);
 if do
+    T = readtable('/Users/matt/Documents/Data/KRSP/AxyCSV/J1_Sep1_2014.csv');
+    odba = T.odba;
+    [temp,nest] = getTempAndNest(T.temp,60);
+    do = 0;
+end
+
+if doTrain
+    samplesPerSegment = 60*60*12; % hours
+    nSegments = ceil(numel(temp)/samplesPerSegment);
+    close all
+    ff(1400,800);
     transArr = [];
     jj = 0;
     lastLine = NaN;
@@ -15,19 +22,19 @@ if do
         tempRange = normalize(temp(useRange));
         odbaRange = normalize(odba(useRange),'range',[min(tempRange),max(tempRange)]);
         nestRange = nest(useRange);
-
+        
         colors = lines(5);
         ylabel('raw axy');
         plot(useRange,odbaRange,'k-','linewidth',1);
         hold on;
         plot(useRange,tempRange,'r-','linewidth',1);
-    %     ylabel('ODBA');
-
+        %     ylabel('ODBA');
+        
         plot(useRange,nestRange,'-','color',[colors(5,:),0.35],'linewidth',2);
         hold on;
-    %     set(gca,'ycolor',colors(5,:));
+        %     set(gca,'ycolor',colors(5,:));
         set(gca,'fontsize',fs);
-    %     ylim([-.1 1.1]);
+        %     ylim([-.1 1.1]);
         yticks([0 1]);
         yticklabels({'Out of Nest','In Nest'});
         ylim([-max(abs(ylim)) max(abs(ylim))]);
@@ -51,13 +58,15 @@ if do
                 delete(lns(kk));
                 if kk > 1
                     kk = kk - 1;
+                else
+                    nestState = NaN;
                 end
             end
             if y < min(ylim) % quit
                 forceQuit = true;
                 break;
             end
-
+            
             if isnan(nestState)
                 if y > 0
                     nestState = 1;
@@ -81,6 +90,7 @@ if do
             break;
         end
     end
+    doTrain = false;
 end
 %% make nest
 trainingNest = NaN(size(nest));

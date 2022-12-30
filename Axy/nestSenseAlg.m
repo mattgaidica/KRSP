@@ -1,14 +1,14 @@
 function [binNestSense,sense] = nestSenseAlg(temp,odba,nest,senseParams)
 sense = {};
 
-% senseParams.thresh = wArr(1);
-% senseParams.w_kmeans = wArr(2);
-% senseParams.w_temp = wArr(3);
-% senseParams.w_tempGrad = wArr(4);
-% senseParams.w_odba = wArr(5);
-% senseParams.sm_tempGrad = wArr(6);
-% senseParams.sm_odba = wArr(7);
-% senseParams.offset_odba;
+% senseParams.thresh = ;
+% senseParams.w_kmeans = ;
+% senseParams.w_temp = ;
+% senseParams.w_tempGrad = ;
+% senseParams.w_odba = ;
+% senseParams.sm_tempGrad = ;
+% senseParams.sm_odba = ;
+% senseParams.offset_odba = ;
 
 temp = temp-smoothdata(temp,'movmean',86400 * 3); % subtract moving mean for large changes over time
 sense.tempZ = senseParams.w_temp*normalize(temp);
