@@ -10,7 +10,7 @@ sense = {};
 % senseParams.sm_odba = ;
 % senseParams.offset_odba = ;
 
-temp = temp-smoothdata(temp,'movmean',86400 * 3); % subtract moving mean for large changes over time
+temp = detrend(temp,2); % subtract moving mean for large changes over time
 sense.tempZ = senseParams.w_temp*normalize(temp);
 
 sense.tempGrad = gradient(smoothdata(temp,'gaussian',senseParams.sm_tempGrad * 60));
@@ -37,3 +37,60 @@ binNestSense = normalize(sense.nest > 0,'range'); % turn into binary in/out nest
 binNestSense(abs(sense.nest) < senseParams.thresh) = NaN; % set small values to ambiguous
 binNestSense = fillmissing(binNestSense,'previous'); % fill with previous
 binNestSense = fillmissing(binNestSense,'next'); % in case beginning is NaN
+
+if senseParams.fixTransitions
+    doPlot = false;
+    maxShift = 60*5; % window
+    transLocs = [1;find(abs(diff(binNestSense))==1);numel(binNestSense)]; % pad to rm logic below
+    
+    weightDist = normalize(normpdf(linspace(-1,1,maxShift*2)),'range',[0 1]);
+    for ii = 2:numel(transLocs)-1 % exclude pads
+        useRange = transLocs(ii)-maxShift+1:transLocs(ii)+maxShift;
+        usefulStart = max([1,transLocs(ii-1)]);
+        usefulEnd = min([numel(binNestSense),transLocs(ii+1)]);
+        fillStart = find(useRange < usefulStart,1,'last');
+        fillEnd = find(useRange >= usefulEnd,1,'first');
+        if isempty(fillStart); fillStart = 1; end
+        if isempty(fillEnd); fillEnd = numel(useRange); end
+        if fillEnd-fillStart < 120; continue; end
+        
+        nanData = NaN(size(useRange));
+        use_tempZ = nanData;
+        use_tempZ(fillStart:fillEnd) = sense.tempZ(useRange(fillStart):useRange(fillEnd));
+        
+        sensorData1 = normalize(weightDist .* smoothdata(gradient(use_tempZ),'gaussian',60));
+        if binNestSense(transLocs(ii)) == 1 % in to out, search for neg peak
+            sensorData1 = -sensorData1;
+        end
+        sensorData2 = normalize(gradient(sensorData1));
+        [~,k] = max(sensorData2);
+        
+        newData = binNestSense(useRange);
+        if k >= maxShift
+            newData(maxShift:k) = binNestSense(transLocs(ii));
+        else
+            newData(k:maxShift) = ~binNestSense(transLocs(ii));
+        end
+        
+        if doPlot
+            close all
+            ff(600,500);
+            yyaxis left;
+            plot(sensorData2,'k-','linewidth',2);
+            hold on;
+            plot(k,sensorData2(k),'k.','markerSize',20);
+            plot(sensorData1,'k:');
+            
+            yyaxis right;
+            plot(use_tempZ,'r-','linewidth',2);
+            hold on;
+            plot(binNestSense(useRange),'g-','linewidth',1);
+            plot(newData+1.1,'g-','linewidth',3);
+            plot(weightDist,'b-');
+            xlim([1 numel(useRange)]);
+            grid on;
+            hold off;
+        end
+        binNestSense(useRange) = newData;
+    end
+end

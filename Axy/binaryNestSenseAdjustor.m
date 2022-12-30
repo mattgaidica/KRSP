@@ -2,11 +2,25 @@ load('algorithmApp_session.mat');
 sampleWindow = 60 * 30; % 60 * minutes
 incBy = 10; % seconds
 
+startFresh = true;
+if exist('lastLoc','var')
+    if lastLoc > 0
+        answer = questdlg(sprintf("lastLoc = %i (%1.1f%%), reset?",lastLoc,100*lastLoc/numel(binNestSense)),...
+            'Reset','Yes','No','Yes');
+        if strcmp(answer,"No")
+            startFresh = false;
+        end
+    end
+end
+
+if startFresh
+    adj_binNestSense = binNestSense;
+    lastLoc = 0;
+end
+
 colors = lines(5);
 close all
 ff(800,400);
-adj_binNestSense = binNestSense;
-lastLoc = 0;
 while(1)
     transLocs = find(abs(diff(adj_binNestSense))==1);
     ii = find(transLocs > lastLoc,1,'first');
@@ -31,7 +45,7 @@ while(1)
     
     xlim([min(useRange),max(useRange)]);
     transSample = round((useRange(1)+useRange(end))/2);
-    transLine = xline(transSample,'k:');
+    transLine = xline(transSample,'k:','linewidth',2);
     title(sprintf("Trans %i/%i",ii,numel(transLocs)));
     
     value = 0;
@@ -50,7 +64,7 @@ while(1)
             transSample = transLocs(ii); % reset
         end
         delete(transLine);
-        transLine = xline(transSample,'k:');
+        transLine = xline(transSample,'k:','linewidth',2);
         
         adj_binNestSense(useRange) = ii_adj_binNestSense(useRange);
         if value == 31 % down
@@ -58,7 +72,7 @@ while(1)
             if ii < numel(transLocs)
                 adj_binNestSense(transLocs(ii):transLocs(ii+1)) = ii_adj_binNestSense(transLocs(ii));
             end
-             transSample = transLocs(ii); % reset
+            transSample = transLocs(ii); % reset
         else
             if transSample ~= transLocs(ii)
                 if transSample > transLocs(ii)
@@ -77,5 +91,9 @@ while(1)
     end
     
     hold off;
+    save("adjustSession.mat",'adj_binNestSense','lastLoc');
 end
-% save
+close all
+%%
+load("adjustSession.mat");
+fprintf("Alikeness: %1.2f\n",sum(binNestSense==adj_binNestSense) / numel(adj_binNestSense));
