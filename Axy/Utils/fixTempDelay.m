@@ -69,7 +69,7 @@ nestFixed = circshift(nest,shiftNest); % rotate
 nestFixed(end+shiftNest+1:end) = repmat(nestFixed(end+shiftNest),[1,-shiftNest]); % fill in end
     
 if doPlot
-    ff(500,225);
+    ff(500,300);
     plot(searchRange,meanODBA,'k-','linewidth',2);
     hold on;
     xline(-shiftNest,'r','linewidth',2);
