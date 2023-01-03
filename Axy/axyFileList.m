@@ -52,23 +52,7 @@ if do
     t = T_AxyFiles; % backup variable
     toc;
 end
-%%
-close all;
-rows = 1;
-cols = 2;
-ff(300*cols,300);
-subplot(rows,cols,1);
-histogram(T_AxyFiles.days);
-title('Days per session');
-grid on;
-
-subplot(rows,cols,2);
-histogram(year(T_AxyFiles.startDate),min(year(T_AxyFiles.startDate))-0.5:max(year(T_AxyFiles.startDate))+0.5);
-title('Sessions per year');
-xtickangle(30);
-grid on;
-
-fprintf("%i/%i errors, %i/%i have headers\n",sum(T_AxyFiles.hasError),sum(T_AxyFiles.hasHeader));
+fprintf("%i/%i errors, %i/%i have headers\n",sum(T_AxyFiles.hasError),size(T_AxyFiles,1),sum(T_AxyFiles.hasHeader),size(T_AxyFiles,1));
 
 %% find duplicates
 sameList = [];
@@ -86,3 +70,30 @@ for ii = 1:size(T_AxyFiles)
     end
 end
 fprintf("%i/%i entries the same\n",size(sameList,1),size(T_AxyFiles,1));
+%%
+answer = questdlg("Remove duplicates?","Duplicates","Yes","No","No");
+if strcmp(answer,"Yes")
+    T_AxyFiles(sameList(:,2),:) = [];
+    T_AxyFiles.id(1:size(T_AxyFiles,1)) = 1:size(T_AxyFiles,1);
+    fprintf("Removed %i files, now contains %i files\n",size(sameList,1),size(T_AxyFiles,1));
+else
+    fprintf("No files removed\n");
+end
+
+%%
+close all;
+rows = 1;
+cols = 2;
+ff(300*cols,300);
+subplot(rows,cols,1);
+histogram(T_AxyFiles.days);
+title('Days per session');
+grid on;
+
+subplot(rows,cols,2);
+histogram(year(T_AxyFiles.startDate),min(year(T_AxyFiles.startDate))-0.5:max(year(T_AxyFiles.startDate))+0.5);
+title('Sessions per year');
+xtickangle(30);
+grid on;
+
+fprintf("%i cumulative days\n",sum(T_AxyFiles.days));

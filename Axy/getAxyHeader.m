@@ -5,17 +5,20 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
     dateFmt = '';
     startDate = NaT;
     
+    nFs = 3; % header+2
     fid = fopen(fname);
     dataLines = string;
     jj = 0;
+    % gather samples far enough where battery has settled, must include
+    % header line (ii=1)
     for ii = 1:2000
         dataLine = fgetl(fid);
-        if mod(ii,200) == 0
+        if ii <= nFs || mod(ii,100) == 0
             jj = jj + 1;
             dataLines(jj,:) = strrep(dataLine,'"','');
         end
     end
-    fclose(fid);
+    % do not close file yet
 
     colCell = {{'date','Var1'},'time',{'temp','Var5'},...
         {'x','Var2'},{'y','Var3'},{'z','Var4'},'odba',{'battery','alt','Var6'},'nest'};
@@ -57,9 +60,9 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
             medCols = median(dataDouble);
             if abs(meanCols) < 3 && abs(medCols) < 2 % x,y,z,odba
                 xlCols = [xlCols ii]; %#ok<AGROW>
-            elseif meanCols > 10
+            elseif medCols > 10
                 tempCols = [tempCols ii]; %#ok<AGROW>
-            elseif meanCols > 3 && meanCols < 6
+            elseif medCols > 3 && medCols < 6
                 battCols = [battCols ii]; %#ok<AGROW>
             end
         end
@@ -71,6 +74,54 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
     if ~isempty(timeCols)
         colMap(useCol('time',colCell)) = timeCols(1); % take first
     end
+    
+    
+    yearPos = NaN;
+    dayPos = NaN;
+    if ~isnan(colMap(useCol('date',colCell)))
+        ii = 0;
+        while(1)
+            dataLine = fgetl(fid);
+            if mod(ii,1000) == 0 % test periodically
+                dataLines(end,:) = strrep(dataLine,'"','');
+                dataArr = delimText(dataLines(double(hasHeader)+1:end));
+                dateString = dataArr(:,colMap(useCol('date',colCell)));
+                dateParts = split(dateString);
+                dateNoTime = dateParts(:,1);
+                d1 = dateNoTime(end-1);
+                d2 = dateNoTime(end);
+                if strcmp(d1,d2) == 0 % different
+                    d1Parts = strsplit(d1,'/');
+                    d2Parts = strsplit(d2,'/');
+                    
+                    if numel(d1Parts) == 3 % it should
+                        for jj = 1:3
+                            if numel(d1Parts{jj}) == 4 % year
+                                yearPos = jj;
+                            end
+                            if strcmp(d1Parts{jj},d2Parts{jj}) == 0
+                                dayPos = jj;
+                            end
+                        end
+                        break; % get out
+                    end
+                end
+            end
+            ii = ii + 1;
+            if ii > 86400*10 % 1day if Fs = 10
+                break;
+            end
+        end
+    end
+    fclose(fid);
+    
+    % !! now I can build the proper date format if dayPos/yearPos not NAN
+    % still need to get time format, can just truncate time to HH:mm:ss
+    % (n=8 characters)
+    
+    
+    
+    
     if colMap(useCol('date',colCell)) == colMap(useCol('time',colCell)) % same col
         [Fs,dateFmt] = getFs(dataArr(:,colMap(useCol('date',colCell))));
     elseif ~isnan(colMap(useCol('time',colCell))) % time is separate
@@ -88,6 +139,10 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
             startDate = datetime(dateParts(1),'inputformat',fmtParts{1});
         end
     end
+    
+    
+    
+    
         
     if isnan(colMap(useCol('x',colCell)))
         if numel(xlCols) > 2
@@ -135,6 +190,7 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
         hasError = true;
         disp("Error: no temperature");
     end
+    dataLines = dataLines(1:10); % only return 10
 end
 
 function [Fs,dateFmt] = getFs(data)
@@ -154,18 +210,5 @@ function [Fs,dateFmt] = getFs(data)
             catch
             end
         end
-    end
-    
-end
-
-function dataArr = delimText(lineText)
-    for ii = 1:size(lineText,1)
-        colText = strsplit(lineText(ii),"\t"); % try tab delim
-        if numel(colText) == 1 % try again
-            colText = strsplit(lineText(ii),","); % try comma delim
-        end
-        dashIdx = find(count(colText,'-') > 1); % must be a date
-        colText(dashIdx) = strrep(colText(dashIdx),'-','/');
-        dataArr(ii,:) = colText; %#ok<AGROW>
     end
 end
