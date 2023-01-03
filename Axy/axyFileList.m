@@ -18,7 +18,7 @@ if do
 
         fname = fullfile(T_AxyFiles.folder(ii),T_AxyFiles.filename(ii));
         
-        [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = getAxyHeader(fname);
+        [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,timeFmt,dataLines] = getAxyHeader(fname);
         T_AxyFiles.Fs(ii) = Fs;
         T_AxyFiles.colNames(ii) = {colNames};
         T_AxyFiles.colMap(ii) = {colMap};
@@ -26,6 +26,7 @@ if do
         T_AxyFiles.hasHeader(ii) = hasHeader;
         T_AxyFiles.startDate(ii) = startDate;
         T_AxyFiles.dateFmt(ii) = string(dateFmt);
+        T_AxyFiles.timeFmt(ii) = string(timeFmt);
         T_AxyFiles.dataLines(ii) = {string(dataLines)};
         
         if hasError

@@ -1,9 +1,13 @@
-function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = getAxyHeader(fname)
+function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,timeFmt,dataLines] = getAxyHeader(fname)
     hasHeader = false;
     hasError = false;
     Fs = NaN;
-    dateFmt = '';
+    dateFmt = "";
+    timeFmt = "";
+    dateDelim = "/";
+    timeDelim = ":";
     startDate = NaT;
+    % locale: 'America/Whitehorse'
     
     nFs = 3; % header+2
     fid = fopen(fname);
@@ -47,10 +51,10 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
     battCols = [];
     for ii = 1:size(dataArr,2) % iterate columns
         % datetime
-        if contains(dataArr(1,ii),'/')
+        if contains(dataArr(1,ii),dateDelim)
             dateCols = [dateCols ii];
         end
-        if contains(dataArr(1,ii),':')
+        if contains(dataArr(1,ii),timeDelim)
             timeCols = [timeCols ii];
         end
 
@@ -74,76 +78,6 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
     if ~isempty(timeCols)
         colMap(useCol('time',colCell)) = timeCols(1); % take first
     end
-    
-    
-    yearPos = NaN;
-    dayPos = NaN;
-    if ~isnan(colMap(useCol('date',colCell)))
-        ii = 0;
-        while(1)
-            dataLine = fgetl(fid);
-            if mod(ii,1000) == 0 % test periodically
-                dataLines(end,:) = strrep(dataLine,'"','');
-                dataArr = delimText(dataLines(double(hasHeader)+1:end));
-                dateString = dataArr(:,colMap(useCol('date',colCell)));
-                dateParts = split(dateString);
-                dateNoTime = dateParts(:,1);
-                d1 = dateNoTime(end-1);
-                d2 = dateNoTime(end);
-                if strcmp(d1,d2) == 0 % different
-                    d1Parts = strsplit(d1,'/');
-                    d2Parts = strsplit(d2,'/');
-                    
-                    if numel(d1Parts) == 3 % it should
-                        for jj = 1:3
-                            if numel(d1Parts{jj}) == 4 % year
-                                yearPos = jj;
-                            end
-                            if strcmp(d1Parts{jj},d2Parts{jj}) == 0
-                                dayPos = jj;
-                            end
-                        end
-                        break; % get out
-                    end
-                end
-            end
-            ii = ii + 1;
-            if ii > 86400*10 % 1day if Fs = 10
-                break;
-            end
-        end
-    end
-    fclose(fid);
-    
-    % !! now I can build the proper date format if dayPos/yearPos not NAN
-    % still need to get time format, can just truncate time to HH:mm:ss
-    % (n=8 characters)
-    
-    
-    
-    
-    if colMap(useCol('date',colCell)) == colMap(useCol('time',colCell)) % same col
-        [Fs,dateFmt] = getFs(dataArr(:,colMap(useCol('date',colCell))));
-    elseif ~isnan(colMap(useCol('time',colCell))) % time is separate
-        Fs = getFs(dataArr(:,colMap(useCol('time',colCell)))); % Fs from time
-        [~,dateFmt] = getFs(dataArr(:,colMap(useCol('date',colCell)))); % fmt from date
-    end
-    % combine to get startDate
-    if ~isnan(colMap(useCol('date',colCell)))
-        dateString = dataArr(1,colMap(useCol('date',colCell)));
-        dateParts = strsplit(dateString);
-        if isempty(dateFmt)
-            startDate = datetime(dateParts(1));
-        else
-            fmtParts = strsplit(dateFmt); % only return date (not time)
-            startDate = datetime(dateParts(1),'inputformat',fmtParts{1});
-        end
-    end
-    
-    
-    
-    
-        
     if isnan(colMap(useCol('x',colCell)))
         if numel(xlCols) > 2
             colMap(useCol('x',colCell)) = xlCols(1);
@@ -160,26 +94,85 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
     if isnan(colMap(useCol('battery',colCell))) && ~isempty(battCols)
         colMap(useCol('battery',colCell)) = battCols(1); % take first
     end
-
-    % compress all possible names
-    colNames = colCell;
-    for ii = 1:numel(colCell)
-        if iscell(colNames{ii})
-            colNames(ii) = colNames{ii}(1);
+    
+    % date detector
+    yearPos = NaN;
+    dayPos = NaN;
+    if ~isnan(colMap(useCol('date',colCell)))
+        ii = 0;
+        while(1)
+            dataLine = fgetl(fid);
+            if ~isa(dataLine,'double') && mod(ii,1000) == 0 % test periodically
+                dataLines(end,:) = strrep(dataLine,'"','');
+                dataArr = delimText(dataLines(double(hasHeader)+1:end)); % exclude header
+                dateString = dataArr(:,colMap(useCol('date',colCell)));
+                try
+                    dateParts = split(dateString);
+                catch
+                    hold on;
+                end
+                dateNoTime = dateParts(:,1);
+                d1 = dateNoTime(end-1);
+                d2 = dateNoTime(end);
+                if strcmp(d1,d2) == 0 % different
+                    d1Parts = strsplit(d1,dateDelim);
+                    d2Parts = strsplit(d2,dateDelim);
+                    yearPos = find(strlength(d2Parts)==4);
+                    possiblePos = 1:3;
+                    possiblePos(yearPos) = [];
+                    posDiff = [abs(str2double(d1Parts(possiblePos(1))) - str2double(d2Parts(possiblePos(1)))),...
+                        abs(str2double(d1Parts(possiblePos(2))) - str2double(d2Parts(possiblePos(2))))];
+                    if any(posDiff>0)
+                        [~,k] = max(posDiff);
+                        dayPos = possiblePos(k);
+                        break;
+                    end
+                end
+            end
+            ii = ii + 1;
+            if isa(dataLine,'double') || ii > 86400*10 % 1day if Fs = 10
+                break;
+            end
+        end
+    end
+    fclose(fid);
+    
+    if ~isnan(dayPos) && ~isnan(yearPos)
+        dateParts = ["","",""];
+        dateParts(dayPos) = "dd";
+        dateParts(yearPos) = "yyyy";
+        dateParts(strcmp(dateParts,"")) = "MM";
+        dateFmt = strjoin(dateParts,"/");
+    end
+    
+    if ~isnan(colMap(useCol('time',colCell)))
+        timeString = dataArr(1,colMap(useCol('time',colCell)));
+        timeParts = strsplit(timeString,timeDelim);
+        if strlength(timeParts(end)) == 2
+            timeFmt = "HH:mm:ss";
+        else
+            timeFmt = "HH:mm:ss.S"; % this should work for all ms after period
         end
     end
 
-    % can we form a datetime?
-    if isnan(colMap(useCol('datetime',colCell)))
-        if isnan(colMap(useCol('date',colCell))) || isnan(colMap(useCol('time',colCell)))
-            hasError = true;
-            disp("Error: unable to make datetime");
+    % start error reporting
+    if strcmp(dateFmt,"") == 0 && strcmp(timeFmt,"") == 0
+        if colMap(useCol('date',colCell)) == colMap(useCol('time',colCell)) % same col
+            allDates = datetime(dateString,'inputformat',strjoin([dateFmt,timeFmt]," ")); % join formats
+            startDate = allDates(1);
+            Fs = 1/seconds(allDates(2)-allDates(1));
+        elseif ~isnan(colMap(useCol('time',colCell))) % time is separate
+            startDate = datetime(dateString(1),'inputformat',dateFmt);
+            timeStrings = dataArr(:,colMap(useCol('time',colCell)));
+            allTimes = datetime(timeStrings,'inputformat',timeFmt);
+            Fs = 1/seconds(allTimes(2)-allTimes(1));
         end
     end
-    if isnan(Fs)
+    if isnan(Fs) || isnat(startDate)
         hasError = true;
-        disp("Error: Fs was not determined");
+        disp("Error: Fs or date issues");
     end
+
     if isnan(colMap(useCol('odba',colCell)))
         if isnan(colMap(useCol('x',colCell)))
             hasError = true;
@@ -190,17 +183,25 @@ function [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,dataLines] = g
         hasError = true;
         disp("Error: no temperature");
     end
+    
+    % compress all possible names
+    colNames = colCell;
+    for ii = 1:numel(colCell)
+        if iscell(colNames{ii})
+            colNames(ii) = colNames{ii}(1);
+        end
+    end
     dataLines = dataLines(1:10); % only return 10
 end
 
-function [Fs,dateFmt] = getFs(data)
+function Fs = getFs(data)
     Fs = NaN;
     dateFmt = '';
     try
         dt = datetime(data);
         Fs = 1/seconds(median(diff(dt)));
     catch
-        parts = strsplit(data(1),'/');
+        parts = strsplit(data(1),dateDelim);
         if strlength(parts(1)) == 4
             dateFmt = 'yyyy/MM/dd HH:mm:ss';
             dateFmt = dateFmt(1:strlength(data(1))); % only date
