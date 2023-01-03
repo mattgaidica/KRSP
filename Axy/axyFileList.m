@@ -4,47 +4,46 @@ if do
     rootDir = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data';
     files = dir2(rootDir,'-r','*.csv');
     mbSize = 1048576; % MB
-    files = files([files.bytes] >= mbSize*30);
-    files = struct2table(files);
+    files = struct2table(files([files.bytes] >= mbSize*30));
 
-    warning ('off','all');
-    T_AxyFiles = table;
+    fnames = string;
     for ii = 1:size(files,1)
-        T_AxyFiles.id(ii) = ii;
-        T_AxyFiles.folder(ii) = string(files.folder(ii));
         [~,name,ext] = fileparts(files.name(ii));
-        T_AxyFiles.filename(ii) = string([name,ext]);
-        T_AxyFiles.mb(ii) = round(files.bytes(ii) / mbSize);
+        fnames(ii,:) = string(fullfile(files.folder(ii),[name,ext]));
+    end
 
-        fname = fullfile(T_AxyFiles.folder(ii),T_AxyFiles.filename(ii));
-        
-        [colMap,colNames,hasHeader,hasError,Fs,startDate,dateFmt,timeFmt,dataLines] = getAxyHeader(fname);
-        T_AxyFiles.Fs(ii) = Fs;
-        T_AxyFiles.colNames(ii) = {colNames};
-        T_AxyFiles.colMap(ii) = {colMap};
-        T_AxyFiles.hasError(ii) = hasError;
-        T_AxyFiles.hasHeader(ii) = hasHeader;
-        T_AxyFiles.startDate(ii) = startDate;
-        T_AxyFiles.dateFmt(ii) = string(dateFmt);
-        T_AxyFiles.timeFmt(ii) = string(timeFmt);
-        T_AxyFiles.dataLines(ii) = {string(dataLines)};
-        
-        if hasError
-            hold on;
-        end
-        
-        [status,cmdout] = system(sprintf('wc -l "%s"',fname)); % unix
-        if status == 0
-            cmdParts = strsplit(strtrim(cmdout));
-            T_AxyFiles.rows(ii) = str2double(cmdParts(1));
-        else
-            T_AxyFiles.rows(ii) = NaN;
-        end
-        if ~isnan(T_AxyFiles.Fs(ii))
-            T_AxyFiles.days(ii) = floor(T_AxyFiles.rows(ii) / (86400*T_AxyFiles.Fs(ii)));
-        else
-            T_AxyFiles.days(ii) = NaN;
-        end
+    tic;
+    results = {};
+    n = numel(fnames);
+    D = parallel.pool.DataQueue;
+    h = waitbar(0, 'Please wait ...');
+    nUpdateWaitbar(n, h);
+    afterEach(D, @nUpdateWaitbar);
+    parfor ii = 1:n
+        results{ii} = getAxyHeader(fnames(ii));
+        send(D,1);
+    end
+    toc
+
+    T_AxyFiles = table;
+    warning ('off','all');
+    for ii = 1:numel(results)
+        T_AxyFiles.id(ii) = ii;
+        [path,name,ext] = fileparts(fnames(ii));
+        T_AxyFiles.folder(ii) = string(path);
+        T_AxyFiles.filename(ii) = string(name+ext);
+        T_AxyFiles.mb(ii) = round(files.bytes(ii) / mbSize);
+        T_AxyFiles.Fs(ii) = results{ii}.Fs;
+        T_AxyFiles.colNames(ii) = {results{ii}.colNames};
+        T_AxyFiles.colMap(ii) = {results{ii}.colMap};
+        T_AxyFiles.hasError(ii) = results{ii}.hasError;
+        T_AxyFiles.hasHeader(ii) = results{ii}.hasHeader;
+        T_AxyFiles.startDate(ii) = results{ii}.startDate;
+        T_AxyFiles.dateFmt(ii) = string(results{ii}.dateFmt);
+        T_AxyFiles.timeFmt(ii) = string(results{ii}.timeFmt);
+        T_AxyFiles.rows(ii) = results{ii}.rows;
+        T_AxyFiles.days(ii) = results{ii}.days;
+        T_AxyFiles.dataLines(ii) = {string(results{ii}.dataLines)};
         fprintf("%03d/%i (%1.1f%%) %s - %i days\n",ii,size(files,1),100*ii/size(files,1),T_AxyFiles.filename(ii),T_AxyFiles.days(ii));
     end
     warning ('on','all');
@@ -84,10 +83,11 @@ end
 %%
 close all;
 rows = 1;
-cols = 2;
+cols = 5;
 ff(300*cols,300);
 subplot(rows,cols,1);
 histogram(T_AxyFiles.days);
+xlabel('rec days');
 title('Days per session');
 grid on;
 
@@ -96,5 +96,28 @@ histogram(year(T_AxyFiles.startDate),min(year(T_AxyFiles.startDate))-0.5:max(yea
 title('Sessions per year');
 xtickangle(30);
 grid on;
+
+subplot(rows,cols,3);
+histogram(month(T_AxyFiles.startDate),0.5:12.5);
+xticks(1:12);
+title('Sessions per month');
+xlabel('month');
+xtickangle(30);
+grid on;
+
+subplot(rows,cols,4:5)
+recDays = zeros(size(T_AxyFiles,1),366);
+for ii = 1:size(T_AxyFiles,1)
+    theseDays = zeros(1,366);
+    theseDays(1:T_AxyFiles.days(ii)) = 1;
+    theseDays = circshift(theseDays,day(T_AxyFiles.startDate(ii),'dayofyear'));
+    recDays(ii,:) = theseDays;
+end
+imagesc(recDays);
+colormap("gray");
+title('Data Coverage')
+xlabel('DOY');
+xticks([1,366]);
+ylabel('Rec session');
 
 fprintf("%i cumulative days\n",sum(T_AxyFiles.days));
