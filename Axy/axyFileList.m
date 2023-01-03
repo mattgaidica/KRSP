@@ -23,6 +23,7 @@ if do
         results{ii} = getAxyHeader(fnames(ii));
         send(D,1);
     end
+    close(h);
     toc
 
     T_AxyFiles = table;
@@ -55,6 +56,9 @@ end
 fprintf("%i/%i errors, %i/%i have headers\n",sum(T_AxyFiles.hasError),size(T_AxyFiles,1),sum(T_AxyFiles.hasHeader),size(T_AxyFiles,1));
 
 %% find duplicates
+% find all files with higher-level xlsx
+axyLogIds = searchForLogs(T_AxyFiles,rootDir);
+
 sameList = [];
 sameCount = 0;
 clc
@@ -63,57 +67,64 @@ for ii = 1:size(T_AxyFiles)
     for jj = 1:numel(tryIdx)
         if all((T_AxyFiles.dataLines{ii} == T_AxyFiles.dataLines{tryIdx(jj)}))
             sameCount = sameCount + 1;
-            sameList(sameCount,1:2) = [ii tryIdx(jj)]; %#ok<SAGROW>
+            % second element will be excluded below, keep files w logs
+            if ismember(ii,axyLogIds)
+                sameList(sameCount,1:2) = [ii tryIdx(jj)]; %#ok<SAGROW>
+            else
+                sameList(sameCount,1:2) = [tryIdx(jj) ii]; %#ok<SAGROW>
+            end
             fprintf("%s (%s)\n%s (%s)\n\n",T_AxyFiles.filename(ii),T_AxyFiles.folder(ii),...
                 T_AxyFiles.filename(tryIdx(jj)),T_AxyFiles.folder(tryIdx(jj)));
         end
     end
 end
 fprintf("%i/%i entries the same\n",size(sameList,1),size(T_AxyFiles,1));
-%%
-answer = questdlg("Remove duplicates?","Duplicates","Yes","No","No");
-if strcmp(answer,"Yes")
-    T_AxyFiles(sameList(:,2),:) = [];
-    T_AxyFiles.id(1:size(T_AxyFiles,1)) = 1:size(T_AxyFiles,1);
-    fprintf("Removed %i files, now contains %i files\n",size(sameList,1),size(T_AxyFiles,1));
-else
-    fprintf("No files removed\n");
+if sameCount > 0
+    answer = questdlg("Remove duplicates?","Duplicates","Yes","No","No");
+    if strcmp(answer,"Yes")
+        T_AxyFiles(sameList(:,2),:) = [];
+        T_AxyFiles.id(1:size(T_AxyFiles,1)) = 1:size(T_AxyFiles,1);
+        fprintf("Removed %i files, now contains %i files\n",size(sameList,1),size(T_AxyFiles,1));
+    else
+        fprintf("No files removed\n");
+    end
 end
+
+% do again now that dups are excluded
+[axyLogIds,no_axyLogIds] = searchForLogs(T_AxyFiles,rootDir);
+% !! could do >> T_AxyFiles(no_axyLogIds,:) == [];
+% but more files might be rm in the future
 
 %%
 close all;
 rows = 1;
-cols = 5;
-ff(300*cols,300);
+cols = 4;
+ff(1200,300);
 subplot(rows,cols,1);
-histogram(T_AxyFiles.days);
+histogram(T_AxyFiles.days,'facecolor','k','facealpha',1,'edgecolor','w');
 xlabel('rec days');
 title('Days per session');
 grid on;
 
 subplot(rows,cols,2);
-histogram(year(T_AxyFiles.startDate),min(year(T_AxyFiles.startDate))-0.5:max(year(T_AxyFiles.startDate))+0.5);
+histogram(year(T_AxyFiles.startDate),min(year(T_AxyFiles.startDate))-0.5:max(year(T_AxyFiles.startDate))+0.5,...
+    'facecolor','k','facealpha',1,'edgecolor','w');
+xticks(min(year(T_AxyFiles.startDate)):max(year(T_AxyFiles.startDate)));
 title('Sessions per year');
 xtickangle(30);
 grid on;
 
-subplot(rows,cols,3);
-histogram(month(T_AxyFiles.startDate),0.5:12.5);
-xticks(1:12);
-title('Sessions per month');
-xlabel('month');
-xtickangle(30);
-grid on;
-
-subplot(rows,cols,4:5)
+subplot(rows,cols,3:4)
 recDays = zeros(size(T_AxyFiles,1),366);
+[v,k] = sort(day(T_AxyFiles.startDate,'dayofyear'));
 for ii = 1:size(T_AxyFiles,1)
     theseDays = zeros(1,366);
-    theseDays(1:T_AxyFiles.days(ii)) = 1;
-    theseDays = circshift(theseDays,day(T_AxyFiles.startDate(ii),'dayofyear'));
+    theseDays(1:T_AxyFiles.days(k(ii))) = 1;
+    theseDays = circshift(theseDays,v(ii));
     recDays(ii,:) = theseDays;
 end
 imagesc(recDays);
+set(gca,'ydir','normal');
 colormap("gray");
 title('Data Coverage')
 xlabel('DOY');
