@@ -1,4 +1,4 @@
-function [axyLogIds,no_axyLogIds] = searchForLogs(T_AxyFiles,rootDir)
+function [axyLogIds,no_axyLogIds,logFileList] = searchForLogs(T_AxyFiles,rootDir)
 xlFiles = dir2(rootDir,'-r','*.xlsx');
 % remove hidden files
 rmIds = [];
@@ -11,14 +11,22 @@ end
 xlFiles(rmIds,:) = [];
 
 axyLogIds = [];
+logFileList = string;
+fCount = 0;
 for ii = 1:size(xlFiles)
     csvFiles = dir2(xlFiles(ii).folder,'-r','*.csv');
+    [~,name,ext] = fileparts(xlFiles(ii).name);
+    logFilename = [name,ext];
     for jj = 1:numel(csvFiles)
         [~,name,ext] = fileparts(csvFiles(jj).name);
-        axyLogIds = [axyLogIds;find(strcmp(T_AxyFiles.filename,[name,ext]))]; %#ok<AGROW>
+        axyId = find(strcmp(T_AxyFiles.filename,[name,ext]));
+        for kk = 1:numel(axyId)
+            fCount = fCount + 1;
+            axyLogIds(fCount) = axyId(kk); %#ok<AGROW>
+            logFileList(fCount,:) = string(fullfile(xlFiles(ii).folder,logFilename));
+        end
     end
 end
-axyLogIds = unique(axyLogIds);
 clc
 no_axyLogIds = [];
 for ii = 1:size(T_AxyFiles,1)

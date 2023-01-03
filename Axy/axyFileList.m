@@ -91,9 +91,11 @@ if sameCount > 0
 end
 
 % do again now that dups are excluded
-[axyLogIds,no_axyLogIds] = searchForLogs(T_AxyFiles,rootDir);
+[axyLogIds,no_axyLogIds,logFileList] = searchForLogs(T_AxyFiles,rootDir);
 % !! could do >> T_AxyFiles(no_axyLogIds,:) == [];
 % but more files might be rm in the future
+% logFileList are candidates, need to work on identifying actual logs
+% (maybe these all need to have "log" in filename)
 
 %%
 close all;
