@@ -9,6 +9,7 @@ timeDelim = ":";
 startDate = NaT;
 nRows = NaN;
 nDays = NaN;
+headerCols = {};
 % locale: 'America/Whitehorse'
 
 nFs = 3; % header+2
@@ -54,10 +55,10 @@ battCols = [];
 for ii = 1:size(dataArr,2) % iterate columns
     % datetime
     if contains(dataArr(1,ii),dateDelim)
-        dateCols = [dateCols ii];
+        dateCols = [dateCols ii]; %#ok<AGROW> 
     end
     if contains(dataArr(1,ii),timeDelim)
-        timeCols = [timeCols ii];
+        timeCols = [timeCols ii]; %#ok<AGROW> 
     end
 
     dataDouble = str2double(dataArr(:,ii));
@@ -108,26 +109,31 @@ if ~isnan(colMap(useCol('date',colCell)))
     ii = 0;
     while(1)
         dataLine = fgetl(fid);
-        if ~isa(dataLine,'double') && mod(ii,1000) == 0 % test periodically
+        if ~isa(dataLine,'double') && mod(ii,1000) == 0 % test periodically, double for -1
             dataLines(end,:) = strrep(dataLine,'"','');
             dataArr = delimText(dataLines(double(hasHeader)+1:end)); % exclude header
             dateString = dataArr(:,colMap(useCol('date',colCell)));
-            try
-                dateParts = split(dateString);
-            catch
-                hold on;
-            end
+            dateParts = split(dateString);
             dateNoTime = dateParts(:,1);
             d1 = dateNoTime(end-1);
             d2 = dateNoTime(end);
             if strcmp(d1,d2) == 0 % different
-                d1Parts = strsplit(d1,dateDelim);
-                d2Parts = strsplit(d2,dateDelim);
-                yearPos = find(strlength(d2Parts)==4);
+                d1Parts = double(strsplit(d1,dateDelim));
+                d2Parts = double(strsplit(d2,dateDelim));
+                yearPos = find(d1Parts>2000);
+                if isempty(yearPos) % year must not exist/two digits
+                    break;
+                end
                 possiblePos = 1:3;
                 possiblePos(yearPos) = [];
-                posDiff = [abs(str2double(d1Parts(possiblePos(1))) - str2double(d2Parts(possiblePos(1)))),...
-                    abs(str2double(d1Parts(possiblePos(2))) - str2double(d2Parts(possiblePos(2))))];
+                % detect day by > 12
+                k = find(d1Parts(possiblePos)>12 | d2Parts(possiblePos)>12);
+                if ~isempty(k)
+                    dayPos = possiblePos(k);
+                    break;
+                end
+                % or detect day by changing values
+                posDiff = abs(d1Parts(possiblePos)-d2Parts(possiblePos));
                 if any(posDiff>0)
                     [~,k] = max(posDiff);
                     dayPos = possiblePos(k);
@@ -210,10 +216,26 @@ for ii = 1:numel(colCell)
     end
 end
 
+% make header labels
+defaultLabel  = "var";
+defaultCount = 0;
+headerLabels = {};
+for ii = 1:numel(headerCols)
+    mapIds = find(colMap==ii);
+    if ~isempty(mapIds)
+        headerLabels{ii} = [colNames{mapIds}]; %#ok<*AGROW> % handles datetime
+    else
+        defaultCount = defaultCount + 1;
+        headerLabels{ii} = sprintf("%s%i",defaultLabel,defaultCount);
+    end
+end
+
 % make results struct, !!could replace inline
 results = struct;
 results.colMap = colMap;
 results.colNames = colNames;
+results.headerColumns = numel(headerCols);
+results.headerLabels = headerLabels;
 results.hasHeader = hasHeader;
 results.hasError = hasError;
 results.Fs = Fs;

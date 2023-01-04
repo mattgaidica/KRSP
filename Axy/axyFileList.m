@@ -21,6 +21,7 @@ if do
     afterEach(D, @nUpdateWaitbar);
     parfor ii = 1:n
         results{ii} = getAxyHeader(fnames(ii));
+        disp(ii);
         send(D,1);
     end
     close(h);
