@@ -27,7 +27,7 @@ for ii = 1:size(xlFiles)
         end
     end
 end
-clc
+
 no_axyLogIds = [];
 for ii = 1:size(T_AxyFiles,1)
     if ismember(ii,axyLogIds)

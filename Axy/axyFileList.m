@@ -25,10 +25,11 @@ if do
         send(D,1);
     end
     close(h);
-    toc
+    toc;
 
     T_AxyFiles = table;
     warning ('off','all');
+    tic;
     for ii = 1:numel(results)
         T_AxyFiles.id(ii) = ii;
         [path,name,ext] = fileparts(fnames(ii));
@@ -38,6 +39,8 @@ if do
         T_AxyFiles.Fs(ii) = results{ii}.Fs;
         T_AxyFiles.colNames(ii) = {results{ii}.colNames};
         T_AxyFiles.colMap(ii) = {results{ii}.colMap};
+        T_AxyFiles.headerColumns(ii) = results{ii}.headerColumns;
+        T_AxyFiles.headerLabels(ii) = {results{ii}.headerLabels};
         T_AxyFiles.hasError(ii) = results{ii}.hasError;
         T_AxyFiles.hasHeader(ii) = results{ii}.hasHeader;
         T_AxyFiles.startDate(ii) = results{ii}.startDate;
@@ -45,54 +48,56 @@ if do
         T_AxyFiles.timeFmt(ii) = string(results{ii}.timeFmt);
         T_AxyFiles.rows(ii) = results{ii}.rows;
         T_AxyFiles.days(ii) = results{ii}.days;
+        T_AxyFiles.md5(ii) = results{ii}.md5;
         T_AxyFiles.dataLines(ii) = {string(results{ii}.dataLines)};
-        fprintf("%03d/%i (%1.1f%%) %s - %i days\n",ii,size(files,1),100*ii/size(files,1),T_AxyFiles.filename(ii),T_AxyFiles.days(ii));
     end
+    toc;
     warning ('on','all');
     do = 0;
     save("T_AxyFiles",'T_AxyFiles','rootDir');
     t = T_AxyFiles; % backup variable
-    toc;
 end
+clc
 fprintf("%i/%i errors, %i/%i have headers\n",sum(T_AxyFiles.hasError),size(T_AxyFiles,1),sum(T_AxyFiles.hasHeader),size(T_AxyFiles,1));
 
 %% find duplicates
 % find all files with higher-level xlsx
-axyLogIds = searchForLogs(T_AxyFiles,rootDir);
+% % axyLogIds = searchForLogs(T_AxyFiles,rootDir);
 
 sameList = [];
 sameCount = 0;
+sameMenu = {};
 clc
-for ii = 1:size(T_AxyFiles)
-    tryIdx = find(T_AxyFiles.rows == T_AxyFiles.rows(ii) & T_AxyFiles.id ~= ii & ~ismember(ii,sameList(:)));
-    for jj = 1:numel(tryIdx)
-        if all((T_AxyFiles.dataLines{ii} == T_AxyFiles.dataLines{tryIdx(jj)}))
-            sameCount = sameCount + 1;
-            % second element will be excluded below, keep files w logs
-            if ismember(ii,axyLogIds)
-                sameList(sameCount,1:2) = [ii tryIdx(jj)]; %#ok<SAGROW>
-            else
-                sameList(sameCount,1:2) = [tryIdx(jj) ii]; %#ok<SAGROW>
-            end
-            fprintf("%s (%s)\n%s (%s)\n\n",T_AxyFiles.filename(ii),T_AxyFiles.folder(ii),...
-                T_AxyFiles.filename(tryIdx(jj)),T_AxyFiles.folder(tryIdx(jj)));
+for ii = 1:size(T_AxyFiles,1)
+    sameIds = find(strcmp(T_AxyFiles.md5{ii},T_AxyFiles.md5));
+    if numel(sameIds) > 1 && ~any(ismember(sameIds,sameList))
+        sameCount = sameCount + 1;
+        sameList = [sameList;sameIds]; %#ok<AGROW> 
+        sameMenu{sameCount} = sameIds; %#ok<SAGROW> 
+        for jj = 1:numel(sameIds)
+            fprintf("%s - %s\n",T_AxyFiles.filename(sameIds(jj)),T_AxyFiles.folder(sameIds(jj)));
         end
+        fprintf("\n");
     end
 end
-fprintf("%i/%i entries the same\n",size(sameList,1),size(T_AxyFiles,1));
-if sameCount > 0
-    answer = questdlg("Remove duplicates?","Duplicates","Yes","No","No");
-    if strcmp(answer,"Yes")
-        T_AxyFiles(sameList(:,2),:) = [];
-        T_AxyFiles.id(1:size(T_AxyFiles,1)) = 1:size(T_AxyFiles,1);
-        fprintf("Removed %i files, now contains %i files\n",size(sameList,1),size(T_AxyFiles,1));
-    else
-        fprintf("No files removed\n");
-    end
-end
+fprintf("%i duplicates found\n",sameCount);
+
+%!! remove duplicates? based on what?
+
+% fprintf("%i/%i entries the same\n",size(sameList,1),size(T_AxyFiles,1));
+% if sameCount > 0
+%     answer = questdlg("Remove duplicates?","Duplicates","Yes","No","No");
+%     if strcmp(answer,"Yes")
+%         T_AxyFiles(sameList(:,2),:) = [];
+%         T_AxyFiles.id(1:size(T_AxyFiles,1)) = 1:size(T_AxyFiles,1);
+%         fprintf("Removed %i files, now contains %i files\n",size(sameList,1),size(T_AxyFiles,1));
+%     else
+%         fprintf("No files removed\n");
+%     end
+% end
 
 % do again now that dups are excluded
-[axyLogIds,no_axyLogIds,logFileList] = searchForLogs(T_AxyFiles,rootDir);
+% % [axyLogIds,no_axyLogIds,logFileList] = searchForLogs(T_AxyFiles,rootDir);
 % !! could do >> T_AxyFiles(no_axyLogIds,:) == [];
 % but more files might be rm in the future
 % logFileList are candidates, need to work on identifying actual logs

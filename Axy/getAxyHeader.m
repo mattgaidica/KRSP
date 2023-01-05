@@ -10,6 +10,7 @@ startDate = NaT;
 nRows = NaN;
 nDays = NaN;
 headerCols = {};
+md5 = "";
 % locale: 'America/Whitehorse'
 
 nFs = 3; % header+2
@@ -109,7 +110,7 @@ if ~isnan(colMap(useCol('date',colCell)))
     ii = 0;
     while(1)
         dataLine = fgetl(fid);
-        if ~isa(dataLine,'double') && mod(ii,1000) == 0 % test periodically, double for -1
+        if ~isa(dataLine,'double') && mod(ii,7200) == 0 % test periodically, double for -1
             dataLines(end,:) = strrep(dataLine,'"','');
             dataArr = delimText(dataLines(double(hasHeader)+1:end)); % exclude header
             dateString = dataArr(:,colMap(useCol('date',colCell)));
@@ -187,6 +188,13 @@ if status == 0
     nRows = str2double(cmdParts(1));
 end
 
+[status,cmdout] = system(sprintf('md5 "%s"',fname)); % unix
+if status == 0
+    cmdParts = strsplit(strtrim(cmdout));
+    md5 = string(cmdParts(end));
+end
+
+
 if ~isnan(nRows) && ~isnan(Fs)
     nDays = floor(nRows / (86400*Fs));
 end
@@ -217,16 +225,23 @@ for ii = 1:numel(colCell)
 end
 
 % make header labels
+headerLabels = cell(1,size(dataArr,2));
+for ii = 1:numel(colMap)
+    if ~isnan(colMap(ii))
+        if ~isempty(headerLabels{colMap(ii)}) % datetime condition
+            headerLabels{colMap(ii)} = [headerLabels{colMap(ii)},colNames{ii}];
+        else
+            headerLabels{colMap(ii)} = colNames{ii};
+        end
+    end
+end
+% fill missing
 defaultLabel  = "var";
 defaultCount = 0;
-headerLabels = {};
-for ii = 1:numel(headerCols)
-    mapIds = find(colMap==ii);
-    if ~isempty(mapIds)
-        headerLabels{ii} = [colNames{mapIds}]; %#ok<*AGROW> % handles datetime
-    else
+for ii = 1:numel(headerLabels)
+    if isempty(headerLabels{ii})
         defaultCount = defaultCount + 1;
-        headerLabels{ii} = sprintf("%s%i",defaultLabel,defaultCount);
+        headerLabels{ii} = sprintf('%s%i',defaultLabel,defaultCount);
     end
 end
 
@@ -242,6 +257,7 @@ results.Fs = Fs;
 results.startDate = startDate;
 results.dateFmt = dateFmt;
 results.timeFmt = timeFmt;
-results.dataLines = dataLines(1:10);
+results.dataLines = dataLines(1:5);
 results.days = nDays;
 results.rows = nRows;
+results.md5 = md5;
