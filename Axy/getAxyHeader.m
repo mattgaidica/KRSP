@@ -13,7 +13,7 @@ headerCols = {};
 md5 = "";
 % locale: 'America/Whitehorse'
 
-nFs = 3; % header+2
+nFs = 5; % header+2
 fid = fopen(fname);
 dataLines = string;
 jj = 0;
@@ -21,7 +21,7 @@ jj = 0;
 % header line (ii=1)
 for ii = 1:2000
     dataLine = fgetl(fid);
-    if ii <= nFs || mod(ii,100) == 0
+    if ~isa(dataLine,'double') && (ii <= nFs || mod(ii,100) == 0)
         jj = jj + 1;
         dataLines(jj,:) = strrep(dataLine,'"','');
     end
@@ -70,7 +70,7 @@ for ii = 1:size(dataArr,2) % iterate columns
             xlCols = [xlCols ii]; %#ok<AGROW>
         elseif medCols > 10
             tempCols = [tempCols ii]; %#ok<AGROW>
-        elseif medCols > 3 && medCols < 6
+        else
             battCols = [battCols ii]; %#ok<AGROW>
         end
     end
@@ -109,31 +109,32 @@ dayPos = NaN;
 if ~isnan(colMap(useCol('date',colCell)))
     ii = 0;
     while(1)
-        dataLine = fgetl(fid);
-        if ~isa(dataLine,'double') && mod(ii,7200) == 0 % test periodically, double for -1
-            dataLines(end,:) = strrep(dataLine,'"','');
-            dataArr = delimText(dataLines(double(hasHeader)+1:end)); % exclude header
+        if mod(ii,7200) == 0 % test periodically
+            if ~isa(dataLine,'double') % in case -1 from reading file above
+                dataLines(end,:) = strrep(dataLine,'"','');
+                dataArr = delimText(dataLines(double(hasHeader)+1:end)); % exclude header
+            end
             dateString = dataArr(:,colMap(useCol('date',colCell)));
             dateParts = split(dateString);
             dateNoTime = dateParts(:,1);
             d1 = dateNoTime(end-1);
             d2 = dateNoTime(end);
+            d1Parts = double(strsplit(d1,dateDelim));
+            d2Parts = double(strsplit(d2,dateDelim));
+            yearPos = find(d1Parts>2000);
+            if isempty(yearPos) % year must not exist/two digits
+                break;
+            end
+            possiblePos = 1:3;
+            possiblePos(yearPos) = [];
+            % detect day by > 12
+            k = find(d1Parts(possiblePos)>12 | d2Parts(possiblePos)>12);
+            if ~isempty(k)
+                dayPos = possiblePos(k);
+                break;
+            end
+            % or detect day by changing values
             if strcmp(d1,d2) == 0 % different
-                d1Parts = double(strsplit(d1,dateDelim));
-                d2Parts = double(strsplit(d2,dateDelim));
-                yearPos = find(d1Parts>2000);
-                if isempty(yearPos) % year must not exist/two digits
-                    break;
-                end
-                possiblePos = 1:3;
-                possiblePos(yearPos) = [];
-                % detect day by > 12
-                k = find(d1Parts(possiblePos)>12 | d2Parts(possiblePos)>12);
-                if ~isempty(k)
-                    dayPos = possiblePos(k);
-                    break;
-                end
-                % or detect day by changing values
                 posDiff = abs(d1Parts(possiblePos)-d2Parts(possiblePos));
                 if any(posDiff>0)
                     [~,k] = max(posDiff);
@@ -142,13 +143,23 @@ if ~isnan(colMap(useCol('date',colCell)))
                 end
             end
         end
-        ii = ii + 1;
+        % read line after above has executed once
+        dataLine = fgetl(fid);
         if isa(dataLine,'double') || ii > 86400*10 % 1day if Fs = 10
             break;
         end
+        ii = ii + 1;
     end
 end
 fclose(fid);
+
+if isnan(dayPos) && ~isnan(yearPos)
+    if yearPos == 1
+        dayPos = 3;
+    elseif yearPos == 3
+        dayPos = 1;
+    end
+end
 
 if ~isnan(dayPos) && ~isnan(yearPos)
     dateParts = ["","",""];
@@ -168,8 +179,16 @@ if ~isnan(colMap(useCol('time',colCell)))
     end
 end
 
+% % % small files?
+% % if strcmp(dateFmt,"")
+% %     if colMap(useCol('date',colCell)) == 1
+% %         dateFmt = "dd/MM/yyyy";
+% %     end
+% % end
+
 % start error reporting
 if strcmp(dateFmt,"") == 0 && strcmp(timeFmt,"") == 0
+    dateString = dataArr(:,colMap(useCol('date',colCell))); % make sure this exists
     if colMap(useCol('date',colCell)) == colMap(useCol('time',colCell)) % same col
         allDates = datetime(dateString,'inputformat',strjoin([dateFmt,timeFmt]," ")); % join formats
         startDate = allDates(1);
@@ -193,7 +212,6 @@ if status == 0
     cmdParts = strsplit(strtrim(cmdout));
     md5 = string(cmdParts(end));
 end
-
 
 if ~isnan(nRows) && ~isnan(Fs)
     nDays = floor(nRows / (86400*Fs));
@@ -223,7 +241,6 @@ for ii = 1:numel(colCell)
         colNames(ii) = colNames{ii}(1);
     end
 end
-
 % make header labels
 headerLabels = cell(1,size(dataArr,2));
 for ii = 1:numel(colMap)
@@ -235,6 +252,7 @@ for ii = 1:numel(colMap)
         end
     end
 end
+
 % fill missing
 defaultLabel  = "var";
 defaultCount = 0;
@@ -257,7 +275,7 @@ results.Fs = Fs;
 results.startDate = startDate;
 results.dateFmt = dateFmt;
 results.timeFmt = timeFmt;
-results.dataLines = dataLines(1:5);
+results.dataLines = dataLines(1:nFs);
 results.days = nDays;
 results.rows = nRows;
 results.md5 = md5;

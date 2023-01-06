@@ -1,41 +1,60 @@
 if do
-    tic;
+    doParfor = true;
     clc;
     rootDir = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data';
-    files = dir2(rootDir,'-r','*.csv');
+    csvFiles = dir2(rootDir,'-r','*.csv');
     mbSize = 1048576; % MB
-    files = struct2table(files([files.bytes] >= mbSize*30));
-
+    csvFiles = struct2table(csvFiles);
+%     files = struct2table(files([files.bytes] >= 4096));
+%     files = struct2table(files([files.bytes] >= mbSize*30));
+    
+    logFiles = {'2019axy_dateIssues.csv','2020 AXY logsheet.csv','AxyLog2017.csv',...
+        'SQRaxy_key_mid_den.csv'};
     fnames = string;
-    for ii = 1:size(files,1)
-        [~,name,ext] = fileparts(files.name(ii));
-        fnames(ii,:) = string(fullfile(files.folder(ii),[name,ext]));
+    jj = 0;
+    rmIds = [];
+    for ii = 1:size(csvFiles,1)
+        [~,name,ext] = fileparts(csvFiles.name(ii));
+        if ~any(strcmp(name(1),{'.','~'})) && ~ismember([name,ext],logFiles)
+            jj = jj + 1;
+            fnames(jj,:) = string(fullfile(csvFiles.folder(ii),[name,ext]));
+        else
+            fprintf("skipping fname %i %s\n",ii,[name,ext]);
+            rmIds = [rmIds ii]; %#ok<AGROW> 
+        end
     end
+    csvFiles(rmIds,:) = [];
 
     tic;
     results = {};
     n = numel(fnames);
-    D = parallel.pool.DataQueue;
-    h = waitbar(0, 'Please wait ...');
-    nUpdateWaitbar(n, h);
-    afterEach(D, @nUpdateWaitbar);
-    parfor ii = 1:n
-        results{ii} = getAxyHeader(fnames(ii));
-        disp(ii);
-        send(D,1);
+    if ~doParfor
+        for ii = 1:n
+            disp(ii);
+            results{ii} = getAxyHeader(fnames(ii)); %#ok<SAGROW> 
+        end
+    else
+        D = parallel.pool.DataQueue;
+        h = waitbar(0, 'Please wait ...');
+        nUpdateWaitbar(n, h);
+        afterEach(D, @nUpdateWaitbar);
+        parfor ii = 1:n
+            disp(ii);
+            results{ii} = getAxyHeader(fnames(ii));
+            send(D,1);
+        end
+        close(h);
     end
-    close(h);
     toc;
 
     T_AxyFiles = table;
     warning ('off','all');
-    tic;
     for ii = 1:numel(results)
         T_AxyFiles.id(ii) = ii;
         [path,name,ext] = fileparts(fnames(ii));
         T_AxyFiles.folder(ii) = string(path);
         T_AxyFiles.filename(ii) = string(name+ext);
-        T_AxyFiles.mb(ii) = round(files.bytes(ii) / mbSize);
+        T_AxyFiles.bytes(ii) = csvFiles.bytes(ii);
         T_AxyFiles.Fs(ii) = results{ii}.Fs;
         T_AxyFiles.colNames(ii) = {results{ii}.colNames};
         T_AxyFiles.colMap(ii) = {results{ii}.colMap};
@@ -51,7 +70,6 @@ if do
         T_AxyFiles.md5(ii) = results{ii}.md5;
         T_AxyFiles.dataLines(ii) = {string(results{ii}.dataLines)};
     end
-    toc;
     warning ('on','all');
     do = 0;
     save("T_AxyFiles",'T_AxyFiles','rootDir');
@@ -111,6 +129,7 @@ ff(1200,300);
 subplot(rows,cols,1);
 histogram(T_AxyFiles.days,'facecolor','k','facealpha',1,'edgecolor','w');
 xlabel('rec days');
+ylabel('sessions');
 title('Days per session');
 grid on;
 
@@ -119,6 +138,7 @@ histogram(year(T_AxyFiles.startDate),min(year(T_AxyFiles.startDate))-0.5:max(yea
     'facecolor','k','facealpha',1,'edgecolor','w');
 xticks(min(year(T_AxyFiles.startDate)):max(year(T_AxyFiles.startDate)));
 title('Sessions per year');
+ylabel('sessions');
 xtickangle(30);
 grid on;
 
