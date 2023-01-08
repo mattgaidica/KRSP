@@ -213,7 +213,7 @@ if status == 0
     md5 = string(cmdParts(end));
 end
 
-if ~isnan(nRows) && ~isnan(Fs)
+if ~isnan(nRows) && ~isnan(Fs) && ~isinf(Fs)
     nDays = floor(nRows / (86400*Fs));
 end
 

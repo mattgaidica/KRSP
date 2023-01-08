@@ -1,5 +1,5 @@
 if do
-    doParfor = true;
+    doParfor = false;
     clc;
     rootDir = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data';
     csvFiles = dir2(rootDir,'-r','*.csv');
@@ -29,7 +29,7 @@ if do
     results = {};
     n = numel(fnames);
     if ~doParfor
-        for ii = 1:n
+        for ii = 17%:n
             disp(ii);
             results{ii} = getAxyHeader(fnames(ii)); %#ok<SAGROW> 
         end
@@ -50,7 +50,7 @@ if do
     T_AxyFiles = table;
     warning ('off','all');
     for ii = 1:numel(results)
-        T_AxyFiles.id(ii) = ii;
+%         T_AxyFiles.id(ii) = ii;
         [path,name,ext] = fileparts(fnames(ii));
         T_AxyFiles.folder(ii) = string(path);
         T_AxyFiles.filename(ii) = string(name+ext);
@@ -160,3 +160,4 @@ xticks([1,366]);
 ylabel('Rec session');
 
 fprintf("%i cumulative days\n",sum(T_AxyFiles.days));
+saveas(gcf,'KRSP_AxyDataAnalytics.jpg');
