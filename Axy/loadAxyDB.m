@@ -1,10 +1,11 @@
 axyDbFile = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data/AxyDatabase.xlsx';
+axyPath = '/Users/matt/Documents/MATLAB/KRSP/Axy';
 opts = detectImportOptions(axyDbFile);
 
 opts = setvartype(opts,opts.VariableNames(contains(opts.VariableNames,{'shake','time'})),'datetime');
 T_AxyDB = readtable(axyDbFile,opts);
 fprintf("total filenames: %i/%i rows\n",sum(strcmp(T_AxyDB.filename,"")==0),size(T_AxyDB,1));
-save('T_AxyDB.mat','T_AxyDB','storagePath','axyDbFile','opts');
+save(fullfile(axyPath,'T_AxyDB.mat'),'T_AxyDB','storagePath','axyDbFile','opts');
 
 %% re-export axy files
 storagePath = '/Volumes/GAIDICASSD/KRSP';

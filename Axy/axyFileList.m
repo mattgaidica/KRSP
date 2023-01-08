@@ -1,6 +1,7 @@
 if do
     doParfor = false;
     clc;
+    axyPath = '/Users/matt/Documents/MATLAB/KRSP/Axy';
     rootDir = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data';
     csvFiles = dir2(rootDir,'-r','*.csv');
     mbSize = 1048576; % MB
@@ -72,7 +73,7 @@ if do
     end
     warning ('on','all');
     do = 0;
-    save("T_AxyFiles",'T_AxyFiles','rootDir');
+    save(fullfile(axyPath,"T_AxyFiles"),'T_AxyFiles','rootDir');
     t = T_AxyFiles; % backup variable
 end
 clc
