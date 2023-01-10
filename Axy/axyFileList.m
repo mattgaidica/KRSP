@@ -1,5 +1,5 @@
 if do
-    doParfor = false;
+    doParfor = true;
     clc;
     axyPath = '/Users/matt/Documents/MATLAB/KRSP/Axy';
     rootDir = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data';
