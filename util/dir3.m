@@ -1,5 +1,5 @@
 function T = dir3(dn,varargin)
-inputVals = {'',true}; % filetype, recursive
+inputVals = {'',true,{}}; % filter ("*.csv"), do recursive, rm if contains
 inputVals(1:nargin-1) = varargin;
 
 if inputVals{2}
@@ -19,7 +19,7 @@ for ii = 1:size(dout,1)
     filename = [name,ext];
     T.name(ii) = filename;
     T.fullfile(ii) = fullfile(T.folder(ii),T.name(ii));
-    if any(strcmp(filename(1),{'.','$'})) % rm hidden/recycle
+    if any(strcmp(filename(1),{'.','$'})) || contains(lower(filename),lower(inputVals{3})) % rm hidden/recycle
         rmIds = [rmIds ii]; %#ok<AGROW> 
     end
 end

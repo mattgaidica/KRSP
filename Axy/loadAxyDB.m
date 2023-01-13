@@ -1,5 +1,5 @@
 % load
-storagePath = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data';
+storagePath = '/Volumes/GAIDICASSD/KRSP/Axy Database';
 axyDbFile = 'AxyDatabase.xlsx';
 opts = detectImportOptions(fullfile(storagePath,axyDbFile));
 
@@ -7,6 +7,7 @@ opts = detectImportOptions(fullfile(storagePath,axyDbFile));
 variableNames = opts.VariableNames;
 [variableTypes{1:numel(variableNames)}] = deal('string');
 [variableTypes{contains(variableNames,{'date','time'})}] = deal('datetime');
+variableTypes(strcmp(variableNames,'squirrel_id')) = {'double'};
 % opts = setvartype(opts,opts.VariableNames(contains(opts.VariableNames,{'date','time'})),'datetime');
 opts.VariableNames = variableNames;
 opts.VariableTypes = variableTypes;

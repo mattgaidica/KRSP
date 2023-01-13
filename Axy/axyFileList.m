@@ -2,29 +2,14 @@ if do
     doParfor = true;
     clc;
     axyPath = '/Users/matt/Documents/MATLAB/KRSP/Axy';
-    rootDir = '/Volumes/GAIDICASSD/KRSP/KRSP Axy Data';
-    csvFiles = dir2(rootDir,'-r','*.csv');
-    mbSize = 1048576; % MB
-    csvFiles = struct2table(csvFiles);
+    rootDir = '/Volumes/GAIDICASSD/KRSP/Axy Database/Archive';
+    csvFiles = dir3(rootDir,'*.csv');
+%     mbSize = 1048576; % MB
 %     files = struct2table(files([files.bytes] >= 4096));
 %     files = struct2table(files([files.bytes] >= mbSize*30));
     
-    logFiles = {'2019axy_dateIssues.csv','2020 AXY logsheet.csv','AxyLog2017.csv',...
-        'SQRaxy_key_mid_den.csv'};
-    fnames = string;
-    jj = 0;
-    rmIds = [];
-    for ii = 1:size(csvFiles,1)
-        [~,name,ext] = fileparts(csvFiles.name(ii));
-        if ~any(strcmp(name(1),{'.','~'})) && ~ismember([name,ext],logFiles)
-            jj = jj + 1;
-            fnames(jj,:) = string(fullfile(csvFiles.folder(ii),[name,ext]));
-        else
-            fprintf("skipping fname %i %s\n",ii,[name,ext]);
-            rmIds = [rmIds ii]; %#ok<AGROW> 
-        end
-    end
-    csvFiles(rmIds,:) = [];
+    logFiles = {'2020 AXY logsheet.csv','AxyLog2017.csv','SQRaxy_key_mid_den.csv'};
+    fnames = T.fullfile;
 
     tic;
     results = {};
