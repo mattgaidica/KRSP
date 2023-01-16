@@ -3,7 +3,7 @@ inputVals = {'',true,{}}; % filter ("*.csv"), do recursive, rm if contains
 inputVals(1:nargin-1) = varargin;
 T = table;
 n = 0;
-if ~ismissing(dn) && ~ismissing(inputVals{1})
+if ~ismissing(string(dn)) && ~ismissing(string(inputVals{1}))
     if inputVals{2}
         dout = dir2(char(dn),char(inputVals{1}),'-r');
     else
