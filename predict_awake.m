@@ -26,6 +26,7 @@ for ii = 1:366
 end
 seasonLookup = string(seasonLookup);
 clc
+warning ('off','all');
 if do
     weather = readtable('HainesJunction_DailyTemps_Master.csv');
     Tss = makeTss(2014:2020);
@@ -230,8 +231,9 @@ if do
     end
     do = false;
     chime;
+    writetable(overlapMeta,fullfile('R','nestAsleepOverlap_v3.csv'));
 end
-writetable(overlapMeta,fullfile('R','nestAsleepOverlap_v3.csv'));
+warning ('off','all');
 
 %%
 doSave = true;
