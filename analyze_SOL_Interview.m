@@ -30,44 +30,35 @@ durationBinEdges = linspace(5,60,25);
 timingBinEdges = linspace(720-400,720+400,50);
 sunColors = [repmat(0.8,[1,3]);colors(1:4,:)];
 seasonLabelsAll = [{'All'},seasonLabels(:)'];
+sunLabels = {'Sunrise','Sunset'};
+nestLabels = {'Exit','Entry'};
 
-iSeason = 3;
+useSeasons = [2:5];
 gcaFontSize = 16;
-% close all;
-% ff(1000,400);
+sunData = {sunrise_means,sunset_means};
+close all;
+ff(1000,400);
+for iSS = 1:2
+    subplot(1,2,iSS);
+    lns = [];
+    for iSeason = useSeasons
+        lns(numel(lns)+1) = histogram(sunData{iSS}{iSeason},timingBinEdges,'FaceColor',sunColors(iSeason,:),...
+            'Normalization','probability','FaceAlpha',0.5); %#ok<SAGROW> 
+        hold on;
+        set(gca,'fontsize',gcaFontSize);
+        xticks(720-60*6:120:720+60*6);
+        xticklabels({'-6','-4','-2','0','+2','+4','+6'});
+        xlabel('Rel. Time (hours)');
+        ylim([0 0.45]);
+        yticks(ylim);
+        ylabel('Probability');
+        title(sprintf('Nest %s at %s',nestLabels{iSS},sunLabels{iSS}));
+        grid on;
+        xline(720,'k-');
+        if numel(lns) == numel(useSeasons)
+            legend(lns,seasonLabelsAll{useSeasons});
+        end
+    end
+end
+saveas(gcf,fullfile(exportPath,sprintf("sunriseSunsetDist_%s.jpg",strjoin(string(useSeasons),'-'))));
 
-subplot(121);
-% histogram(SOLs_sunrise{iSeason},durationBinEdges,'FaceColor',sunColors(iSeason,:),'Normalization','probability');
-counts = histcounts(SOLs_sunrise{iSeason},durationBinEdges,'Normalization','probability');
-countsSm = smoothdata(equalVectors(counts,1000),'gaussian',100);
-plot(countsSm,'linewidth',3,'color',sunColors(iSeason,:));
-hold on;
-hold on;
-% histogram(SOLs_sunset{iSeason},durationBinEdges,'FaceColor','k','Normalization','probability');
-set(gca,'fontsize',gcaFontSize);
-% xlim([min(durationBinEdges) max(durationBinEdges)]);
-xlabel('Duration (minutes)');
-ylim([0 0.4]);
-yticks(ylim);
-ylabel('Probability','VerticalAlignment','top');
-title(sprintf('%s',seasonLabelsAll{iSeason}));
-grid on;
-legend({'Sunrise','Sunset'},'fontsize',gcaFontSize-2);
-legend boxoff;
-
-subplot(122);
-histogram(sunrise_means{iSeason},timingBinEdges,'FaceColor',sunColors(iSeason,:),'Normalization','probability');
-hold on;
-histogram(sunset_means{iSeason},timingBinEdges,'FaceColor','k','Normalization','probability');
-set(gca,'fontsize',gcaFontSize);
-xticks(720-60*6:120:720+60*6);
-xticklabels({'-6','-4','-2','0','2','4','6'});
-xlabel('Rel. Time (hours)');
-ylim([0 0.4]);
-yticks(ylim);
-title(sprintf('%s%s',seasonLabelsAll{iSeason}));
-legend off;
-grid on;
-legend({'Sunrise','Sunset'},'fontsize',gcaFontSize-2,'AutoUpdate','off');
-legend boxoff;
-xline(720,'k-');
