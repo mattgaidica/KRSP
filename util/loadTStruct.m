@@ -1,5 +1,5 @@
 function [T,sleepThresh] = loadTStruct(iSq,sqkey,Tss)
-loadPath = '/Users/matt/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
+loadPath = '/Users/mattgaidica/Dropbox (University of Michigan)/from_box/KRSP Axy Data/Temp';
 if ~isnumeric(iSq) % iSq
     iSq = find(strcmp(iSq,sqkey.filename)); % overwrite
 end

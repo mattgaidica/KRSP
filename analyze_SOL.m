@@ -326,10 +326,10 @@ end
 writematrix(mastPmat,fullfile(exportPath,'SOL_mastPmat.csv'));
 
 %% !RUNFIG! plot all seasons with mast cond
-colors = mycmap('/Users/matt/Documents/MATLAB/KRSP/util/seasons2.png',5);
+colors = mycmap('/Users/mattgaidica/Documents/MATLAB/KRSP/util/seasons2.png',5);
 useSex = [1];
 mastCond = {[0,1],0,1};
-mastTitle = {' - Both Mast',' - Non-mast',' - Mast'};
+mastTitle = {' - All',' - Non-mast',' - Mast'};
 doMast = 1; % if 0, it assumes this is part of the big plot (all conds), else, creates the supp figure
 ylims = [0.2,0.3,0.2,0.3,0.4];
 if doMast
