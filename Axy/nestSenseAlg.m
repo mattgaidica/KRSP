@@ -10,11 +10,19 @@ sense = {};
 % senseParams.sm_odba = ;
 % senseParams.offset_odba = ;
 
-temp = detrend(temp,2); % subtract moving mean for large changes over time
-sense.tempZ = senseParams.w_temp*normalize(temp);
+if all(temp==0)
+    sense.tempZ = temp; % skip
+else
+    temp = detrend(temp,2); % subtract moving mean for large changes over time
+    sense.tempZ = senseParams.w_temp*normalize(temp);
+end
 
-sense.tempGrad = gradient(smoothdata(temp,'gaussian',senseParams.sm_tempGrad * 60));
-sense.tempGrad = senseParams.w_tempGrad * normalize(sense.tempGrad .* abs(sense.tempGrad)); % square it for some drama:
+if all(nest==0)
+    sense.tempGrad = nest; % skip
+else
+    sense.tempGrad = gradient(smoothdata(temp,'gaussian',senseParams.sm_tempGrad * 60));
+    sense.tempGrad = senseParams.w_tempGrad * normalize(sense.tempGrad .* abs(sense.tempGrad)); % square it for some drama:
+end
 
 sense.smOdba = smoothdata(normalize(odba) + senseParams.offset_odba,'gaussian',senseParams.sm_odba * 60); % normal inside smooth
 sense.invOdba = senseParams.w_odba * -sense.smOdba;
