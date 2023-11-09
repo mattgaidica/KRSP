@@ -24,7 +24,11 @@ end
 % Calculating moving variance with a width of 420 and step of 30
 axy.var = movvar(axy.temp, [419 0], 'omitnan'); % Note: Adjust the window as per requirement
 axy.var(1) = 0;
-axy.var = fillmissing(axy.var, 'linear', 'SamplePoints', axy.datetime);
+try % !!not working with 10Hz data
+    axy.var = fillmissing(axy.var, 'linear', 'SamplePoints', axy.datetime);
+catch
+    disp("Not filling missing var column in axyPrep");
+end
 
 % Assigning the SN variable
 axy.Squirrel = repmat(SN, size(axy, 1), 1);

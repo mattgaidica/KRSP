@@ -1,3 +1,4 @@
+% upload: https://drive.google.com/drive/folders/1z37UOIedbWeJea2c4oOftKt6ghXA8eOV
 % load database
 storagePath = '/Volumes/GAIDICASSD/KRSP/Axy Database';
 axyDbFile = 'AxyDatabase.xlsx';
@@ -16,7 +17,9 @@ T_AxyDB = readtable(fullfile(storagePath,axyDbFile),opts);
 fprintf("total filenames: %i/%i rows\n",sum(strcmp(T_AxyDB.filename,"")==0),size(T_AxyDB,1));
 
 %%
+% check: c92f49590fdfd9a03cc5df6232a27268, 5a8d427fb949f28ac5cfa67d1bceb83b
 doPlot = true;
+skipExisting = true;
 savePath = '/Volumes/GAIDICASSD/KRSP/Data_behaviorClass';
 hashedAxyFiles = dir3(fullfile(storagePath,'Data'));
 iSuccess = 0;
@@ -24,19 +27,34 @@ corruptIds = [];
 noDataIds = [];
 noTempIds = [];
 catchIds = [];
-for ii = 200:height(T_AxyDB)
+successIds = [];
+for ii = 676:height(T_AxyDB)
     % find hashed file
     findId = find(contains(hashedAxyFiles.fullfile,T_AxyDB.md5_hash(ii)));
+
     if ~isempty(findId)
+        newfilename = sprintf("row%03d_squirrel%i_%s",ii,T_AxyDB.squirrel_id(ii),T_AxyDB.md5_hash(ii));
+        csvFile = fullfile(savePath,newfilename + '.csv');
+        if skipExisting && isfile(csvFile)
+            fprintf("Skipping row %i (already exists)\n",ii);
+            continue;
+        end
         try
-            fprintf("Loading axy data: %s\n",T_AxyDB.md5_hash(ii));
+            fprintf("Loading row %i: %s\n",ii,T_AxyDB.md5_hash(ii));
+            % not using axy_d/t_format here, maybe I should?
             axy = readtable(hashedAxyFiles.fullfile(findId)); % ,'Delimiter',delimiter
 
+            newHeaderLabels = strsplit(T_AxyDB.header_labels(ii),",");
+            axy.Properties.VariableNames(1:numel(newHeaderLabels)) = newHeaderLabels;
+
             containsNaNorMissing = false;
+            variables_to_check = {'datetime','date','time','temp','odba','x','y','z'};
             for col = 1:width(axy)
-                columnData = axy{:, col};
-                if isnumeric(columnData) && any(isnan(columnData))
-                    containsNaNorMissing = true;
+                if contains(axy.Properties.VariableNames{col},variables_to_check)
+                    columnData = axy{:,col};
+                    if isnumeric(columnData) && any(isnan(columnData))
+                        containsNaNorMissing = true;
+                    end
                 end
             end
             if containsNaNorMissing
@@ -44,12 +62,38 @@ for ii = 200:height(T_AxyDB)
                 corruptIds = [corruptIds;ii];
                 continue;
             end
-           
-            newHeaderLabels = strsplit(T_AxyDB.header_labels(ii),",");
-            axy.Properties.VariableNames(1:numel(newHeaderLabels)) = newHeaderLabels;
+
+            % handle case where date/time is string and combine them
+            t_fmt = T_AxyDB.axy_t_fmt(ii);
+            d_fmt = T_AxyDB.axy_d_fmt(ii);
             if ~any(contains(axy.Properties.VariableNames,"datetime"))
+                if iscell(axy.date)
+                    if sum(axy.date{1}=='-') == 2
+                        d_fmt = strrep(d_fmt,'/','-'); % replace
+                    end
+                    axy.date = datetime(axy.date,'Format',d_fmt);
+                end
+                if iscell(axy.time)
+                    axy.time = datetime(axy.time,'Format',t_fmt);
+                end
                 % combine date, time
                 axy.datetime = axy.date + axy.time;
+            end
+            % !! fixing similar issue to above but requires datetime
+            datetimeIncorrect = false;
+            if iscell(axy.datetime)
+                try
+                    if sum(axy.datetime{1}=='-') == 2
+                        d_fmt = strrep(T_AxyDB.axy_d_fmt(ii),'/','-'); % replace
+                    end
+                    axy.datetime = datetime(axy.datetime,'Format',d_fmt+" "+t_fmt);
+                catch
+                    datetimeIncorrect = true;
+                end
+            end
+            if datetimeIncorrect
+                disp("failed to convert datetime from string, skipping");
+                continue;
             end
 
             % remove nose/tail of data
@@ -59,7 +103,11 @@ for ii = 200:height(T_AxyDB)
                 hour(T_AxyDB.deploy_time(ii)),minute(T_AxyDB.deploy_time(ii)),second(T_AxyDB.deploy_time(ii)));
             tailDatetime = datetime(year(T_AxyDB.removed_date(ii)),month(T_AxyDB.removed_date(ii)),day(T_AxyDB.removed_date(ii)),...
                 hour(T_AxyDB.removed_time(ii)),minute(T_AxyDB.removed_time(ii)),second(T_AxyDB.removed_time(ii)));
-            axy(axy.datetime < noseDatetime | axy.datetime > tailDatetime,:) = []; % remove
+            % check for valid times, keep going if it can't trim (need to
+            % review plot to find valid deployment interval)
+            if ~isnat(noseDatetime) && ~isnat(tailDatetime)
+                axy(axy.datetime < noseDatetime | axy.datetime > tailDatetime,:) = []; % remove
+            end
             if isempty(axy)
                 disp("No data in range, skipping");
                 noDataIds = [noDataIds;ii];
@@ -92,7 +140,6 @@ for ii = 200:height(T_AxyDB)
             axy = april_summaryStats(axy);
             disp("adding behavior class...");
             axy = april_behavClass2(axy);
-            newfilename = sprintf("row%03d_squirrel%i_%s",ii,T_AxyDB.squirrel_id(ii),T_AxyDB.md5_hash(ii));
             fprintf("writing: %s\n",newfilename);
 
             % List of variables to keep
@@ -146,17 +193,15 @@ for ii = 200:height(T_AxyDB)
             end
 
             % write CSV file
-            writetable(axy,fullfile(savePath,newfilename + '.csv'));
+            writetable(axy,csvFile);
             fprintf("Success!\n\n");
-            iSuccess = iSuccess + 1;
+            successIds = [successIds;ii];
         catch
             fprintf("!! Caught %s\n",T_AxyDB.md5_hash(ii));
             catchIds = [catchIds;ii];
         end
     end
 end
-fprintf("Succeeded n = %i\n",iSuccess);
-fprintf("Caught n = %i\n",iCatch);
 
 %%
 fprintf("Caught n = %i\n",numel(catchIds));
