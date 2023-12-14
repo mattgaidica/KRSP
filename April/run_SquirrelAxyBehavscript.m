@@ -19,7 +19,7 @@ fprintf("total filenames: %i/%i rows\n",sum(strcmp(T_AxyDB.filename,"")==0),size
 %%
 % check: c92f49590fdfd9a03cc5df6232a27268, 5a8d427fb949f28ac5cfa67d1bceb83b
 doPlot = true;
-skipExisting = true;
+skipExisting = false;
 savePath = '/Volumes/GAIDICASSD/KRSP/Data_behaviorClass';
 hashedAxyFiles = dir3(fullfile(storagePath,'Data'));
 iSuccess = 0;
@@ -28,7 +28,7 @@ noDataIds = [];
 noTempIds = [];
 catchIds = [];
 successIds = [];
-for ii = 676:height(T_AxyDB)
+for ii = 712%1:height(T_AxyDB)
     % find hashed file
     findId = find(contains(hashedAxyFiles.fullfile,T_AxyDB.md5_hash(ii)));
 
@@ -95,6 +95,7 @@ for ii = 676:height(T_AxyDB)
                 disp("failed to convert datetime from string, skipping");
                 continue;
             end
+            axy.datetime.Format = 'dd-MMM-yyyy HH:mm:ss';
 
             % remove nose/tail of data
             % handle the way date/time is read
@@ -155,9 +156,9 @@ for ii = 676:height(T_AxyDB)
                 maxPoints = 1000;       % Maximum number of points to plot
                 interval = max(ceil(numRows / maxPoints), 1);
                 idx = (1:interval:numRows)';
-                
+
                 close all;
-                
+
                 figure('position',[0 0 1200 800]);
                 subplot(211);
                 plot(axy.datetime(idx),axy.odba(idx),'w-');
@@ -165,7 +166,7 @@ for ii = 676:height(T_AxyDB)
                 xlim([axy.datetime(idx(1)),axy.datetime(idx(end))]);
                 xticks(xlim);
                 ylabel('ODBA');
-                
+
                 yyaxis right;
                 plot(axy.datetime(idx),axy.temp(idx),'r-');
                 ylabel('Temp (C)');
@@ -176,12 +177,19 @@ for ii = 676:height(T_AxyDB)
                 plot(axy.datetime(idx),nestData + mean(ylim),'g-','LineWidth',3);
                 legend({"ODBA","Temp","In Nest"});
                 title('Axy + Temp')
-                
+
                 subplot(212);
-                plot(axy.datetime(idx),categorical(axy.All(idx)));
+                % Convert to categorical if not already
+                allCategorical = categorical(axy.All);
+                % Define the desired order of categories
+                desiredOrder = {'NestNotMove', 'NestMove', 'NotMoving', 'Feed', 'Forage', 'Travel'};
+                % Reorder the categories
+                allCategorical = reordercats(allCategorical, desiredOrder);
+
+                plot(axy.datetime(idx),allCategorical(idx));
                 xlim([axy.datetime(idx(1)),axy.datetime(idx(end))]);
                 xticks(xlim);
-                
+
                 yyaxis right;
                 plot(axy.datetime(idx),nestData + mean(ylim),'g-','LineWidth',3);
                 set(gca,'ycolor','w');
