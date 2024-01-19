@@ -28,7 +28,7 @@ noDataIds = [];
 noTempIds = [];
 catchIds = [];
 successIds = [];
-for ii = 712%1:height(T_AxyDB)
+for ii = newIds%1:height(T_AxyDB)
     % find hashed file
     findId = find(contains(hashedAxyFiles.fullfile,T_AxyDB.md5_hash(ii)));
 
@@ -121,17 +121,15 @@ for ii = 712%1:height(T_AxyDB)
             end
 
             % handle 10Hz data
-            if T_AxyDB.axy_fs ~= 1
-                % Identify which variables (columns) are of a desired type before
-                % downsampling
-                validVarTypes = {'double', 'datetime', 'duration'};  % Desired types
-                isVarValid = varfun(@(x) any(strcmp(class(x), validVarTypes)), axy, 'OutputFormat', 'uniform');
-                % Keep only valid variables
-                axy = axy(:,isVarValid);
-                axy_timetable = table2timetable(axy);
-                resampled_axy = retime(axy_timetable, 'secondly', 'mean');
-                axy = timetable2table(resampled_axy);
+            if T_AxyDB.axy_fs(ii) == 10
+                % Calculate the subsampling interval based on the sampling frequency
+                subsampleInterval = T_AxyDB.axy_fs(ii);
+
+                % Subsample the data
+                % Keep the first row and then every 'subsampleInterval'-th row
+                axy = axy(1:subsampleInterval:end, :);
             end
+
             % add behavior columns
             disp("filtering temp...");
             axy = april_tempFilter(axy);
