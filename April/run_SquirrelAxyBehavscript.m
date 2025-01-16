@@ -1,5 +1,9 @@
-% upload: https://drive.google.com/drive/folders/1z37UOIedbWeJea2c4oOftKt6ghXA8eOV
-% load database
+%% Script to Process Squirrel Accelerometer (Axy) Data
+% This script processes raw accelerometer data from squirrels and classifies their behaviors.
+% It reads from an Excel database containing metadata about each recording and processes
+% the corresponding accelerometer files.
+
+% Set up paths and load the database
 storagePath = '/Volumes/GAIDICASSD/KRSP/Axy Database';
 axyDbFile = 'AxyDatabase.xlsx';
 opts = detectImportOptions(fullfile(storagePath,axyDbFile));
@@ -16,37 +20,55 @@ opts.VariableTypes = variableTypes;
 T_AxyDB = readtable(fullfile(storagePath,axyDbFile),opts);
 fprintf("total filenames: %i/%i rows\n",sum(strcmp(T_AxyDB.filename,"")==0),size(T_AxyDB,1));
 
-%%
-% check: c92f49590fdfd9a03cc5df6232a27268, 5a8d427fb949f28ac5cfa67d1bceb83b
+%% Main Processing Loop
+% This section processes each accelerometer file in the database:
+% 1. Loads the raw data
+% 2. Cleans and formats the timestamps
+% 3. Removes data outside the deployment period
+% 4. Processes the accelerometer signals
+% 5. Classifies behaviors
+% 6. Saves results and creates summary plots
+
+% Track different types of processing issues
 doPlot = true;
 skipExisting = false;
 savePath = '/Volumes/GAIDICASSD/KRSP/Data_behaviorClass';
 hashedAxyFiles = dir3(fullfile(storagePath,'Data'));
+
+% Initialize arrays to track different types of processing issues
 iSuccess = 0;
-corruptIds = [];
-noDataIds = [];
-noTempIds = [];
-catchIds = [];
-successIds = [];
-for ii = newIds%1:height(T_AxyDB)
+corruptIds = [];      % Files with corrupted data
+noDataIds = [];       % Files with no valid data in deployment period
+noTempIds = [];       % Files with non-varying temperature
+catchIds = [];        % Files that caused errors during processing
+successIds = [];      % Successfully processed files
+
+% Process each entry in the database
+for ii = 1:height(T_AxyDB)
     % find hashed file
     findId = find(contains(hashedAxyFiles.fullfile,T_AxyDB.md5_hash(ii)));
 
     if ~isempty(findId)
+        % Create a unique filename for the processed data
         newfilename = sprintf("row%03d_squirrel%i_%s",ii,T_AxyDB.squirrel_id(ii),T_AxyDB.md5_hash(ii));
         csvFile = fullfile(savePath,newfilename + '.csv');
+        
+        % Skip if file already exists and skipExisting is true
         if skipExisting && isfile(csvFile)
             fprintf("Skipping row %i (already exists)\n",ii);
             continue;
         end
+        
         try
             fprintf("Loading row %i: %s\n",ii,T_AxyDB.md5_hash(ii));
-            % not using axy_d/t_format here, maybe I should?
-            axy = readtable(hashedAxyFiles.fullfile(findId)); % ,'Delimiter',delimiter
+            % Load the raw accelerometer data
+            axy = readtable(hashedAxyFiles.fullfile(findId));
 
+            % Rename columns based on header labels in database
             newHeaderLabels = strsplit(T_AxyDB.header_labels(ii),",");
             axy.Properties.VariableNames(1:numel(newHeaderLabels)) = newHeaderLabels;
 
+            % Check for missing or NaN values in important columns
             containsNaNorMissing = false;
             variables_to_check = {'datetime','date','time','temp','odba','x','y','z'};
             for col = 1:width(axy)
@@ -63,6 +85,7 @@ for ii = newIds%1:height(T_AxyDB)
                 continue;
             end
 
+            % Format datetime information consistently
             % handle case where date/time is string and combine them
             t_fmt = T_AxyDB.axy_t_fmt(ii);
             d_fmt = T_AxyDB.axy_d_fmt(ii);
@@ -130,26 +153,25 @@ for ii = newIds%1:height(T_AxyDB)
                 axy = axy(1:subsampleInterval:end, :);
             end
 
-            % add behavior columns
+            % Process the accelerometer data through several steps:
             disp("filtering temp...");
-            axy = april_tempFilter(axy);
+            axy = april_tempFilter(axy);           % Filter temperature data
             disp("axy prep...");
-            axy = april_axyPrep(axy,T_AxyDB.squirrel_id(ii));
+            axy = april_axyPrep(axy,T_AxyDB.squirrel_id(ii));  % Prepare accelerometer data
             disp("generating statistics...");
-            axy = april_summaryStats(axy);
+            axy = april_summaryStats(axy);         % Calculate summary statistics
             disp("adding behavior class...");
-            axy = april_behavClass2(axy);
+            axy = april_behavClass2(axy);          % Classify behaviors
             fprintf("writing: %s\n",newfilename);
 
-            % List of variables to keep
+            % Keep only the essential columns in final output
             variables_to_keep = {'datetime','temp','odba','Nest','squirrel','All'};
-            % Find variables in the table that are not in the list to keep
             variables_to_remove = setdiff(axy.Properties.VariableNames, variables_to_keep);
-            % Remove unwanted variables
             axy(:, variables_to_remove) = [];
 
-            % create summary figure
+            % Create visualization if doPlot is true
             if doPlot
+                % Subsample data for plotting to improve performance
                 numRows = height(axy); % Total number of rows in the data
                 maxPoints = 1000;       % Maximum number of points to plot
                 interval = max(ceil(numRows / maxPoints), 1);
@@ -157,7 +179,10 @@ for ii = newIds%1:height(T_AxyDB)
 
                 close all;
 
+                % Create a figure with two subplots
                 figure('position',[0 0 1200 800]);
+                
+                % Top subplot: ODBA and Temperature
                 subplot(211);
                 plot(axy.datetime(idx),axy.odba(idx),'w-');
                 set(gca,'ycolor','w');
@@ -165,29 +190,33 @@ for ii = newIds%1:height(T_AxyDB)
                 xticks(xlim);
                 ylabel('ODBA');
 
+                % Add temperature data on secondary y-axis
                 yyaxis right;
                 plot(axy.datetime(idx),axy.temp(idx),'r-');
                 ylabel('Temp (C)');
                 set(gca,'ycolor','r');
                 hold on;
+                
+                % Add nest occupancy indicator
                 nestData = double(contains(axy.Nest(idx),"Out"));
                 nestData(nestData == 1) = NaN;
                 plot(axy.datetime(idx),nestData + mean(ylim),'g-','LineWidth',3);
                 legend({"ODBA","Temp","In Nest"});
                 title('Axy + Temp')
 
+                % Bottom subplot: Behavior Classification
                 subplot(212);
-                % Convert to categorical if not already
+                % Convert behavior classes to categorical and set specific order
                 allCategorical = categorical(axy.All);
-                % Define the desired order of categories
                 desiredOrder = {'NestNotMove', 'NestMove', 'NotMoving', 'Feed', 'Forage', 'Travel'};
-                % Reorder the categories
                 allCategorical = reordercats(allCategorical, desiredOrder);
 
+                % Plot behavior classes over time
                 plot(axy.datetime(idx),allCategorical(idx));
                 xlim([axy.datetime(idx(1)),axy.datetime(idx(end))]);
                 xticks(xlim);
 
+                % Add nest occupancy indicator
                 yyaxis right;
                 plot(axy.datetime(idx),nestData + mean(ylim),'g-','LineWidth',3);
                 set(gca,'ycolor','w');
@@ -195,10 +224,11 @@ for ii = newIds%1:height(T_AxyDB)
                 title('Behavior Class');
                 legend({"Class","In Nest"});
 
+                % Save the figure as a JPG
                 exportgraphics(gcf,fullfile(savePath,newfilename + '.jpg'));
             end
 
-            % write CSV file
+            % Save processed data to CSV
             writetable(axy,csvFile);
             fprintf("Success!\n\n");
             successIds = [successIds;ii];
@@ -209,7 +239,8 @@ for ii = newIds%1:height(T_AxyDB)
     end
 end
 
-%%
+%% Final Summary
+% Display counts of different processing outcomes
 fprintf("Caught n = %i\n",numel(catchIds));
 fprintf("Corrupt n = %i\n",numel(corruptIds));
 fprintf("No data n = %i\n",numel(noDataIds));
